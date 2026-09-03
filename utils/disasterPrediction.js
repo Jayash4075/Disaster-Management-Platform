@@ -6,6 +6,9 @@ const predictDisaster = async ({
     previous_floods
 }) => {
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
+
     try {
         const response = await fetch(
             `${process.env.ML_SERVICE_URL || "http://localhost:5001"}/predict/disaster`,
@@ -24,6 +27,8 @@ const predictDisaster = async ({
             }
         );
 
+        clearTimeout(timeoutId);
+
         const data = await response.json();
 
         if (!response.ok) {
@@ -35,13 +40,18 @@ const predictDisaster = async ({
         return data;
 
     } catch (error) {
+        clearTimeout(timeoutId);
 
         console.error(
             "Disaster ML service error:",
             error.message
         );
+        return {
+            success: false,
+            prediction: { risk: "UNKNOWN", probability: null },
+            probabilities: {}
+        };
 
-        throw error;
     }
 };
 
