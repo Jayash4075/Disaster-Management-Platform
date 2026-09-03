@@ -1,7 +1,7 @@
 const SOSReport = require('../models/report.js');
 const uploadBufferToCloudinary = require('../utils/cloudinaryUpload.js');
 const calculateSeverity = require('../utils/severity.js');
-const predictSOSSeverity = require('../utils/mlservice.js');
+const predictSOSSeverity = require('../utils/mlService.js');
 
 //createSOS, 
 
