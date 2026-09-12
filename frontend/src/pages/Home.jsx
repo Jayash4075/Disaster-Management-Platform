@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./Home.css";
+import api from "../api/axios";
 
 function Home() {
   const [summary, setSummary] = useState({
@@ -13,11 +14,8 @@ function Home() {
   useEffect(() => {
     const fetchSummary = async () => {
       try {
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/habitations/landing-summary`
-        );
-        const data = await response.json();
-        setSummary(data);
+        const response = await api.get("/api/habitations/landing-summary");
+        setSummary(response.data);
       } catch (error) {
         console.error("Failed to load landing summary:", error);
       } finally {
