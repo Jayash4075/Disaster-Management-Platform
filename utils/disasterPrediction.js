@@ -7,7 +7,7 @@ const predictDisaster = async ({
 }) => {
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 45000);
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
 
     try {
         const response = await fetch(

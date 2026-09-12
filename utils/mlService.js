@@ -1,4 +1,5 @@
 const predictSOSSeverity = async (features) => {
+    
     const mlServiceUrl = process.env.ML_SERVICE_URL;
     
     const payload = {
@@ -13,7 +14,7 @@ const predictSOSSeverity = async (features) => {
     };
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 45000);
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
 
     try {
         const response = await fetch(`${mlServiceUrl}/predict/sos`, {

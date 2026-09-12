@@ -1,7 +1,33 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import "./Home.css";
 
 function Home() {
+  const [summary, setSummary] = useState({
+    redZones: 0,
+    highRisk: 0,
+    totalHabitations: 0,
+    saferSites: 0
+  });
+  const [loadingSummary, setLoadingSummary] = useState(true);
+
+  useEffect(() => {
+    const fetchSummary = async () => {
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/habitations/landing-summary`
+        );
+        const data = await response.json();
+        setSummary(data);
+      } catch (error) {
+        console.error("Failed to load landing summary:", error);
+      } finally {
+        setLoadingSummary(false);
+      }
+    };
+
+    fetchSummary();
+  }, []);
+
   return (
     <div className="home">
 
@@ -35,17 +61,17 @@ function Home() {
         <div className="hero-content">
 
           <p className="hero-label">
-            SMART DISASTER RESPONSE PLATFORM
+            INTELLIGENT DISASTER RISK & RELOCATION PLATFORM
           </p>
 
           <h1>
-            Predict. Respond. <span>Rescue.</span>
+            Identify Risk. <span>Protect Lives.</span>
           </h1>
 
           <p className="hero-description">
-            An intelligent disaster-response platform connecting
-            citizens, rescue teams, healthcare, resources and
-            volunteers when every second matters.
+            ResQ uses intelligent risk analysis and GIS-based mapping
+            to identify hazardous zones, assess vulnerable habitations,
+            and support safer relocation before disaster strikes.
           </p>
 
           <div className="hero-buttons">
@@ -54,37 +80,95 @@ function Home() {
             </a>
 
             <a href="#features" className="secondary-btn">
-              Explore Features
+              Explore ResQ
             </a>
+          </div>
+
+          {/* Small capability indicators */}
+          <div className="hero-highlights">
+            <div>
+              <strong>Risk</strong>
+              <span>Identification</span>
+            </div>
+
+            <div>
+              <strong>GIS</strong>
+              <span>Hazard Mapping</span>
+            </div>
+
+            <div>
+              <strong>Safe</strong>
+              <span>Relocation Planning</span>
+            </div>
           </div>
 
         </div>
 
 
-        {/* Hero visual */}
+        {/* Hero Visual */}
         <div className="hero-visual">
 
           <div className="map-card">
 
             <div className="map-header">
-          <span>Intelligent Risk Mapping</span>
-          <span className="live">RISK PREVIEW</span>
-          </div>
+              <span>Hazard Intelligence Map</span>
+              <span className="live">
+                {loadingSummary ? "Loading..." : "Live Analysis"}
+              </span>
+            </div>
 
             <div className="map-area">
 
+              {/* Red hazard zones */}
               <div className="risk-zone zone-one"></div>
               <div className="risk-zone zone-two"></div>
-              <div className="location-point point-one"></div>
-              <div className="location-point point-two"></div>
-              <div className="location-point point-three"></div>
+
+              {/* Vulnerable habitation */}
+              <div className="habitation-point habitation-one">
+                <span></span>
+              </div>
+
+              <div className="habitation-point habitation-two">
+                <span></span>
+              </div>
+
+              {/* Safer relocation locations */}
+              <div className="safe-point safe-one">
+                <span>✓</span>
+              </div>
+
+              <div className="safe-point safe-two">
+                <span>✓</span>
+              </div>
+
+              {/* Connecting relocation route */}
+              <div className="relocation-route"></div>
 
             </div>
 
             <div className="map-footer">
-              <span>🔴 High Risk</span>
-              <span>🟠 Moderate</span>
-              <span>🟢 Safe</span>
+                <span>🔴 Red Zone</span>
+                <span>🟠 High Risk</span>
+                <span>🟢 Safer Site</span>
+            </div>
+            {/* NEW — real stats row */}
+            <div className="live-stats">
+                <div>
+                    <strong>{loadingSummary ? "—" : summary.totalHabitations}</strong>
+                    <span>Habitations Monitored</span>
+                </div>
+                <div>
+                    <strong>{loadingSummary ? "—" : summary.highRisk}</strong>
+                    <span>High Risk Areas</span>
+                </div>
+                <div>
+                      <strong>{loadingSummary ? "—" : summary.redZones}</strong>
+                      <span>Red Zones</span>
+                </div>
+                <div>
+                      <strong>{loadingSummary ? "—" : summary.saferSites.length}</strong>
+                      <span>Safer Relocation Sites</span>
+                </div>
             </div>
 
           </div>
@@ -94,7 +178,7 @@ function Home() {
       </section>
 
 
-      {/* Emergency Alert */}
+      {/* Main Alert / Intelligence Banner */}
       <section className="alert-section">
 
         <div className="alert-icon">
@@ -102,15 +186,18 @@ function Home() {
         </div>
 
         <div>
-          <strong>Stay Alert. Stay Safe.</strong>
+          <strong>
+            Know the Risk Before Disaster Strikes
+          </strong>
+
           <p>
-            Get real-time disaster alerts and safety information
-            for your location.
+            Identify vulnerable habitations, understand their risk,
+            and support timely relocation decisions.
           </p>
         </div>
 
         <a href="#how-it-works" className="primary-btn">
-        Learn How It Works
+          See How It Works
         </a>
 
       </section>
@@ -121,16 +208,17 @@ function Home() {
 
         <div className="section-heading">
 
-          <p>OUR PLATFORM</p>
+          <p>OUR INTELLIGENCE PLATFORM</p>
 
           <h2>
-            Everything You Need When
-            <span> Disaster Strikes</span>
+            From Risk Identification to
+            <span> Safer Relocation</span>
           </h2>
 
           <p>
-            From early warnings to rescue coordination,
-            ResQ brings disaster response together in one platform.
+            ResQ combines hazard analysis, GIS intelligence,
+            vulnerability assessment and relocation planning
+            in one platform.
           </p>
 
         </div>
@@ -138,57 +226,92 @@ function Home() {
 
         <div className="feature-grid">
 
+          {/* Feature 1 */}
           <div className="feature-card">
             <div>🗺️</div>
-            <h3>Risk Prediction & GIS</h3>
+
+            <h3>
+              Hazard & Red Zone Mapping
+            </h3>
+
             <p>
-              Identify disaster-prone zones and visualize
-              risks on an interactive map.
+              Identify hazardous areas and visualize red zones
+              using an interactive GIS-based map.
             </p>
           </div>
 
+
+          {/* Feature 2 */}
+          <div className="feature-card">
+            <div>🏘️</div>
+
+            <h3>
+              Vulnerable Habitations
+            </h3>
+
+            <p>
+              Locate settlements exposed to hazards and assess
+              population vulnerability and disaster exposure.
+            </p>
+          </div>
+
+
+          {/* Feature 3 */}
+          <div className="feature-card">
+            <div>📊</div>
+
+            <h3>
+              Risk Assessment
+            </h3>
+
+            <p>
+              Analyze hazard exposure, vulnerability and other
+              risk factors to prioritize areas requiring attention.
+            </p>
+          </div>
+
+
+          {/* Feature 4 */}
+          <div className="feature-card">
+            <div>📍</div>
+
+            <h3>
+              Relocation Planning
+            </h3>
+
+            <p>
+              Identify safer alternative locations for populations
+              living in high-risk and red-zone areas.
+            </p>
+          </div>
+
+
+          {/* Feature 5 */}
+          <div className="feature-card">
+            <div>🏠</div>
+
+            <h3>
+              Carrying Capacity
+            </h3>
+
+            <p>
+              Compare population requirements with the available
+              capacity and infrastructure of potential relocation sites.
+            </p>
+          </div>
+
+
+          {/* Feature 6 */}
           <div className="feature-card">
             <div>🚨</div>
-            <h3>SOS & Rescue</h3>
-            <p>
-              Send an emergency SOS and get connected
-              with the most suitable rescue team.
-            </p>
-          </div>
 
-          <div className="feature-card">
-            <div>🛣️</div>
-            <h3>Safe Routes</h3>
-            <p>
-              Find evacuation routes that prioritize
-              safety instead of simply choosing the shortest path.
-            </p>
-          </div>
+            <h3>
+              Emergency Response
+            </h3>
 
-          <div className="feature-card">
-            <div>📦</div>
-            <h3>Resource Matching</h3>
             <p>
-              Connect affected areas with available food,
-              water, medicine and other essential resources.
-            </p>
-          </div>
-
-          <div className="feature-card">
-            <div>🏥</div>
-            <h3>Healthcare</h3>
-            <p>
-              Find nearby hospitals, available beds,
-              ambulances and blood resources.
-            </p>
-          </div>
-
-          <div className="feature-card">
-            <div>🤝</div>
-            <h3>Volunteer & NGO Matching</h3>
-            <p>
-              Connect volunteers and organizations with
-              relief operations where they are needed most.
+              Continue supporting SOS, emergency alerts,
+              rescue coordination and essential disaster services.
             </p>
           </div>
 
@@ -197,54 +320,90 @@ function Home() {
       </section>
 
 
-      {/* How it works */}
+      {/* How It Works */}
       <section className="how-it-works" id="how-it-works">
 
-        <div className="section-heading">
+    <div className="section-heading">
+      <p className="section-label">OUR INTELLIGENCE PLATFORM</p>
 
-          <p>HOW IT WORKS</p>
+      <h2>
+        From Risk Identification to
+        <span> Safer Relocation</span>
+      </h2>
 
-          <h2>
-            From Emergency to
-            <span> Response</span>
-          </h2>
-
-        </div>
+      <p className="section-description">
+        Identify hazardous zones, assess vulnerable communities,
+        and plan safer relocation with intelligent GIS insights.
+      </p>
+    </div>
 
 
         <div className="steps">
 
+          {/* Step 1 */}
           <div className="step">
-            <div className="step-number">01</div>
-            <h3>Detect</h3>
+            <div className="step-number">
+              01
+            </div>
+
+            <h3>
+              Identify
+            </h3>
+
             <p>
-              Monitor disaster risks and identify affected zones.
+              Analyze hazards and identify areas that may
+              become unsafe for habitation.
             </p>
           </div>
 
+
+          {/* Step 2 */}
           <div className="step">
-            <div className="step-number">02</div>
-            <h3>Report</h3>
+            <div className="step-number">
+              02
+            </div>
+
+            <h3>
+              Assess
+            </h3>
+
             <p>
-              Citizens can quickly report emergencies through SOS.
+              Assess vulnerable habitations, population exposure
+              and the severity of risk.
             </p>
           </div>
 
+
+          {/* Step 3 */}
           <div className="step">
-            <div className="step-number">03</div>
-            <h3>Coordinate</h3>
+            <div className="step-number">
+              03
+            </div>
+
+            <h3>
+              Plan
+            </h3>
+
             <p>
-              Match rescue teams, resources and volunteers
-              with those who need them.
+              Find suitable relocation sites and evaluate
+              their available carrying capacity.
             </p>
           </div>
 
+
+          {/* Step 4 */}
           <div className="step">
-            <div className="step-number">04</div>
-            <h3>Rescue</h3>
+            <div className="step-number">
+              04
+            </div>
+
+            <h3>
+              Prioritize
+            </h3>
+
             <p>
-              Guide responders using safe routes and
-              real-time information.
+              Prioritize immediate, short-term and medium-term
+              relocation needs for informed action.
             </p>
           </div>
 
@@ -253,7 +412,37 @@ function Home() {
       </section>
 
 
-      {/* CTA */}
+      {/* PS 191 Highlight */}
+      <section className="ps-highlight">
+
+        <div className="ps-content">
+
+          <p className="hero-label">
+            PROACTIVE DISASTER MANAGEMENT
+          </p>
+
+          <h2>
+            Don't Wait for Disaster.
+            <span> Prepare Before It Happens.</span>
+          </h2>
+
+          <p>
+            ResQ transforms disaster-related data into actionable
+            intelligence — helping authorities identify unsafe
+            habitations, evaluate safer alternatives and make
+            informed relocation decisions.
+          </p>
+
+          <a href="/signup" className="primary-btn">
+            Start with ResQ
+          </a>
+
+        </div>
+
+      </section>
+
+
+      {/* Existing Emergency CTA */}
       <section className="cta">
 
         <h2>
@@ -261,8 +450,8 @@ function Home() {
         </h2>
 
         <p>
-          Join a smarter approach to disaster preparedness
-          and emergency response.
+          From proactive risk assessment to emergency response,
+          ResQ helps communities stay safer and better prepared.
         </p>
 
         <a href="/signup">
@@ -277,15 +466,16 @@ function Home() {
 
         <div>
           <h2>ResQ</h2>
+
           <p>
-            Predict. Respond. Rescue.
+            Identify Risk. Protect Lives.
           </p>
         </div>
 
         <div>
-          <p>Emergency</p>
-          <p>Safety Guidelines</p>
-          <p>Privacy</p>
+          <p>Risk Intelligence</p>
+          <p>Relocation Planning</p>
+          <p>Emergency Response</p>
         </div>
 
         <div>

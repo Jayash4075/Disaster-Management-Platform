@@ -31,6 +31,9 @@ const userSchema = new mongoose.Schema(
             type: String,
             required: [true, 'Phone no. is required'],
         },
+        otp: { type: String },
+        otpExpiry: { type: Date },
+        isVerified: { type: Boolean, default: false },
         location: {
             type: {
                 type: String,

@@ -48,6 +48,7 @@ app.use('/api/resources', require('./routes/resourceroutes'));
 app.use('/api/resource-requests', require('./routes/resourcerequestroutes'));
 app.use('/api/volunteers', require('./routes/volunteerroutes'));
 app.use('/api/campaigns', require('./routes/campaignroutes'));
+app.use('/api/habitations', require('./routes/habitationRoutes.js'));
 
 
  
