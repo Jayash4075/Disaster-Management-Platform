@@ -78,13 +78,13 @@ module.exports.signup = async (req, res) => {
 
         try {
             await sendOTP(email, otp);
-        } catch (mailErr) {
-            await User.findByIdAndDelete(user._id); // rollback so a broken email doesn't leave a dead account
+        } 
+        catch (mailErr) {
+            await User.findByIdAndDelete(user._id);
             console.error('OTP send failed:', mailErr);
             return res.status(500).json({ message: 'Failed to send OTP. Please check your email address and try again.' });
         }
 
-        // NOTE: no token here — user is NOT logged in until they verify OTP
         res.status(201).json({
             message: 'OTP sent to email. Please verify to continue.',
             userId: user._id
@@ -102,7 +102,6 @@ module.exports.verifyOTP = async (req, res) => {
         if (!userId || !otp) {
             return res.status(400).json({ message: 'User ID and OTP are required' });
         }
-
         const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ message: 'User not found' });

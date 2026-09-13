@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const habitationSchema = new mongoose.Schema({
     habitationId:{
         type: String,
-        reqiored: true,
+        required: true,
         unique: true
     },
     name: String,
@@ -14,7 +14,7 @@ const habitationSchema = new mongoose.Schema({
         },
         coordinates: [Number]
     },
-    pupulation: Number,
+    population: Number,
     vulnerability: {
         elderly: Number,
         children: Number,

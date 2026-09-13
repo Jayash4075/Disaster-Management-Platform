@@ -15,6 +15,8 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@getbrevo/brevo": "^6.0.3",
+    "axios": "^1.20.0",
     "bcryptjs": "^3.0.3",
     "cloudinary": "^1.41.3",
     "cors": "^2.8.6",

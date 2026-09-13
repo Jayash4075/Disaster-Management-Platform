@@ -29,16 +29,20 @@ app.use(express.json());
 app.use(helmet());
 app.use(morgan('dev'));
 
+const allowedOrigins = [
+    "http://localhost:5173",
+    process.env.FRONTEND_URL
+].filter(Boolean);
+
 app.use(cors({
-	origin: [
-		"http://localhost:5173",
-		"https://disaster-management-platform-seven.vercel.app"
-	],
+    origin: true,  // reflects whatever origin sent the request — permissive, local testing only
     credentials: true
 }));
 
 // Routes
 app.use('/api/auth', require('./routes/authroutes.js'));
+app.use('/api/habitations', require('./routes/habitationRoutes.js'));
+app.use('/api/relocation', require('./routes/relocationroutes.js'));
 app.use('/api/dashboard', require('./routes/dashboardroutes.js'));
 app.use('/api/sos', require('./routes/sosroutes.js'));
 app.use('/api/rescue-teams', require('./routes/rescueroutes.js'));
@@ -46,9 +50,7 @@ app.use('/api/shelters', require('./routes/shelterroutes.js'));
 app.use('/api/risk-zones', require('./routes/riskzoneroutes.js'));
 app.use('/api/resources', require('./routes/resourceroutes'));
 app.use('/api/resource-requests', require('./routes/resourcerequestroutes'));
-app.use('/api/volunteers', require('./routes/volunteerroutes'));
-app.use('/api/campaigns', require('./routes/campaignroutes'));
-app.use('/api/habitations', require('./routes/habitationRoutes.js'));
+
 
 
  

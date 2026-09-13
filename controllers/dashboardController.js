@@ -47,20 +47,11 @@ module.exports.getDashboard = async (req, res) => {
         );
 
 
-        // ========================================================
-        // 2. CONSTANTS
-        // ========================================================
-
         // Nearby emergency resources radius
         const RESOURCE_RADIUS_METERS = 10000;
 
         // Disaster alert radius
         const ALERT_RADIUS_METERS = 10000;
-
-
-        // ========================================================
-        // 3. FIND NEARBY HOSPITALS + SHELTERS
-        // ========================================================
 
         let allShelters = [];
 
@@ -90,11 +81,6 @@ module.exports.getDashboard = async (req, res) => {
 
             allShelters = [];
         }
-
-
-        // ========================================================
-        // 4. SEPARATE HOSPITALS AND SHELTERS
-        // ========================================================
 
         const hospitals = allShelters.filter((place) => {
 
@@ -134,12 +120,7 @@ module.exports.getDashboard = async (req, res) => {
             "Nearby shelters:",
             shelters.length
         );
-
-
-        // ========================================================
-        // 5. FIND ACTIVE DISASTER ALERTS NEAR CITIZEN
-        // ========================================================
-
+        
         let nearbyRiskZones = [];
 
         try {

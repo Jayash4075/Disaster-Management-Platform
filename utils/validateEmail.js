@@ -1,4 +1,3 @@
-// utils/validateEmail.js
 const dns = require('dns').promises;
 
 exports.isDomainValid = async (email) => {
