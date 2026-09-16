@@ -1,0 +1,15 @@
+{
+  "population": 5000,
+  "rainfall": 250,
+  "river_level": 8,
+  "flood_history": 3,
+  "building_damage": 3,
+  "vulnerable_population": 1000,
+  "water_level": 7,
+  "road_access": 1,
+  "hospital_distance": 20,
+  "shelter_capacity": 3000,
+  "available_water": 15000,
+  "food_stock": 10000,
+  "medical_capacity": 300
+}

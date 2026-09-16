@@ -1,0 +1,36 @@
+feature,missing_count,missing_percent,unique_values
+Village_Code,0,0.0,3053
+Village Name,0,0.0,2888
+Name,0,0.0,2888
+No_HH,0,0.0,739
+TOT_P,0,0.0,1916
+P_06,0,0.0,734
+P_SC,0,0.0,1010
+P_ST,0,0.0,64
+Total Geographical Area (in Hectares),0,0.0,2861
+Community Health Centre (Numbers),329,10.77628562070095,2
+Primary Health Centre (Numbers),326,10.678021618080576,2
+Primary Health Sub Centre (Numbers),374,12.25024566000655,2
+Hospital Allopathic (Numbers),326,10.678021618080576,3
+Dispensary (Numbers),329,10.77628562070095,5
+Tap Water-Treated (Status A(1)/NA(2)),294,9.629872256796594,2
+Hand Pump (Status A(1)/NA(2)),289,9.466098919095971,2
+Tube Wells/Borehole (Status A(1)/NA(2)),301,9.859154929577464,2
+River/Canal (Status A(1)/NA(2)),325,10.645266950540453,2
+Tank/Pond/Lake (Status A(1)/NA(2)),323,10.579757615460203,2
+Closed Drainage (Status A(1)/NA(2)),341,11.169341631182442,2
+No Drainage (Status A(1)/NA(2)),327,10.7107762856207,2
+Mobile Phone Coverage (Status A(1)/NA(2)),305,9.990173599737963,3
+Internet Cafes / Common Service Centre (CSC) (Status A(1)/NA(2)),297,9.728136259416967,3
+National Highway (Status A(1)/NA(2)),285,9.335080248935473,3
+State Highway (Status A(1)/NA(2)),290,9.498853586636095,3
+Major District Road (Status A(1)/NA(2)),290,9.498853586636095,3
+Black Topped (pucca) Road (Status A(1)/NA(2)),299,9.793645594497216,2
+All Weather Road (Status A(1)/NA(2)),317,10.383229610219455,2
+Footpath (Status A(1)/NA(2)),308,10.088437602358336,2
+Public Distribution System (PDS) Shop (Status A(1)/NA(2)),244,7.99213887979037,2
+Nutritional Centres-Anganwadi Centre (Status A(1)/NA(2)),244,7.99213887979037,2
+ASHA (Status A(1)/NA(2)),244,7.99213887979037,2
+Sub District Head Quarter (Distance in km),70,2.2928267278087127,68
+District Head Quarter (Distance in km),75,2.456600065509335,102
+Nearest Statutory Town (Distance in km),325,10.645266950540453,86
