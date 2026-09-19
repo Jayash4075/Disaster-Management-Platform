@@ -1,54 +1,137 @@
 const Habitation = require("../models/Habitation");
 const RelocationSite = require("../models/RelocationSite");
 
-module.exports.getRecommendedSite = async(req, res) => {
-    try{
-        const habitation = await Habitation.findOne({ habitationId: req.params.id});
-        if (!habitation){
-            return res.status(404).json({success: false, message: "habitation not found"});
+module.exports.getRecommendedSite = async (req, res) => {
+    try {
+        const habitation = await Habitation.findOne({
+            habitationId: req.params.id
+        }).lean();
 
-        }
-        const sites = await RelocationSite.find({
-            "capacity.available": { $gte: habitation.population}
-        });
-
-        if (sites.length === 0){
-            return res.status(200).json({
-                success: true,
-                recommendations: null, 
-                message: "No sites with sufficent capacity found"
+        if (!habitation) {
+            return res.status(404).json({
+                success: false,
+                message: "Habitation not found"
             });
         }
 
-        const ranked = sites.sort((a, b) => b.suitabilityScore - a.suitabilityScore);
-        const best = ranked[0];
+        const sites = await RelocationSite.find({
+            "capacity.available": {
+                $gte: habitation.population || 0
+            }
+        })
+            .sort({
+                suitabilityScore: -1
+            })
+            .lean();
 
+
+        if (sites.length === 0) {
+            return res.status(200).json({
+                success: true,
+                habitationId: habitation.habitationId,
+                habitationName: habitation.name,
+                recommendations: [],
+                message:
+                    "No relocation site with sufficient capacity found"
+            });
+        }
+
+        const best = sites[0];
         const reasons = [];
-        if (best.capacity.available >= habitation.population){
-            reasons.push("Adequate capacity");
+        if (
+            best.capacity &&
+            best.capacity.available >=
+                (habitation.population || 0)
+        ) {
+            reasons.push(
+                "Adequate available capacity"
+            );
         }
-        if (best.hazardRisk < 20){
-            reasons.push("Low hazard risk");
-        }
-        if (best.accessibilityScore > 80){
-            reasons.push("Good Road Accessibility");
-        }
-        if (best.infrastructure?.healthcare){
-            reasons.push("Healthcare available");
+        if (
+            typeof best.suitabilityScore === "number"
+        ) {
+            reasons.push(
+                "High suitability score"
+            );
         }
 
-        res.status(200).json({
+
+        return res.status(200).json({
+
             success: true,
             habitationId: habitation.habitationId,
-            recommendedSite: best.name,
-            suitabilityScore: best.suitabilityScore,
-            availableCapacity: best.capacity.available,
+
+            habitationName: habitation.name,
+
+            population: habitation.population || 0,
+
+            recommendedSite: {
+                siteId: best.siteId,
+
+                name: best.name,
+
+                location: best.location,
+
+                suitabilityScore: best.suitabilityScore || 0,
+
+                capacity: {
+                    total: best.capacity?.total || 0,
+
+                    occupied: best.capacity?.occupied || 0,
+
+                    available: best.capacity?.available || 0
+                }
+            },
+
             reasons
         });
-    }
-    catch(err){
-        console.error("Recommende site error:", err);
-        res.status(500).json({success: false, message: "Failed to recommend site"});
 
+
+    } catch (error) {
+        console.error(
+            "Recommended site error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to recommend relocation site"
+        });
+    }
+};
+
+module.exports.getPriorityVillages = async (req,res) => {
+    try {
+        const villages =
+            await Habitation.find({
+
+                relocationPriority: {
+                    $in: [
+                        "IMMEDIATE",
+                        "SHORT_TERM",
+                        "MEDIUM_TERM"
+                    ]
+                }
+
+            })
+            .sort({
+                riskScore: -1
+            })
+            .lean();
+
+
+        return res.status(200).json({
+
+            success: true,
+            total: villages.length,
+            illages
+
+        });
+
+
+    } catch (error) {
+        console.error("Relocation priority error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to load relocation priorities"
+        });
     }
 };

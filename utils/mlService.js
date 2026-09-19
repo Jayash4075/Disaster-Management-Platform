@@ -1,75 +1,97 @@
-const predictSOSSeverity = async (features) => {
-    
-    const mlServiceUrl = process.env.ML_SERVICE_URL;
-    
-    const payload = {
-        people_trapped: Number(features.peopleCount),
-        injured_people: Number(features.injured_people),
-        critical_injuries: Number(features.critical_injuries),
-        children_elderly: Number(features.children_elderly),
-        water_level: Number(features.water_level),
-        building_damage: Number(features.building_damage),
-        hours_trapped: Number(features.hours_trapped),
-        communication_available: Number(features.communication_available)
-    };
+const axios = require('axios');
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000);
+const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:5001';
 
-    try {
-        const response = await fetch(`${mlServiceUrl}/predict/sos`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload),
-            signal: controller.signal
-        });
+const ML_Timeout = Number(process.env.ML_Timeout) || 30000;
 
-        clearTimeout(timeoutId);
+//Generic ML request
+async function mlPost(endpoint, payload){
+    try{
+        const response = await axios.post(
+            `${ML_SERVICE_URL}${endpoint}`,
+            payload,
+            {
+                timeout: ML_Timeout,
+                headers: {
+                    "Content-type": "application/json"
+                }
+            }
+        );
+        return response.data;
+    }
+    catch(error){
+        console.error("ML Service Error:", error.response?.data || error.message);
 
-        if (!response.ok) {
-            throw new Error(`ML service HTTP error: status ${response.status}`);
-        }
+        throw new Error(
+            error.response?.data?.error || "ML service unavailable"
+        );
+    }
+}
 
-        const data = await response.json();
+//ML Health
 
-        if (data && data.success && data.prediction) {
-            return {
-                success: true,
-                severityScore: Number(data.prediction.severity_score),
-                severityLabel: String(data.prediction.severity),
-                mlProbability: (data.prediction.probability !== undefined && data.prediction.probability !== null) ? Number(data.prediction.probability) : null,
-                isMlPredicted: true,
-                mlStatus: 'SUCCESS'
-            };
-        } else {
-            throw new Error('Invalid or unexpected ML service response format');
-        }
-        
-    } catch (err) {
-        clearTimeout(timeoutId);
-        console.warn('[ML Service Warning] Failed to reach Flask ML service:', err.message);
+async function getMLHealth(){
+    try{
+        const response = await axios.get(
+            `${ML_SERVICE_URL}/health`,
+            {
+                timeout: ML_TIMEOUT
+            }
+        );
+        return response.data;
+    }
+    catch(error){
+        throw new Error("ML service unavailable");
+    }
+}
 
-        // Safe heuristic fallback calculation when ML service is unavailable
-        const fallbackScore = Math.min(
-            100,
-            (payload.people_trapped * 10) +
-            (payload.injured_people * 20) +
-            (payload.critical_injuries * 35) +
-            (payload.building_damage * 10) +
-            (payload.water_level * 10)
+//Habitation Prediction
+
+async function getHabitationPrediction(habitation){
+    const requiredFields = ['population', 'rainfall', 'riverLevel', 'floodHistory',
+        'buildingDamage', 'vulnerablePopulation', 'waterLevel', 'roadAccess', 'hospitalDistance',
+        'shelterCapacity', 'availableWater', 'foodStock', 'medicalCapacity'
+    ];
+
+    const missingFields = 
+        requiredFields.filter(
+            field => 
+                habitation[field] === undefined || 
+                habitation[field] === null
         );
 
+    if (missingFields.length > 0){
         return {
             success: false,
-            severityScore: fallbackScore,
-            severityLabel: 'HEURISTIC_FALLBACK',
-            mlProbability: null,
-            isMlPredicted: false,
-            mlStatus: 'FALLBACK_HEURISTIC'
+            error: "Required ML inputs are missing",
+            missingFields
         };
     }
-};
 
-module.exports = predictSOSSeverity;
+    //Convert backend field names to ML field names
+
+    const payload = {
+        habitationId: habitation.habitationId,
+        name: habitation.name,
+        population: Number(habitation.population),
+        rainfall: Number(habitation.rainfall),
+        river_level: Number(habitation.riverLevel),
+        flood_history: Number(habitation.floodHistory),
+        building_damage: Number(habitation.buildingDamage),
+        vulnerable_population: Number(habitation.vulnerablePopulation),
+        water_level: Number(habitation.waterLevel),
+        road_access: Number(habitation.waterLevel),
+        hospital_distance: Number(habitation.hospitalDistance),
+        shelter_capacity: Number(habitation.shelterCapacity),
+        available_water: Number(habitation.availableWater),
+        food_stock: Number(habitation.foodStock),
+        medical_capacity: Number(habitation.medicalCapacity)
+    };
+
+    return await mlPost(
+        "/predict/habitation",
+        payload
+    );
+}
+
+module.exports = {mlPost, getMLHealth, getHabitationPrediction};

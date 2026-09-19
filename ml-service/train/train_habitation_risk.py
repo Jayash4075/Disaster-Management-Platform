@@ -38,7 +38,9 @@ features = [
     "vulnerable_population",
     "water_level",
     "road_access",
-    "hospital_distance"
+    "hospital_distance",
+    "latitude",
+    "longitude"
 ]
 
 X = df[features]

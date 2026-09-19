@@ -11,5 +11,8 @@
   "shelter_capacity": 3000,
   "available_water": 15000,
   "food_stock": 10000,
-  "medical_capacity": 300
+  "medical_capacity": 300,
+  "latitude": 25.4484,
+  "longitude": 81.8462
 }
+

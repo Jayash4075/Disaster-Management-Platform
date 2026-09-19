@@ -1,9 +1,9 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 
-const { getDashboard } = require('../controllers/dashboardController.js');
-const { protect } = require('../middleware/authmiddleware.js');
+const {protect, authorize} = require("../middleware/authmiddleware");
+const {getAuthorityDashboard} = require("../controllers/dashboardController.js");
 
-router.get('/', protect, getDashboard);
+router.get("/authority", protect, authorize("authority"), getAuthorityDashboard);
 
 module.exports = router;
