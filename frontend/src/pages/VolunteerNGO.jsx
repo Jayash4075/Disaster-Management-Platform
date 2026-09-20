@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./VolunteerNGO.css";
-import api from "../api/axios"; 
+
 function VolunteerNGO() {
 
     const navigate = useNavigate();
@@ -127,22 +127,11 @@ function VolunteerNGO() {
              * GET /api/ngos?lat=25.3176&lng=82.9739
              */
 
-            const response = await api.get(
+            const response = await fetch(
 
-                 `/volunteers/nearby?longitude=${longitude}&latitude=${latitude}`
+                `http://localhost:5000/api/ngos?lat=${latitude}&lng=${longitude}`
 
             );
-
-            const mapped = (response.data.volunteers || []).map((v) => ({
-                id: v._id,
-                name: v.userId?.name || "Volunteer",
-                services: v.skills?.join(", ") || "General support",
-                available: v.availability === "available",
-                distance: "nearby", // backend doesn't return a distance value currently
-                phone: v.userId?.phone,
-            }));
-
-            setNgos(mapped);
 
 
             if (!response.ok) {
@@ -166,8 +155,10 @@ function VolunteerNGO() {
 
         catch (error) {
 
-           console.error("NGO API error:", error.response?.data || error.message);
-            setNgos([]);
+            console.error(
+                "NGO API error:",
+                error
+            );
 
             /*
              * Do NOT add hard-coded NGOs here.

@@ -1,0 +1,245 @@
+.authority-topbar {
+    height: 72px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 30px;
+
+    background: #ffffff;
+    border-bottom: 1px solid #e5e8ed;
+
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.authority-topbar-left,
+.authority-topbar-right {
+    display: flex;
+    align-items: center;
+}
+
+.authority-topbar-left {
+    flex: 1;
+}
+
+.authority-topbar-right {
+    gap: 18px;
+}
+
+/* =========================================================
+   SEARCH
+========================================================= */
+
+.authority-search {
+    width: min(410px, 100%);
+
+    height: 39px;
+
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 0 12px;
+
+    border: 1px solid #e1e5eb;
+    border-radius: 9px;
+
+    background: #f8fafc;
+    color: #8b95a4;
+}
+
+.authority-search:focus-within {
+    border-color: #cbd5e2;
+    background: #ffffff;
+}
+
+.authority-search input {
+    width: 100%;
+
+    border: 0;
+    outline: 0;
+
+    background: transparent;
+
+    color: #3e4a5d;
+    font-size: 11px;
+}
+
+.authority-search input::placeholder {
+    color: #9aa3af;
+}
+
+/* =========================================================
+   LIVE
+========================================================= */
+
+.authority-live-status {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+
+    color: #647083;
+    font-size: 9px;
+    font-weight: 650;
+}
+
+.authority-live-status span {
+    width: 6px;
+    height: 6px;
+
+    border-radius: 50%;
+    background: #27a36d;
+
+    box-shadow: 0 0 0 4px rgba(39, 163, 109, 0.1);
+}
+
+/* =========================================================
+   NOTIFICATIONS
+========================================================= */
+
+.authority-notification {
+    position: relative;
+
+    width: 35px;
+    height: 35px;
+
+    display: grid;
+    place-items: center;
+
+    border: 0;
+    border-radius: 8px;
+
+    background: transparent;
+    color: #687487;
+
+    cursor: pointer;
+}
+
+.authority-notification:hover {
+    background: #f2f4f7;
+}
+
+.authority-notification > span {
+    position: absolute;
+
+    top: 7px;
+    right: 7px;
+
+    width: 5px;
+    height: 5px;
+
+    border-radius: 50%;
+
+    background: #e15b32;
+}
+
+/* =========================================================
+   PROFILE
+========================================================= */
+
+.authority-profile {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+
+    padding-left: 15px;
+
+    border-left: 1px solid #e8ebef;
+}
+
+.authority-profile-icon {
+    width: 34px;
+    height: 34px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 9px;
+
+    background: #eef3f9;
+    color: #4f719d;
+}
+
+.authority-profile-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.authority-profile-text strong {
+    color: #354053;
+    font-size: 10px;
+}
+
+.authority-profile-text span {
+    color: #9aa2ae;
+    font-size: 8px;
+}
+
+/* =========================================================
+   MOBILE MENU
+========================================================= */
+
+.mobile-menu-button {
+    display: none;
+
+    width: 37px;
+    height: 37px;
+
+    margin-right: 10px;
+
+    border: 1px solid #e1e5eb;
+    border-radius: 8px;
+
+    background: #ffffff;
+    color: #566276;
+
+    cursor: pointer;
+}
+
+@media (max-width: 850px) {
+    .authority-topbar {
+        padding: 0 16px;
+    }
+
+    .mobile-menu-button {
+        display: grid;
+        place-items: center;
+    }
+
+    .authority-live-status {
+        display: none;
+    }
+
+    .authority-profile-text {
+        display: none;
+    }
+
+    .authority-profile {
+        padding-left: 8px;
+    }
+
+    .authority-search {
+        width: 100%;
+    }
+}
+
+@media (max-width: 500px) {
+    .authority-topbar {
+        height: 64px;
+    }
+
+    .authority-profile-icon {
+        width: 31px;
+        height: 31px;
+    }
+
+    .authority-notification {
+        width: 31px;
+        height: 31px;
+    }
+}
+

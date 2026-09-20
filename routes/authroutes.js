@@ -1,12 +1,59 @@
-const express = require('express');
+const express = require("express");
+
 const router = express.Router();
 
-const {signup, login, getMe, verifyOTP, resendOTP} = require('../controllers/authController.js');
-const {protect} = require('../middleware/authmiddleware.js');
+const {
+    signup,
+    login,
+    getMe,
+    verifyOTP,
+    resendOTP,
+} = require("../controllers/authController.js");
 
-router.post('/signup', signup);
-router.post('/login', login);
-router.get('/me', protect, getMe);
-router.post('/verify-otp', verifyOTP);
-router.post('/resend-otp', resendOTP);
+const {
+    protect,
+} = require("../middleware/authmiddleware.js");
+
+// ==========================================
+// SIGNUP
+// Creates account + sends OTP
+// ==========================================
+router.post(
+    "/signup",
+    signup
+);
+
+// ==========================================
+// LOGIN
+// ==========================================
+router.post(
+    "/login",
+    login
+);
+
+// ==========================================
+// CURRENT USER
+// ==========================================
+router.get(
+    "/me",
+    protect,
+    getMe
+);
+
+// ==========================================
+// VERIFY OTP
+// ==========================================
+router.post(
+    "/verify-otp",
+    verifyOTP
+);
+
+// ==========================================
+// RESEND OTP
+// ==========================================
+router.post(
+    "/resend-otp",
+    resendOTP
+);
+
 module.exports = router;

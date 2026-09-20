@@ -17,6 +17,13 @@ import CreateRiskZone from "./pages/CreateRiskZone";
 import ResourceRequestsDashboard from "./pages/ResourceRequestsDashboard";
 import VolunteerNGO from "./pages/VolunteerNGO";
 import NotFoundPage from "./pages/NotFoundPage";
+import RiskMap from "./pages/RiskMap";
+import Habitations from "./pages/Habitations";
+import Emergencies from "./pages/Emergencies";
+import GISMonitoring from "./pages/GISMonitoring";
+import RiskIntelligence from "./pages/RiskIntelligence";
+import Relocation from "./pages/Relocation";
+import SafeSites from "./pages/SafeSites";
 
 function App() {
     return (
@@ -47,13 +54,13 @@ function App() {
                 {/* Citizen Dashboard */}
                 <Route
                     path="/dashboard"
-                    element={<ProtectedRoute> <CitizenDashboard /></ProtectedRoute>}
+                    element={<ProtectedRoute> <CitizenDashboard /> </ProtectedRoute>}
                 />
 
                 <Route 
-                    path="/authority" 
-                    element={<ProtectedRoute allowedRoles={["authority"]}> <AuthorityDashboard /> </ProtectedRoute>} 
-                />
+    path="/authority" 
+    element={<AuthorityDashboard />} 
+/>
 
                 <Route 
                     path="/emergency" 
@@ -104,6 +111,38 @@ function App() {
                 <Route 
                     path="*" 
                     element={<NotFoundPage />} 
+                />
+
+                <Route path="/authority/risk-map" element={<RiskMap />} />
+
+                <Route
+                    path="/authority/habitations"
+                    element={<Habitations />}
+                />
+
+                <Route
+                    path="/authority/emergencies"
+                    element={<Emergencies />}
+                />
+
+                <Route
+                    path="/authority/gis"
+                    element={<GISMonitoring />}
+                />
+
+                <Route
+                    path="/authority/risk-intelligence"
+                    element={<RiskIntelligence />}
+                />
+
+                <Route
+                    path="/authority/relocation"
+                    element={<Relocation />}
+                />
+
+                <Route
+                    path="/authority/safe-sites"
+                    element={<SafeSites />}
                 />
         </Routes>
         </BrowserRouter>

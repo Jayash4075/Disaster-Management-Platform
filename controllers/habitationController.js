@@ -1,4 +1,3 @@
-const { mongoosePopulatedDocumentMarker } = require("mongoose");
 const Habitation = require("../models/Habitation.js");
 const RelocationSite = require("../models/RelocationSite.js");
 const {assessHabitation} = require("../services/habitationAssessmentService.js");
@@ -170,7 +169,8 @@ module.exports.syncAllFromML = async(req, res) => {
             catch(error){
                 failed++;
                 results.push({
-                    habitationId: habitationId,
+                    habitationId: habitation.habitationId,
+                    name: habitation.name,
                     status: "failed",
                     error: error.message
                 });
@@ -205,7 +205,7 @@ module.exports.getAuthorityStats = async(req, res) => {
         const safeSites = await RelocationSite.countDocuments({
             "capacity.available": {$gt: 0}
         });
-        const redZones = habitations.filter(h => riskLevel === "RED").length;
+        const redZones = habitations.filter(h => h.riskLevel === "RED").length;
         const peopleAtRisk = habitations
             .filter(h => ["RED", 'ORANGE'].includes(h.riskLevel))
             .reduce((sum, h) => sum+ (h.population || 0),0);

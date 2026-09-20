@@ -1,0 +1,19 @@
+.authority-layout {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+    background: #f5f8fc;
+}
+
+.authority-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.25s ease;
+}
+
+.authority-content {
+    flex: 1;
+    min-width: 0;
+}

@@ -98,40 +98,19 @@ module.exports.getRecommendedSite = async (req, res) => {
     }
 };
 
-module.exports.getPriorityVillages = async (req,res) => {
+module.exports.getPriorityVillages = async (req, res) => {
     try {
-        const villages =
-            await Habitation.find({
-
-                relocationPriority: {
-                    $in: [
-                        "IMMEDIATE",
-                        "SHORT_TERM",
-                        "MEDIUM_TERM"
-                    ]
-                }
-
-            })
-            .sort({
-                riskScore: -1
-            })
-            .lean();
-
+        const villages = await Habitation.find({
+            relocationPriority: { $in: ["IMMEDIATE", "SHORT_TERM", "MEDIUM_TERM"] }
+        }).sort({ riskScore: -1 }).lean();
 
         return res.status(200).json({
-
             success: true,
             total: villages.length,
-            illages
-
+            villages // FIXED typo
         });
-
-
     } catch (error) {
         console.error("Relocation priority error:", error);
-        return res.status(500).json({
-            success: false,
-            message: "Failed to load relocation priorities"
-        });
+        return res.status(500).json({ success: false, message: "Failed to load relocation priorities" });
     }
 };

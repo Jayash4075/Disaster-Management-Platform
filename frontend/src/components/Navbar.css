@@ -185,17 +185,3 @@
   }
 
 }
-
-.navbar-link {
-    color: #3b5bdb;
-    font-weight: 600;
-    font-size: 14px;
-    text-decoration: none;
-    padding: 8px 14px;
-    border-radius: 8px;
-    transition: background 0.15s;
-}
-
-.navbar-link:hover {
-    background: #eef1fc;
-}

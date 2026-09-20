@@ -654,21 +654,3 @@
         font-size: 27px;
     }
 }
-.resources-actions-row {
-    margin: 16px 0;
-}
-
-.request-resource-btn {
-    background: #3b5bdb;
-    color: #fff;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 10px;
-    font-weight: 600;
-    cursor: pointer;
-    font-size: 14px;
-}
-
-.request-resource-btn:hover {
-    background: #2f4bb8;
-}

@@ -1,271 +1,62 @@
-/* =========================================================
-   ACTIVE ALERT SUMMARY CARD
-   ========================================================= */
-
 .alert-card {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-
-    min-height: 115px;
-    padding: 18px 20px;
-
-    border-radius: 16px;
-
-    background: #ffffff;
-
-    border: 1px solid #e5e7eb;
-
-    box-shadow:
-        0 4px 12px rgba(15, 23, 42, 0.06);
-
-    transition:
-        transform 0.2s ease,
-        box-shadow 0.2s ease;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  border-left: 4px solid;
 }
-
-.alert-card:hover {
-    transform: translateY(-2px);
-
-    box-shadow:
-        0 8px 20px rgba(15, 23, 42, 0.10);
-}
-
-
-/* =========================================================
-   LEFT ICON
-   ========================================================= */
-
-.alert-card-icon {
-
-    width: 50px;
-    height: 50px;
-
-    flex-shrink: 0;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    border-radius: 14px;
-
-    font-size: 24px;
-
-    background: #fef3c7;
-}
-
-
-/* =========================================================
-   CONTENT
-   ========================================================= */
-
-.alert-card-content {
-    flex: 1;
-    min-width: 0;
-}
-
-
-/* =========================================================
-   HEADER
-   ========================================================= */
-
-.alert-card-header {
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    gap: 12px;
-
-    margin-bottom: 3px;
-}
-
-
-.alert-card-header h3 {
-
-    margin: 0;
-
-    font-size: 15px;
-
-    font-weight: 700;
-
-    color: #111827;
-}
-
-
-.alert-card-header span {
-
-    font-size: 11px;
-
-    color: #9ca3af;
-
-    white-space: nowrap;
-}
-
-
-/* =========================================================
-   ALERT COUNT
-   ========================================================= */
-
-.alert-count {
-
-    margin-top: 2px;
-
-    font-size: 28px;
-
-    line-height: 1.1;
-
-    font-weight: 800;
-
-    color: #111827;
-}
-
-
-/* =========================================================
-   SUBTITLE
-   ========================================================= */
-
-.alert-card-content p {
-
-    margin: 4px 0 0;
-
-    font-size: 11px;
-
-    line-height: 1.4;
-
-    color: #6b7280;
-}
-
-
-/* =========================================================
-   WARNING
-   ========================================================= */
 
 .alert-card.warning {
-
-    background:
-        linear-gradient(
-            135deg,
-            #ffffff 0%,
-            #fffbeb 100%
-        );
-
-    border-color: #fde68a;
+  background: #fffbeb;
+  border-left-color: #f59e0b;
 }
-
-
-.alert-card.warning .alert-card-icon {
-
-    background: #fef3c7;
-}
-
-
-/* =========================================================
-   DANGER
-   ========================================================= */
 
 .alert-card.danger {
-
-    background:
-        linear-gradient(
-            135deg,
-            #ffffff 0%,
-            #fef2f2 100%
-        );
-
-    border-color: #fecaca;
+  background: #fef2f2;
+  border-left-color: #ef4444;
 }
-
-
-.alert-card.danger .alert-card-icon {
-
-    background: #fee2e2;
-}
-
-
-/* =========================================================
-   INFO
-   ========================================================= */
 
 .alert-card.info {
-
-    background:
-        linear-gradient(
-            135deg,
-            #ffffff 0%,
-            #eff6ff 100%
-        );
-
-    border-color: #bfdbfe;
+  background: #eff6ff;
+  border-left-color: #3b82f6;
 }
-
-
-.alert-card.info .alert-card-icon {
-
-    background: #dbeafe;
-}
-
-
-/* =========================================================
-   SAFE
-   ========================================================= */
 
 .alert-card.safe {
-
-    background:
-        linear-gradient(
-            135deg,
-            #ffffff 0%,
-            #ecfdf5 100%
-        );
-
-    border-color: #a7f3d0;
+  background: #ecfdf5;
+  border-left-color: #10b981;
 }
 
-
-.alert-card.safe .alert-card-icon {
-
-    background: #d1fae5;
+.alert-card-icon {
+  font-size: 22px;
 }
 
+.alert-card-content {
+  flex: 1;
+}
 
-/* =========================================================
-   MOBILE
-   ========================================================= */
+.alert-card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
 
-@media (max-width: 600px) {
+.alert-card-header h3 {
+  margin: 0;
+  font-size: 14px;
+  color: #111827;
+}
 
-    .alert-card {
+.alert-card-header span {
+  font-size: 10px;
+  color: #9ca3af;
+  white-space: nowrap;
+}
 
-        min-height: 100px;
-
-        padding: 15px;
-
-        gap: 12px;
-
-    }
-
-    .alert-card-icon {
-
-        width: 44px;
-        height: 44px;
-
-        font-size: 21px;
-
-    }
-
-    .alert-card-header h3 {
-
-        font-size: 14px;
-
-    }
-
-    .alert-count {
-
-        font-size: 24px;
-
-    }
-
+.alert-card-content p {
+  margin: 6px 0 0;
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1.5;
 }

@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api/axios";
 
 import Navbar from "../components/Navbar";
 import AlertCard from "../components/AlertCard";
@@ -10,24 +9,31 @@ import QuickActionCard from "../components/QuickActionCard";
 import DisasterAlert from "../components/DisasterAlert";
 import Map from "../components/Map";
 
+import api from "../api/axios";
+
 import "./CitizenDashboard.css";
 
+
 function CitizenDashboard() {
+
     const navigate = useNavigate();
+
 
     // =====================================================
     // USER
     // =====================================================
 
     const userName =
-        localStorage.getItem("userName") || "Citizen";
+        localStorage.getItem("userName") ||
+        "Citizen";
 
 
     // =====================================================
     // LOCATION
     // =====================================================
 
-    const [location, setLocation] = useState(null);
+    const [location, setLocation] =
+        useState(null);
 
     const [locationLoading, setLocationLoading] =
         useState(true);
@@ -48,7 +54,6 @@ function CitizenDashboard() {
             activeAlerts: 0,
             nearbyHospitals: 0,
             nearbyShelters: 0,
-
             riskLevel: "Unknown",
             riskScore: 0,
 
@@ -56,10 +61,17 @@ function CitizenDashboard() {
             hospitals: [],
             shelters: [],
 
+            hazardZones: [],
+            vulnerableHabitations: [],
+            relocationSites: [],
+
+            relocationRecommendation: null,
+
             disasterRisk: null,
             weather: null,
             features: null
         });
+
 
     const [dataLoading, setDataLoading] =
         useState(false);
@@ -71,158 +83,151 @@ function CitizenDashboard() {
     // =====================================================
     // EXTRACT ML RISK
     // =====================================================
-    //
-    // Your backend/ML can return:
-    //
-    // Option 1:
-    // disasterRisk = {
-    //     success: true,
-    //     risk: "LOW",
-    //     probability: 0.6607
-    // }
-    //
-    // OR:
-    //
-    // Option 2:
-    // disasterRisk = {
-    //     success: true,
-    //     prediction: {
-    //         risk: "LOW",
-    //         probability: 0.6607
-    //     }
-    // }
-    //
-    // This function supports BOTH.
-    // =====================================================
 
-    const extractRiskData = (disasterRisk) => {
+    const extractRiskData = (
+        disasterRisk
+    ) => {
+
         if (!disasterRisk) {
+
             return {
                 risk: null,
                 probability: null
             };
+
         }
+
 
         const risk =
             disasterRisk.risk ??
             disasterRisk.prediction?.risk ??
             null;
 
+
         const probability =
             disasterRisk.probability ??
             disasterRisk.prediction?.probability ??
             null;
 
+
         return {
             risk,
             probability
         };
+
     };
 
 
     // =====================================================
-    // FETCH DASHBOARD DATA
+    // NORMALIZE ARRAY
+    // =====================================================
+
+    const normalizeArray = (
+        value
+    ) => {
+
+        return Array.isArray(value)
+            ? value
+            : [];
+
+    };
+
+
+    // =====================================================
+    // FETCH DASHBOARD
     // =====================================================
 
     const fetchDashboardData = async (
         latitude,
         longitude
     ) => {
+
         try {
+
             setDataLoading(true);
+
             setDisasterError("");
-
-            const token =
-                localStorage.getItem("token");
-
-            if (!token) {
-                throw new Error(
-                    "No authentication token found. Please login again."
-                );
-            }
 
 
             console.log(
-                "Fetching dashboard for:",
+                "Fetching citizen dashboard for:",
                 latitude,
                 longitude
             );
 
 
-            // =================================================
-            // CALL BACKEND
-            // =================================================
-            //
-            // Backend is responsible for:
-            //
-            // 1. Getting weather from weather API
-            // 2. Preparing ML features
-            // 3. Calling Flask ML service
-            // 4. Returning ML prediction
-            //
-            // Frontend only sends latitude + longitude.
-            // =================================================
+            // Axios interceptor in api/axios.js
+            // automatically attaches the token.
 
-            const response = await api.get(
-                `/api/dashboard?lat=${latitude}&lng=${longitude}`,
-                {
-                    headers: {
-                        Authorization:
-                            `Bearer ${token}`
+            const response =
+                await api.get(
+                    "/api/dashboard",
+                    {
+                        params: {
+                            lat: latitude,
+                            lng: longitude
+                        }
                     }
-                }
-            );
+                );
 
 
-            const data = response.data;
+            const data =
+                response.data;
 
-
-           
-
-
-            // =================================================
-            // CHECK RESPONSE
-            // =================================================
 
             if (!data) {
+
                 throw new Error(
-                    "Empty response received from backend"
+                    "Empty response received from backend."
                 );
+
             }
 
 
+            console.log(
+                "Citizen dashboard data:",
+                data
+            );
+
+
             // =================================================
-            // EXTRACT ML DATA
+            // ML RISK
             // =================================================
 
             const disasterRisk =
-                data.disasterRisk || null;
+                data.disasterRisk ||
+                null;
+
 
             const {
                 risk,
                 probability
             } =
-                extractRiskData(disasterRisk);
+                extractRiskData(
+                    disasterRisk
+                );
 
-
-            // =================================================
-            // CONVERT PROBABILITY TO SCORE
-            // =================================================
 
             let riskScore = 0;
+
 
             if (
                 probability !== null &&
                 probability !== undefined
             ) {
+
                 const numericProbability =
-                    Number(probability);
+                    Number(
+                        probability
+                    );
+
 
                 if (
                     Number.isFinite(
                         numericProbability
                     )
                 ) {
+
                     riskScore =
                         Math.round(
                             Math.max(
@@ -233,13 +238,11 @@ function CitizenDashboard() {
                                 )
                             ) * 100
                         );
+
                 }
+
             }
 
-
-            // =================================================
-            // NORMALIZE RISK LEVEL
-            // =================================================
 
             const finalRisk =
                 risk ||
@@ -248,95 +251,121 @@ function CitizenDashboard() {
 
 
             // =================================================
-            // SAVE ALL DATA
+            // SAVE DATA
             // =================================================
 
             setDashboardData({
 
                 activeAlerts:
-                    data.activeAlerts ?? 0,
+                    data.activeAlerts ??
+                    0,
 
                 nearbyHospitals:
-                    data.nearbyHospitals ?? 0,
+                    data.nearbyHospitals ??
+                    0,
 
                 nearbyShelters:
-                    data.nearbyShelters ?? 0,
+                    data.nearbyShelters ??
+                    0,
 
                 riskLevel:
                     finalRisk,
 
-                riskScore:
-                    riskScore,
+                riskScore,
 
                 alerts:
-                    Array.isArray(data.alerts)
-                        ? data.alerts
-                        : [],
+                    normalizeArray(
+                        data.alerts
+                    ),
 
                 hospitals:
-                    Array.isArray(data.hospitals)
-                        ? data.hospitals
-                        : [],
+                    normalizeArray(
+                        data.hospitals
+                    ),
 
                 shelters:
-                    Array.isArray(data.shelters)
-                        ? data.shelters
-                        : [],
+                    normalizeArray(
+                        data.shelters
+                    ),
 
-                disasterRisk:
-                    disasterRisk,
+
+                // SIH 191
+
+                hazardZones:
+                    normalizeArray(
+                        data.hazardZones
+                    ),
+
+                vulnerableHabitations:
+                    normalizeArray(
+                        data.vulnerableHabitations
+                    ),
+
+                relocationSites:
+                    normalizeArray(
+                        data.relocationSites
+                    ),
+
+                relocationRecommendation:
+                    data.relocationRecommendation ||
+                    data.recommendedRelocationSite ||
+                    null,
+
+
+                disasterRisk,
 
                 weather:
-                    data.weather || null,
+                    data.weather ||
+                    null,
 
                 features:
-                    data.features || null
+                    data.features ||
+                    null
+
             });
 
 
             // =================================================
-            // ML ERROR CHECK
+            // ML ERROR
             // =================================================
 
             if (
                 disasterRisk &&
                 disasterRisk.success === false
             ) {
+
                 setDisasterError(
                     disasterRisk.message ||
                     disasterRisk.error ||
-                    "Disaster prediction failed"
+                    "Disaster prediction failed."
                 );
+
             } else {
+
                 setDisasterError("");
+
             }
 
 
-            // =================================================
-            // DEBUG INFORMATION
-            // =================================================
-
             console.log(
-                "FINAL RISK:",
+                "Final citizen risk:",
                 finalRisk
             );
 
             console.log(
-                "FINAL PROBABILITY:",
+                "Risk probability:",
                 probability
             );
 
             console.log(
-                "FINAL RISK SCORE:",
+                "Risk score:",
                 riskScore
             );
 
-        }
-
-        catch (error) {
+        } catch (error) {
 
             console.error(
-                "Dashboard API error:",
+                "Citizen dashboard API error:",
                 error.response?.data ||
                 error
             );
@@ -350,35 +379,50 @@ function CitizenDashboard() {
                 backendError?.message ||
                 backendError?.error ||
                 error.message ||
-                "Unable to load dashboard data"
+                "Unable to load dashboard data."
             );
 
 
-            // Do NOT destroy previously loaded data.
-            // Keep empty arrays safe for UI.
-
             setDashboardData({
+
                 activeAlerts: 0,
+
                 nearbyHospitals: 0,
+
                 nearbyShelters: 0,
 
                 riskLevel: "Unavailable",
+
                 riskScore: 0,
 
                 alerts: [],
+
                 hospitals: [],
+
                 shelters: [],
 
+                hazardZones: [],
+
+                vulnerableHabitations: [],
+
+                relocationSites: [],
+
+                relocationRecommendation: null,
+
                 disasterRisk: null,
+
                 weather: null,
+
                 features: null
+
             });
 
+        } finally {
+
+            setDataLoading(false);
+
         }
 
-        finally {
-            setDataLoading(false);
-        }
     };
 
 
@@ -394,16 +438,17 @@ function CitizenDashboard() {
 
 
         setLocationLoading(true);
+
         setLocationError("");
+
         setLocationAccuracy(null);
+
         setDisasterError("");
 
 
-        // =================================================
-        // BROWSER SUPPORT
-        // =================================================
-
-        if (!navigator.geolocation) {
+        if (
+            !navigator.geolocation
+        ) {
 
             setLocationError(
                 "Geolocation is not supported by your browser."
@@ -412,109 +457,58 @@ function CitizenDashboard() {
             setLocationLoading(false);
 
             return;
+
         }
 
 
-        // =================================================
-        // GET REAL GPS LOCATION
-        // =================================================
-
         navigator.geolocation.getCurrentPosition(
 
-            async (position) => {
+            // =================================================
+            // SUCCESS
+            // =================================================
 
-                try {
+            (position) => {
 
-                    const latitude =
-                        position.coords.latitude;
+                const latitude =
+                    position.coords.latitude;
 
-                    const longitude =
-                        position.coords.longitude;
+                const longitude =
+                    position.coords.longitude;
 
-                    const accuracy =
-                        position.coords.accuracy;
-
-
-                    console.log(
-                        "Latitude:",
-                        latitude
-                    );
-
-                    console.log(
-                        "Longitude:",
-                        longitude
-                    );
-
-                    console.log(
-                        "Accuracy:",
-                        accuracy,
-                        "meters"
-                    );
+                const accuracy =
+                    position.coords.accuracy;
 
 
-                    // =================================================
-                    // SAVE LOCATION
-                    // =================================================
-
-                    setLocation({
-                        latitude,
-                        longitude
-                    });
+                console.log(
+                    "Location received:",
+                    latitude,
+                    longitude
+                );
 
 
-                    setLocationAccuracy(
-                        accuracy
-                    );
+                setLocation({
+
+                    latitude,
+
+                    longitude
+
+                });
 
 
-                    setLocationLoading(false);
+                setLocationAccuracy(
+                    accuracy
+                );
 
 
-                    // =================================================
-                    // FETCH EVERYTHING FROM BACKEND
-                    // =================================================
-                    //
-                    // IMPORTANT:
-                    //
-                    // Only ONE API call is required.
-                    //
-                    // /api/dashboard
-                    //
-                    // Backend handles:
-                    //
-                    // GPS
-                    // ↓
-                    // Weather API
-                    // ↓
-                    // ML service
-                    // ↓
-                    // Dashboard response
-                    //
-                    // =================================================
-
-                    await fetchDashboardData(
-                        latitude,
-                        longitude
-                    );
-
-                }
-
-                catch (error) {
-
-                    console.error(
-                        "Location processing error:",
-                        error
-                    );
-
-                    setLocationLoading(false);
-
-                }
+                setLocationLoading(
+                    false
+                );
 
             },
 
 
             // =================================================
-            // GEOLOCATION ERROR
+            // ERROR
             // =================================================
 
             (error) => {
@@ -525,10 +519,14 @@ function CitizenDashboard() {
                 );
 
 
-                setLocationLoading(false);
+                setLocationLoading(
+                    false
+                );
 
 
-                switch (error.code) {
+                switch (
+                    error.code
+                ) {
 
                     case error.PERMISSION_DENIED:
 
@@ -569,22 +567,48 @@ function CitizenDashboard() {
 
 
             // =================================================
-            // GEOLOCATION OPTIONS
+            // OPTIONS
             // =================================================
 
             {
-                enableHighAccuracy: true,
 
-                timeout: 30000,
+                enableHighAccuracy:
+                    true,
 
-                maximumAge: 0
+                timeout:
+                    30000,
+
+                maximumAge:
+                    0
+
             }
+
         );
+
     };
 
 
     // =====================================================
-    // GET LOCATION WHEN DASHBOARD OPENS
+    // WHEN LOCATION CHANGES -> FETCH BACKEND
+    // =====================================================
+
+    useEffect(() => {
+
+        if (!location) {
+            return;
+        }
+
+
+        fetchDashboardData(
+            location.latitude,
+            location.longitude
+        );
+
+    }, [location]);
+
+
+    // =====================================================
+    // INITIAL LOCATION
     // =====================================================
 
     useEffect(() => {
@@ -598,8 +622,12 @@ function CitizenDashboard() {
     // QUICK ACTION
     // =====================================================
 
-    const handleQuickAction = (path) => {
+    const handleQuickAction = (
+        path
+    ) => {
+
         navigate(path);
+
     };
 
 
@@ -614,15 +642,22 @@ function CitizenDashboard() {
         }
 
 
-        const disasterRisk =
-            dashboardData.disasterRisk;
+        if (
+            dashboardData.riskScore
+        ) {
+
+            return Number(
+                dashboardData.riskScore
+            ) || 0;
+
+        }
 
 
         const {
             probability
         } =
             extractRiskData(
-                disasterRisk
+                dashboardData.disasterRisk
             );
 
 
@@ -632,7 +667,9 @@ function CitizenDashboard() {
         ) {
 
             const numericProbability =
-                Number(probability);
+                Number(
+                    probability
+                );
 
 
             if (
@@ -650,13 +687,14 @@ function CitizenDashboard() {
                         )
                     ) * 100
                 );
+
             }
+
         }
 
 
-        return Number(
-            dashboardData.riskScore
-        ) || 0;
+        return 0;
+
     };
 
 
@@ -671,36 +709,242 @@ function CitizenDashboard() {
         }
 
 
-        const disasterRisk =
-            dashboardData.disasterRisk;
-
-
         const {
             risk
         } =
             extractRiskData(
-                disasterRisk
+                dashboardData.disasterRisk
             );
 
 
         if (risk) {
-            return String(risk).toUpperCase();
+
+            return String(
+                risk
+            ).toUpperCase();
+
         }
 
 
         if (
             dashboardData.riskLevel &&
-            dashboardData.riskLevel !== "Unknown"
+            dashboardData.riskLevel !==
+                "Unknown"
         ) {
+
             return String(
                 dashboardData.riskLevel
             ).toUpperCase();
+
         }
 
 
-        return "Unknown";
+        return "UNKNOWN";
+
     };
 
+
+    // =====================================================
+    // SAFETY STATUS
+    // =====================================================
+
+    const getSafetyStatus = () => {
+
+        const risk =
+            getRiskLevel();
+
+
+        if (
+            risk === "CRITICAL"
+        ) {
+
+            return {
+
+                title:
+                    "Immediate Relocation Recommended",
+
+                description:
+                    "Your current location has been identified as a critical-risk area. Follow instructions from authorities and move toward a designated safer site when advised.",
+
+                className:
+                    "critical"
+
+            };
+
+        }
+
+
+        if (
+            risk === "HIGH" ||
+            risk === "ORANGE"
+        ) {
+
+            return {
+
+                title:
+                    "High Risk Area",
+
+                description:
+                    "Your current location shows elevated disaster risk. Stay alert and be prepared to relocate if instructed.",
+
+                className:
+                    "high"
+
+            };
+
+        }
+
+
+        if (
+            risk === "MEDIUM" ||
+            risk === "MODERATE" ||
+            risk === "YELLOW"
+        ) {
+
+            return {
+
+                title:
+                    "Moderate Risk Area",
+
+                description:
+                    "Monitor disaster alerts and remain prepared to move if conditions worsen.",
+
+                className:
+                    "moderate"
+
+            };
+
+        }
+
+
+        if (
+            risk === "LOW" ||
+            risk === "GREEN"
+        ) {
+
+            return {
+
+                title:
+                    "Relatively Safer Area",
+
+                description:
+                    "The current assessment shows comparatively lower predicted disaster risk.",
+
+                className:
+                    "low"
+
+            };
+
+        }
+
+
+        return {
+
+            title:
+                "Safety Status Unavailable",
+
+            description:
+                "Risk information is currently unavailable. Continue monitoring official disaster alerts.",
+
+            className:
+                "unknown"
+
+        };
+
+    };
+
+
+    const safetyStatus =
+        getSafetyStatus();
+
+
+    // =====================================================
+    // VULNERABLE HABITATION
+    // =====================================================
+
+    const currentHabitation =
+        dashboardData
+            .vulnerableHabitations
+            .length > 0
+            ? dashboardData
+                .vulnerableHabitations[0]
+            : null;
+
+
+    // =====================================================
+    // RELOCATION SITE
+    // =====================================================
+
+    const recommendedSite =
+        dashboardData
+            .relocationRecommendation ||
+        (
+            dashboardData
+                .relocationSites
+                .length > 0
+                ? dashboardData
+                    .relocationSites[0]
+                : null
+        );
+
+
+    // =====================================================
+    // CAPACITY HELPERS
+    // =====================================================
+
+    const getSiteCapacity = (
+        site
+    ) => {
+
+        if (!site) {
+            return null;
+        }
+
+        return (
+            site.availableCapacity ??
+            site.available ??
+            site.capacityAvailable ??
+            site.capacity?.available ??
+            null
+        );
+
+    };
+
+
+    const getTotalCapacity = (
+        site
+    ) => {
+
+        if (!site) {
+            return null;
+        }
+
+        return (
+            site.totalCapacity ??
+            site.capacity?.total ??
+            site.capacity ??
+            null
+        );
+
+    };
+
+
+    const getOccupiedCapacity = (
+        site
+    ) => {
+
+        if (!site) {
+            return null;
+        }
+
+        return (
+            site.occupiedCapacity ??
+            site.occupied ??
+            site.capacity?.occupied ??
+            null
+        );
+
+    };
 
 
     // =====================================================
@@ -708,19 +952,18 @@ function CitizenDashboard() {
     // =====================================================
 
     return (
+
         <div className="dashboard-page">
 
-            {/* =================================================
-                NAVBAR
-            ================================================= */}
 
             <Navbar />
 
 
             <main className="dashboard-container">
 
+
                 {/* =================================================
-                    WELCOME HEADER
+                    HEADER
                 ================================================= */}
 
                 <div className="dashboard-header">
@@ -753,8 +996,7 @@ function CitizenDashboard() {
 
                         {locationLoading
                             ? "Detecting Location..."
-                            : "Use My Current Location"
-                        }
+                            : "Use My Current Location"}
 
                     </button>
 
@@ -785,7 +1027,6 @@ function CitizenDashboard() {
                                 ⚠️ {locationError}
                             </p>
 
-
                             <button
                                 className="location-button"
                                 onClick={
@@ -806,49 +1047,29 @@ function CitizenDashboard() {
                             <div className="location-success">
 
                                 <p>
-
                                     📍{" "}
-
                                     <strong>
                                         Location detected
                                     </strong>
-
                                 </p>
 
-
                                 <p>
-
                                     Latitude:{" "}
-
-                                    {location.latitude.toFixed(
-                                        6
-                                    )}
-
+                                    {location.latitude.toFixed(6)}
                                 </p>
 
-
                                 <p>
-
                                     Longitude:{" "}
-
-                                    {location.longitude.toFixed(
-                                        6
-                                    )}
-
+                                    {location.longitude.toFixed(6)}
                                 </p>
 
-
                                 <p>
-
                                     Accuracy: approximately{" "}
-
                                     {locationAccuracy
                                         ? Math.round(
                                             locationAccuracy
                                         )
-                                        : "--"
-                                    }m
-
+                                        : "--"}m
                                 </p>
 
                             </div>
@@ -859,43 +1080,89 @@ function CitizenDashboard() {
 
 
                 {/* =================================================
-                    TOP DASHBOARD CARDS
+                    SAFETY STATUS
+                ================================================= */}
+
+                <section
+                    className={`safety-status-card ${safetyStatus.className}`}
+                >
+
+                    <div className="safety-status-icon">
+
+                        {safetyStatus.className ===
+                        "critical"
+                            ? "🚨"
+                            : safetyStatus.className ===
+                                "high"
+                                ? "⚠️"
+                                : safetyStatus.className ===
+                                    "moderate"
+                                    ? "🟡"
+                                    : safetyStatus.className ===
+                                        "low"
+                                        ? "🟢"
+                                        : "ℹ️"}
+
+                    </div>
+
+
+                    <div className="safety-status-content">
+
+                        <span className="safety-label">
+                            CURRENT SAFETY STATUS
+                        </span>
+
+                        <h2>
+                            {safetyStatus.title}
+                        </h2>
+
+                        <p>
+                            {safetyStatus.description}
+                        </p>
+
+                    </div>
+
+
+                    {(
+                        safetyStatus.className ===
+                            "critical" ||
+                        safetyStatus.className ===
+                            "high"
+                    ) && (
+
+                        <button
+                            className="relocation-button"
+                            onClick={() =>
+                                handleQuickAction(
+                                    "/safe-routes"
+                                )
+                            }
+                        >
+                            View Safe Route
+                        </button>
+
+                    )}
+
+                </section>
+
+
+                {/* =================================================
+                    TOP CARDS
                 ================================================= */}
 
                 <div className="dashboard-cards">
 
-                    {/* =================================================
-                        ACTIVE ALERTS
-                    ================================================= */}
 
                     <AlertCard
-
                         count={
                             dataLoading
                                 ? "..."
                                 : dashboardData.activeAlerts
                         }
-
                         title="Active Alerts"
-
-                        subtitle={
-                            dashboardData.activeAlerts > 0
-                                ? "Require your attention"
-                                : "No active threats nearby"
-                        }
-
-                        severity = {
-                            dashboardData.activeAlerts > 0
-                                ? "danger"
-                                : "safe"
-                        }
-
+                        subtitle="Near your location"
                     />
 
-
-                    {/* =================================================
-                        HOSPITALS
-                    ================================================= */}
 
                     <div className="dashboard-card">
 
@@ -903,27 +1170,17 @@ function CitizenDashboard() {
                             🏥
                         </div>
 
-
                         <div>
 
                             <h3>
                                 Nearby Hospitals
                             </h3>
 
-
                             <p className="card-number">
-
                                 {dataLoading
                                     ? "..."
-                                    : (
-                                        dashboardData?.nearbyHospitals ??
-                                        dashboardData?.hospitals?.length ??
-                                        0
-                                    )
-                                }
-
+                                    : dashboardData.nearbyHospitals}
                             </p>
-
 
                             <span>
                                 Near your location
@@ -933,10 +1190,6 @@ function CitizenDashboard() {
 
                     </div>
 
-
-                    {/* =================================================
-                        SHELTERS
-                    ================================================= */}
 
                     <div className="dashboard-card">
 
@@ -944,27 +1197,17 @@ function CitizenDashboard() {
                             🏠
                         </div>
 
-
                         <div>
 
                             <h3>
                                 Nearby Shelters
                             </h3>
 
-
                             <p className="card-number">
-
                                 {dataLoading
                                     ? "..."
-                                    : (
-                                        dashboardData?.nearbyShelters ??
-                                        dashboardData?.shelters?.length ??
-                                        0
-                                    )
-                                }
-
+                                    : dashboardData.nearbyShelters}
                             </p>
-
 
                             <span>
                                 Near your location
@@ -975,27 +1218,393 @@ function CitizenDashboard() {
                     </div>
 
 
-                    {/* =================================================
-                        REAL ML RISK CARD
-                    ================================================= */}
-
                     <RiskCard
-
                         riskLevel={
-                            getRiskLevel()
+                            dataLoading
+                                ? "..."
+                                : getRiskLevel()
                         }
-
                         riskScore={
                             getRiskScore()
                         }
-
                     />
 
                 </div>
 
 
                 {/* =================================================
-                    WEATHER / ML INFORMATION
+                    VULNERABILITY + RELOCATION
+                ================================================= */}
+
+                <div className="sih-intelligence-grid">
+
+
+                    <section className="dashboard-section vulnerability-section">
+
+                        <div className="section-heading">
+
+                            <div>
+
+                                <span className="section-label">
+                                    SIH 191
+                                </span>
+
+                                <h2>
+                                    Vulnerable Habitation
+                                </h2>
+
+                                <p>
+                                    Vulnerable communities
+                                    near your current location.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        {currentHabitation ? (
+
+                            <div className="vulnerability-card">
+
+                                <div className="vulnerability-header">
+
+                                    <div>
+
+                                        <span className="small-label">
+                                            HABITATION
+                                        </span>
+
+                                        <h3>
+                                            {currentHabitation.name ||
+                                                currentHabitation.village ||
+                                                currentHabitation.habitation ||
+                                                "Priority Habitation"}
+                                        </h3>
+
+                                    </div>
+
+
+                                    <span
+                                        className={`priority-badge ${
+                                            String(
+                                                currentHabitation.relocationPriority ||
+                                                currentHabitation.priority ||
+                                                "HIGH"
+                                            ).toLowerCase()
+                                        }`}
+                                    >
+
+                                        {currentHabitation.relocationPriority ||
+                                            currentHabitation.priority ||
+                                            "HIGH"}
+
+                                    </span>
+
+                                </div>
+
+
+                                <div className="vulnerability-details">
+
+
+                                    <div>
+
+                                        <span>
+                                            Population
+                                        </span>
+
+                                        <strong>
+                                            {currentHabitation.population ??
+                                                "--"}
+                                        </strong>
+
+                                    </div>
+
+
+                                    <div>
+
+                                        <span>
+                                            Risk Level
+                                        </span>
+
+                                        <strong>
+                                            {currentHabitation.riskLevel ||
+                                                currentHabitation.risk ||
+                                                getRiskLevel()}
+                                        </strong>
+
+                                    </div>
+
+
+                                    <div>
+
+                                        <span>
+                                            Vulnerability
+                                        </span>
+
+                                        <strong>
+                                            {currentHabitation.vulnerabilityScore ??
+                                                currentHabitation.vulnerability?.score ??
+                                                "--"}
+                                        </strong>
+
+                                    </div>
+
+                                </div>
+
+
+                                <p className="vulnerability-note">
+
+                                    ⚠️ This habitation has
+                                    been identified as
+                                    potentially vulnerable.
+
+                                </p>
+
+                            </div>
+
+                        ) : (
+
+                            <div className="empty-state">
+
+                                <div>
+                                    ✓
+                                </div>
+
+                                <p>
+                                    No priority vulnerable
+                                    habitation has been
+                                    returned for your location.
+                                </p>
+
+                            </div>
+
+                        )}
+
+                    </section>
+
+
+                    {/* =================================================
+                        RELOCATION
+                    ================================================= */}
+
+                    <section className="dashboard-section relocation-section">
+
+                        <div className="section-heading">
+
+                            <div>
+
+                                <span className="section-label">
+                                    SIH 191
+                                </span>
+
+                                <h2>
+                                    Safer Relocation Site
+                                </h2>
+
+                                <p>
+                                    Recommended safer site
+                                    based on available capacity.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        {recommendedSite ? (
+
+                            <div className="relocation-site-card">
+
+                                <div className="relocation-site-header">
+
+                                    <div>
+
+                                        <span className="small-label">
+                                            RECOMMENDED SITE
+                                        </span>
+
+                                        <h3>
+                                            {recommendedSite.name ||
+                                                recommendedSite.siteName ||
+                                                "Safer Alternative Site"}
+                                        </h3>
+
+                                    </div>
+
+
+                                    <span className="safe-badge">
+                                        SAFE
+                                    </span>
+
+                                </div>
+
+
+                                <div className="relocation-site-info">
+
+
+                                    <div>
+
+                                        <span>
+                                            📍 Distance
+                                        </span>
+
+                                        <strong>
+                                            {recommendedSite.distance != null
+                                                ? `${recommendedSite.distance} km`
+                                                : "--"}
+                                        </strong>
+
+                                    </div>
+
+
+                                    <div>
+
+                                        <span>
+                                            Capacity
+                                        </span>
+
+                                        <strong>
+                                            {getTotalCapacity(
+                                                recommendedSite
+                                            ) ?? "--"}
+                                        </strong>
+
+                                    </div>
+
+
+                                    <div>
+
+                                        <span>
+                                            Available
+                                        </span>
+
+                                        <strong>
+                                            {getSiteCapacity(
+                                                recommendedSite
+                                            ) ?? "--"}
+                                        </strong>
+
+                                    </div>
+
+                                </div>
+
+
+                                {getOccupiedCapacity(
+                                    recommendedSite
+                                ) !== null && (
+
+                                    <div className="capacity-bar-container">
+
+                                        <div className="capacity-label">
+
+                                            <span>
+                                                Occupancy
+                                            </span>
+
+                                            <span>
+
+                                                {
+                                                    getOccupiedCapacity(
+                                                        recommendedSite
+                                                    )
+                                                }
+
+                                                {" / "}
+
+                                                {
+                                                    getTotalCapacity(
+                                                        recommendedSite
+                                                    ) ??
+                                                    "--"
+                                                }
+
+                                            </span>
+
+                                        </div>
+
+
+                                        <div className="capacity-bar">
+
+                                            <div
+                                                className="capacity-fill"
+                                                style={{
+                                                    width:
+                                                        getTotalCapacity(
+                                                            recommendedSite
+                                                        )
+                                                            ? `${Math.min(
+                                                                100,
+                                                                (
+                                                                    getOccupiedCapacity(
+                                                                        recommendedSite
+                                                                    ) /
+                                                                    getTotalCapacity(
+                                                                        recommendedSite
+                                                                    )
+                                                                ) *
+                                                                100
+                                                            )}%`
+                                                            : "0%"
+                                                }}
+                                            />
+
+                                        </div>
+
+                                    </div>
+
+                                )}
+
+
+                                <button
+                                    className="relocation-button full-width"
+                                    onClick={() =>
+                                        handleQuickAction(
+                                            "/safe-routes"
+                                        )
+                                    }
+                                >
+                                    🛣️ View Safe Route
+                                </button>
+
+                            </div>
+
+                        ) : (
+
+                            <div className="empty-state">
+
+                                <div>
+                                    📍
+                                </div>
+
+                                <p>
+                                    No specific relocation
+                                    recommendation is currently
+                                    available.
+                                </p>
+
+                                <button
+                                    className="secondary-action-button"
+                                    onClick={() =>
+                                        handleQuickAction(
+                                            "/shelters"
+                                        )
+                                    }
+                                >
+                                    View Nearby Shelters
+                                </button>
+
+                            </div>
+
+                        )}
+
+                    </section>
+
+                </div>
+
+
+                {/* =================================================
+                    WEATHER
                 ================================================= */}
 
                 {dashboardData.weather && (
@@ -1011,7 +1620,8 @@ function CitizenDashboard() {
                                 </h2>
 
                                 <p>
-                                    Data used by the disaster prediction model.
+                                    Environmental data returned
+                                    by the dashboard backend.
                                 </p>
 
                             </div>
@@ -1020,6 +1630,7 @@ function CitizenDashboard() {
 
 
                         <div className="dashboard-cards">
+
 
                             <div className="dashboard-card">
 
@@ -1034,10 +1645,8 @@ function CitizenDashboard() {
                                     </h3>
 
                                     <p className="card-number">
-
                                         {dashboardData.weather.rainfall ??
                                             "--"}
-
                                     </p>
 
                                     <span>
@@ -1062,10 +1671,8 @@ function CitizenDashboard() {
                                     </h3>
 
                                     <p className="card-number">
-
                                         {dashboardData.weather.humidity ??
                                             "--"}
-
                                     </p>
 
                                     <span>
@@ -1090,10 +1697,8 @@ function CitizenDashboard() {
                                     </h3>
 
                                     <p className="card-number">
-
                                         {dashboardData.weather.temperature ??
                                             "--"}
-
                                     </p>
 
                                     <span>
@@ -1136,25 +1741,26 @@ function CitizenDashboard() {
 
                 <div className="map-sos-layout">
 
-                    {/* =================================================
-                        MAP
-                    ================================================= */}
 
-                    <section
-                        className="dashboard-section map-section"
-                    >
+                    <section className="dashboard-section map-section">
 
                         <div className="section-heading">
 
                             <div>
 
+                                <span className="section-label">
+                                    SIH 191
+                                </span>
+
                                 <h2>
-                                    Live Risk Map
+                                    Live Risk & Relocation Map
                                 </h2>
 
                                 <p>
-                                    View disasters and emergency
-                                    resources around you.
+                                    View hazard zones,
+                                    vulnerable habitations,
+                                    relocation sites and
+                                    emergency resources.
                                 </p>
 
                             </div>
@@ -1163,35 +1769,31 @@ function CitizenDashboard() {
 
 
                         <Map
-
-                            location={
-                                location
-                            }
-
+                            location={location}
                             alerts={
                                 dashboardData.alerts
                             }
-
                             hospitals={
                                 dashboardData.hospitals
                             }
-
                             shelters={
                                 dashboardData.shelters
                             }
-
+                            hazardZones={
+                                dashboardData.hazardZones
+                            }
+                            vulnerableHabitations={
+                                dashboardData.vulnerableHabitations
+                            }
+                            relocationSites={
+                                dashboardData.relocationSites
+                            }
                         />
 
                     </section>
 
 
-                    {/* =================================================
-                        SOS
-                    ================================================= */}
-
-                    <section
-                        className="dashboard-section sos-section"
-                    >
+                    <section className="dashboard-section sos-section">
 
                         <SOSCard
                             location={location}
@@ -1206,16 +1808,15 @@ function CitizenDashboard() {
                     QUICK ACTIONS
                 ================================================= */}
 
-                <section
-                    className="dashboard-section"
-                >
+                <section className="dashboard-section">
 
                     <h2>
-                        Quick Actions
+                        Emergency Actions
                     </h2>
 
 
                     <div className="quick-actions">
+
 
                         <div
                             className="quick-action-wrapper"
@@ -1263,7 +1864,7 @@ function CitizenDashboard() {
                         >
 
                             <QuickActionCard
-                                title="Shelters"
+                                title="Safer Sites"
                                 icon="🏠"
                                 path="/shelters"
                             />
@@ -1312,12 +1913,10 @@ function CitizenDashboard() {
 
 
                 {/* =================================================
-                    DISASTER ALERTS
+                    ALERTS
                 ================================================= */}
 
-                <section
-                    className="dashboard-section"
-                >
+                <section className="dashboard-section">
 
                     <div className="section-heading">
 
@@ -1338,13 +1937,12 @@ function CitizenDashboard() {
 
                     <div className="alerts-list">
 
+
                         {dashboardData.alerts.length === 0 && (
 
                             <p className="no-alerts">
-
                                 No active alerts near
                                 your location.
-
                             </p>
 
                         )}
@@ -1354,15 +1952,12 @@ function CitizenDashboard() {
                             (alert, index) => (
 
                                 <DisasterAlert
-
                                     key={
-                                        alert.id ||
                                         alert._id ||
+                                        alert.id ||
                                         index
                                     }
-
                                     alert={alert}
-
                                 />
 
                             )
@@ -1372,10 +1967,13 @@ function CitizenDashboard() {
 
                 </section>
 
+
             </main>
 
         </div>
+
     );
+
 }
 
 

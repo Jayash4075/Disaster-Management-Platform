@@ -1040,22 +1040,3 @@ html {
     scroll-behavior: auto !important;
   }
 }
-
-.live-stats {
-  display: flex;
-  gap: 24px;
-  justify-content: center;
-  margin-top: 16px;
-}
-.live-stats div {
-  text-align: center;
-}
-.live-stats strong {
-  display: block;
-  font-size: 1.6rem;
-  color: #174775;
-}
-.live-stats span {
-  font-size: 0.8rem;
-  color: #6b7280;
-}

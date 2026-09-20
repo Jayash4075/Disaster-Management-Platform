@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
 import api from "../api/axios";
-import toast from "react-hot-toast";
 
 function Signup() {
     const navigate = useNavigate();
@@ -15,86 +15,133 @@ function Signup() {
     });
 
     const [otp, setOtp] = useState("");
-    const [userId, setUserId] = useState(null);   // from signup response, needed for verify-otp
+    const [userId, setUserId] = useState("");
     const [otpSent, setOtpSent] = useState(false);
     const [otpVerified, setOtpVerified] = useState(false);
-    const [resendCooldown, setResendCooldown] = useState(0);   // FIX: was missing entirely
 
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const [otpLoading, setOtpLoading] = useState(false);
 
-    // FIX: countdown effect for resend cooldown
-    useEffect(() => {
-        if (resendCooldown <= 0) return;
-        const timer = setInterval(() => {
-            setResendCooldown((prev) => prev - 1);
-        }, 1000);
-        return () => clearInterval(timer);
-    }, [resendCooldown]);
-
+    // -----------------------------------------
+    // HANDLE INPUT CHANGES
+    // -----------------------------------------
     const handleChange = (e) => {
-        setFormData({
-            ...formData,
+        setFormData((previous) => ({
+            ...previous,
             [e.target.name]: e.target.value,
-        });
+        }));
+
         setError("");
     };
 
+    // -----------------------------------------
+    // VALIDATE FORM
+    // -----------------------------------------
     const validateForm = () => {
-        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        const emailRegex =
+            /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
         const phoneRegex = /^[6-9]\d{9}$/;
 
         if (!formData.name.trim()) {
             setError("Please enter your full name");
             return false;
         }
-        if (!emailRegex.test(formData.email)) {
+
+        if (!emailRegex.test(formData.email.trim())) {
             setError("Please enter a valid email address");
             return false;
         }
-        if (!phoneRegex.test(formData.phone)) {
+
+        if (!phoneRegex.test(formData.phone.trim())) {
             setError("Please enter a valid 10-digit phone number");
             return false;
         }
+
         if (formData.password.length < 6) {
             setError("Password must be at least 6 characters");
             return false;
         }
+
         return true;
     };
 
-    // STEP 1: Create account (backend creates user as unverified + sends OTP in same call)
-    const handleSignup = async (e) => {
-        e.preventDefault();
+    // -----------------------------------------
+    // STEP 1:
+    // CREATE UNVERIFIED USER + SEND OTP
+    // -----------------------------------------
+    const handleSendOTP = async () => {
         setError("");
 
-        if (!validateForm()) return;
+        if (!validateForm()) {
+            return;
+        }
 
-        setLoading(true);
+        setOtpLoading(true);
 
         try {
-            const response = await api.post("/api/auth/signup", formData);
-            const data = response.data;
+            const response = await api.post(
+                "/api/auth/signup",
+                {
+                    name: formData.name.trim(),
+                    email: formData.email.trim(),
+                    phone: formData.phone.trim(),
+                    password: formData.password,
+                    role: formData.role,
+                }
+            );
 
-            // backend returns { message, userId } — no token yet, account isn't verified
-            setUserId(data.userId);
+            console.log(
+                "Signup / OTP response:",
+                response.data
+            );
+
+            const receivedUserId =
+                response.data?.userId;
+
+            if (!receivedUserId) {
+                throw new Error(
+                    "User ID was not returned by the server"
+                );
+            }
+
+            // Save user ID for OTP verification
+            setUserId(receivedUserId);
+
+            // Show OTP section
             setOtpSent(true);
-            setResendCooldown(30); // FIX: start cooldown right after first OTP send too
-            toast.success(data.message || "OTP sent to your email");
+
+            // Clear old OTP
+            setOtp("");
+
+            toast.success(
+                response.data?.message ||
+                    "OTP sent to your email"
+            );
         } catch (error) {
-            console.error("Signup error:", error.response?.data || error.message);
+            console.error(
+                "Send OTP error:",
+                error.response?.data || error.message
+            );
+
             const message =
                 error.response?.data?.message ||
-                "Unable to create account. Please try again.";
+                error.response?.data?.error ||
+                "Unable to send OTP. Please try again.";
+
             setError(message);
+
             toast.error(message);
         } finally {
-            setLoading(false);
+            setOtpLoading(false);
         }
     };
 
-    // STEP 2: Verify OTP — this is what actually logs the user in
+    // -----------------------------------------
+    // STEP 2:
+    // VERIFY OTP
+    // -----------------------------------------
     const handleVerifyOTP = async () => {
         setError("");
 
@@ -103,50 +150,194 @@ function Signup() {
             return;
         }
 
+        if (!userId) {
+            setError(
+                "User ID is missing. Please request a new OTP."
+            );
+            return;
+        }
+
         setOtpLoading(true);
 
         try {
-            const response = await api.post("/api/auth/verify-otp", {
-                userId,
-                otp,
-            });
-            const data = response.data;
+            const response = await api.post(
+                "/api/auth/verify-otp",
+                {
+                    userId: userId,
+                    otp: otp.trim(),
+                }
+            );
 
-            localStorage.setItem("token", data.token);
-            localStorage.setItem("user", JSON.stringify(data.user));
-            localStorage.setItem("role", data.user.role);
+            console.log(
+                "Verify OTP response:",
+                response.data
+            );
+
+            // -----------------------------------------
+            // BACKEND RETURNS TOKEN + USER
+            // -----------------------------------------
+            if (response.data?.token) {
+                localStorage.setItem(
+                    "token",
+                    response.data.token
+                );
+            }
+
+            if (response.data?.user) {
+                localStorage.setItem(
+                    "user",
+                    JSON.stringify(response.data.user)
+                );
+            }
 
             setOtpVerified(true);
-            toast.success(`Welcome, ${data.user.name}!`);
-            navigate("/dashboard");
+            setError("");
+
+            toast.success(
+                response.data?.message ||
+                    "Email verified successfully"
+            );
+
         } catch (error) {
-            console.error("Verify OTP error:", error.response?.data || error.message);
+            console.error(
+                "Verify OTP error:",
+                error.response?.data || error.message
+            );
+
             const message =
-                error.response?.data?.message || "Invalid or expired OTP";
+                error.response?.data?.message ||
+                error.response?.data?.error ||
+                "Invalid or expired OTP";
+
             setError(message);
+
+            toast.error(message);
+
+            setOtpVerified(false);
+        } finally {
+            setOtpLoading(false);
+        }
+    };
+
+    // -----------------------------------------
+    // STEP 3:
+    // RESEND OTP
+    // -----------------------------------------
+    const handleResendOTP = async () => {
+        setError("");
+
+        if (!userId) {
+            setError(
+                "User ID is missing. Please start signup again."
+            );
+            return;
+        }
+
+        setOtpLoading(true);
+
+        try {
+            const response = await api.post(
+                "/api/auth/resend-otp",
+                {
+                    userId: userId,
+                }
+            );
+
+            setOtp("");
+
+            toast.success(
+                response.data?.message ||
+                    "OTP resent successfully"
+            );
+        } catch (error) {
+            console.error(
+                "Resend OTP error:",
+                error.response?.data || error.message
+            );
+
+            const message =
+                error.response?.data?.message ||
+                error.response?.data?.error ||
+                "Failed to resend OTP";
+
+            setError(message);
+
             toast.error(message);
         } finally {
             setOtpLoading(false);
         }
     };
 
-    // Resend OTP
-    const handleResendOTP = async () => {
+    // -----------------------------------------
+    // STEP 4:
+    // CONTINUE AFTER VERIFICATION
+    // -----------------------------------------
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
         setError("");
-        setOtpLoading(true);
+
+        if (!otpVerified) {
+            setError(
+                "Please verify your email with OTP first"
+            );
+            return;
+        }
+
+        setLoading(true);
 
         try {
-            const response = await api.post("/api/auth/resend-otp", { userId });
-            toast.success(response.data?.message || "OTP resent successfully");
-            setResendCooldown(30); // FIX: was missing — this is what the button needs
+            const storedUser = JSON.parse(
+                localStorage.getItem("user") || "null"
+            );
+
+            if (!storedUser) {
+                setError(
+                    "User information is missing. Please login again."
+                );
+                return;
+            }
+
+            toast.success(
+                `Welcome, ${storedUser.name}!`
+            );
+
+            // Redirect according to role
+            switch (storedUser.role) {
+                case "authority":
+                    navigate("/authority");
+                    break;
+
+                case "citizen":
+                    navigate("/dashboard");
+                    break;
+
+                case "rescuer":
+                    navigate("/rescuer");
+                    break;
+
+                case "ngo":
+                    navigate("/ngo");
+                    break;
+
+                case "volunteer":
+                    navigate("/volunteer");
+                    break;
+
+                default:
+                    navigate("/dashboard");
+            }
         } catch (error) {
-            console.error("Resend OTP error:", error.response?.data || error.message);
-            const message =
-                error.response?.data?.message || "Failed to resend OTP";
-            setError(message);
-            toast.error(message);
+            console.error(
+                "Dashboard redirect error:",
+                error
+            );
+
+            setError(
+                "Account verified, but dashboard could not be opened."
+            );
         } finally {
-            setOtpLoading(false);
+            setLoading(false);
         }
     };
 
@@ -155,67 +346,101 @@ function Signup() {
 
             {/* LEFT SIDE */}
             <div className="auth-left">
+
                 <div className="resq-brand">
                     <h2>ResQ</h2>
-                    <span>Emergency Response & Relief Platform</span>
+
+                    <span>
+                        Emergency Response & Relief Platform
+                    </span>
                 </div>
 
                 <div className="hero-content">
-                    <h1>One Platform.<br />One Response.</h1>
+
+                    <h1>
+                        One Platform.
+                        <br />
+                        One Response.
+                    </h1>
+
                     <p>
-                        ResQ brings citizens, rescuers, authorities, NGOs and volunteers
-                        together for coordinated disaster response.
+                        ResQ brings citizens, rescuers,
+                        authorities, NGOs and volunteers
+                        together for coordinated disaster
+                        response.
                     </p>
+
                 </div>
 
                 <div className="footer-text">
                     जन सेवा • आपदा प्रबंधन • सुरक्षित भारत
                 </div>
+
             </div>
 
             {/* RIGHT SIDE */}
             <div className="auth-right">
+
                 <div className="auth-card signup-card">
+
                     <div className="card-header">
+
                         <h1>Create Account</h1>
-                        <p>Register with ResQ</p>
+
+                        <p>
+                            Register with ResQ
+                        </p>
+
                     </div>
 
-                    <form onSubmit={handleSignup}>
+                    <form onSubmit={handleSubmit}>
 
                         {/* NAME */}
                         <div className="form-group">
-                            <label>Full Name</label>
+
+                            <label>
+                                Full Name
+                            </label>
+
                             <input
                                 type="text"
                                 name="name"
                                 placeholder="Enter your full name"
                                 value={formData.name}
                                 onChange={handleChange}
-                                disabled={otpSent}
                                 required
+                                disabled={otpSent}
                             />
+
                         </div>
 
                         {/* EMAIL + PHONE */}
                         <div className="form-row">
+
                             <div className="form-group">
-                                <label>Email Address</label>
+
+                                <label>
+                                    Email Address
+                                </label>
+
                                 <input
                                     type="email"
                                     name="email"
                                     placeholder="Enter your email"
                                     value={formData.email}
                                     onChange={handleChange}
-                                    pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
-                                    title="Enter a valid email address"
-                                    disabled={otpSent}
                                     required
+                                    disabled={otpSent}
                                 />
+
                             </div>
 
                             <div className="form-group">
-                                <label>Phone Number</label>
+
+                                <label>
+                                    Phone Number
+                                </label>
+
                                 <input
                                     type="tel"
                                     name="phone"
@@ -225,15 +450,21 @@ function Signup() {
                                     pattern="[6-9][0-9]{9}"
                                     title="Enter a valid 10-digit Indian mobile number"
                                     maxLength="10"
-                                    disabled={otpSent}
                                     required
+                                    disabled={otpSent}
                                 />
+
                             </div>
+
                         </div>
 
                         {/* PASSWORD */}
                         <div className="form-group">
-                            <label>Password</label>
+
+                            <label>
+                                Password
+                            </label>
+
                             <input
                                 type="password"
                                 name="password"
@@ -241,48 +472,92 @@ function Signup() {
                                 value={formData.password}
                                 onChange={handleChange}
                                 minLength="6"
-                                disabled={otpSent}
                                 required
+                                disabled={otpSent}
                             />
+
                         </div>
 
                         {/* ACCOUNT TYPE */}
                         <div className="form-group">
-                            <label>Account Type</label>
+
+                            <label>
+                                Account Type
+                            </label>
+
                             <select
                                 name="role"
                                 value={formData.role}
                                 onChange={handleChange}
                                 disabled={otpSent}
                             >
-                                <option value="citizen">Citizen</option>
-                                <option value="rescuer">Rescuer</option>
-                                <option value="authority">Authority</option>
-                                <option value="ngo">NGO</option>
-                                <option value="volunteer">Volunteer</option>
+
+                                <option value="citizen">
+                                    Citizen
+                                </option>
+
+                                <option value="rescuer">
+                                    Rescuer
+                                </option>
+
+                                <option value="authority">
+                                    Authority
+                                </option>
+
+                                <option value="ngo">
+                                    NGO
+                                </option>
+
+                                <option value="volunteer">
+                                    Volunteer
+                                </option>
+
                             </select>
+
                         </div>
 
-                        {/* CREATE ACCOUNT BUTTON — only shown before OTP is sent */}
+                        {/* SEND OTP */}
                         {!otpSent && (
-                            <button type="submit" className="primary-button" disabled={loading}>
-                                {loading ? "Creating account..." : "Create Account"}
+
+                            <button
+                                type="button"
+                                className="primary-button"
+                                onClick={handleSendOTP}
+                                disabled={otpLoading}
+                            >
+
+                                {otpLoading
+                                    ? "Sending OTP..."
+                                    : "Send OTP"}
+
                             </button>
+
                         )}
 
-                        {/* OTP SECTION — shown after signup succeeds */}
+                        {/* OTP SECTION */}
                         {otpSent && !otpVerified && (
+
                             <div className="otp-section">
+
                                 <div className="otp-message">
-                                    <p>We've sent a 6-digit OTP to</p>
-                                    <strong>{formData.email}</strong>
-                                    <p style={{ fontSize: "0.85em", marginTop: "4px" }}>
-                                        (Check your spam folder if you don't see it)
+
+                                    <p>
+                                        We've sent a 6-digit
+                                        OTP to
                                     </p>
+
+                                    <strong>
+                                        {formData.email}
+                                    </strong>
+
                                 </div>
 
                                 <div className="form-group">
-                                    <label>Enter OTP</label>
+
+                                    <label>
+                                        Enter OTP
+                                    </label>
+
                                     <input
                                         type="text"
                                         inputMode="numeric"
@@ -290,45 +565,107 @@ function Signup() {
                                         placeholder="Enter 6-digit OTP"
                                         value={otp}
                                         onChange={(e) => {
-                                            const value = e.target.value.replace(/\D/g, "");
+
+                                            const value =
+                                                e.target.value.replace(
+                                                    /\D/g,
+                                                    ""
+                                                );
+
                                             setOtp(value);
                                             setError("");
+
                                         }}
                                     />
+
                                 </div>
 
                                 <button
                                     type="button"
                                     className="primary-button"
                                     onClick={handleVerifyOTP}
-                                    disabled={otpLoading || otp.length !== 6}
+                                    disabled={
+                                        otpLoading ||
+                                        otp.length !== 6
+                                    }
                                 >
-                                    {otpLoading ? "Verifying..." : "Verify OTP"}
+
+                                    {otpLoading
+                                        ? "Verifying..."
+                                        : "Verify OTP"}
+
                                 </button>
 
                                 <button
                                     type="button"
                                     className="resend-button"
                                     onClick={handleResendOTP}
-                                    disabled={otpLoading || resendCooldown > 0}
+                                    disabled={otpLoading}
                                 >
-                                    {resendCooldown > 0 ? `Resend OTP in ${resendCooldown}s` : "Resend OTP"}
+                                    Resend OTP
                                 </button>
+
                             </div>
+
+                        )}
+
+                        {/* VERIFIED MESSAGE */}
+                        {otpVerified && (
+
+                            <div className="otp-verified">
+
+                                ✓ Email verified successfully
+
+                            </div>
+
+                        )}
+
+                        {/* CONTINUE */}
+                        {otpVerified && (
+
+                            <button
+                                type="submit"
+                                className="primary-button"
+                                disabled={loading}
+                            >
+
+                                {loading
+                                    ? "Opening dashboard..."
+                                    : "Continue to Dashboard"}
+
+                            </button>
+
                         )}
 
                         {/* ERROR */}
-                        {error && <p className="error-text">{error}</p>}
+                        {error && (
+
+                            <p className="error-text">
+                                {error}
+                            </p>
+
+                        )}
 
                     </form>
 
                     <div className="auth-switch">
+
                         <p>
-                            Already have an account? <Link to="/login">Sign In</Link>
+
+                            Already have an account?{" "}
+
+                            <Link to="/login">
+                                Sign In
+                            </Link>
+
                         </p>
+
                     </div>
+
                 </div>
+
             </div>
+
         </div>
     );
 }

@@ -1,31 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import "./Home.css";
-import api from "../api/axios";
 
 function Home() {
-  const [summary, setSummary] = useState({
-    redZones: 0,
-    highRisk: 0,
-    totalHabitations: 0,
-    saferSites: 0
-  });
-  const [loadingSummary, setLoadingSummary] = useState(true);
-
-  useEffect(() => {
-    const fetchSummary = async () => {
-      try {
-        const response = await api.get("/api/habitations/landing-summary");
-        setSummary(response.data);
-      } catch (error) {
-        console.error("Failed to load landing summary:", error);
-      } finally {
-        setLoadingSummary(false);
-      }
-    };
-
-    fetchSummary();
-  }, []);
-
   return (
     <div className="home">
 
@@ -111,7 +87,7 @@ function Home() {
             <div className="map-header">
               <span>Hazard Intelligence Map</span>
               <span className="live">
-                {loadingSummary ? "Loading..." : "Live Analysis"}
+                LIVE ANALYSIS
               </span>
             </div>
 
@@ -145,28 +121,9 @@ function Home() {
             </div>
 
             <div className="map-footer">
-                <span>🔴 Red Zone</span>
-                <span>🟠 High Risk</span>
-                <span>🟢 Safer Site</span>
-            </div>
-            {/* NEW — real stats row */}
-            <div className="live-stats">
-                <div>
-                    <strong>{loadingSummary ? "—" : summary.totalHabitations}</strong>
-                    <span>Habitations Monitored</span>
-                </div>
-                <div>
-                    <strong>{loadingSummary ? "—" : summary.highRisk}</strong>
-                    <span>High Risk Areas</span>
-                </div>
-                <div>
-                      <strong>{loadingSummary ? "—" : summary.redZones}</strong>
-                      <span>Red Zones</span>
-                </div>
-                <div>
-                      <strong>{loadingSummary ? "—" : summary.saferSites.length}</strong>
-                      <span>Safer Relocation Sites</span>
-                </div>
+              <span>🔴 Red Zone</span>
+              <span>🟠 High Risk</span>
+              <span>🟢 Safer Site</span>
             </div>
 
           </div>

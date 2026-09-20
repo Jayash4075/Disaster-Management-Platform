@@ -2,96 +2,58 @@ import React from "react";
 import "./RiskCard.css";
 
 const RiskCard = ({
-    riskLevel = "LOW",
-    riskScore = 0
+  riskLevel = "Low",
+  riskScore = 25,
 }) => {
 
-    const normalizedRisk =
-        String(riskLevel).toUpperCase();
+  const getRiskClass = () => {
+    if (riskLevel === "High") return "high";
+    if (riskLevel === "Medium") return "medium";
+    return "low";
+  };
 
-    const getRiskClass = () => {
+  return (
+    <div className={`risk-card ${getRiskClass()}`}>
 
-        if (
-            normalizedRisk === "HIGH" ||
-            normalizedRisk === "CRITICAL"
-        ) {
-            return "high";
-        }
+      <div className="risk-header">
 
-        if (
-            normalizedRisk === "MEDIUM" ||
-            normalizedRisk === "MODERATE" ||
-            normalizedRisk === "WARNING"
-        ) {
-            return "medium";
-        }
+        <div>
+          <span className="risk-label">
+            Current Risk Level
+          </span>
 
-        return "low";
-    };
-
-    const score = Math.min(
-        100,
-        Math.max(
-            0,
-            Number(riskScore) || 0
-        )
-    );
-
-    return (
-        <div
-            className={`risk-card ${getRiskClass()}`}
-        >
-
-            <div className="risk-header">
-
-                <div>
-
-                    <span className="risk-label">
-                        Current Risk Level
-                    </span>
-
-                    <h2>
-                        {normalizedRisk}
-                    </h2>
-
-                </div>
-
-                <div className="risk-icon">
-                    🛡️
-                </div>
-
-            </div>
-
-            <div className="risk-meter">
-
-                <div
-                    className="risk-meter-fill"
-                    style={{
-                        width: `${score}%`
-                    }}
-                />
-
-            </div>
-
-            <div className="risk-footer">
-
-                <span>
-                    Risk Score
-                </span>
-
-                <strong>
-                    {score}/100
-                </strong>
-
-            </div>
-
-            <p>
-                Based on current disaster and
-                environmental conditions in your area.
-            </p>
-
+          <h2>{riskLevel}</h2>
         </div>
-    );
+
+        <div className="risk-icon">
+          🛡️
+        </div>
+
+      </div>
+
+      <div className="risk-meter">
+
+        <div
+          className="risk-meter-fill"
+          style={{
+            width: `${riskScore}%`,
+          }}
+        ></div>
+
+      </div>
+
+      <div className="risk-footer">
+        <span>Risk Score</span>
+        <strong>{riskScore}/100</strong>
+      </div>
+
+      <p>
+        Based on current disaster and environmental
+        conditions in your area.
+      </p>
+
+    </div>
+  );
 };
 
 export default RiskCard;

@@ -1,0 +1,719 @@
+/* ================================
+   TERRASHIELD RISK MAP
+================================ */
+
+.risk-page {
+    min-height: 100vh;
+    background: #f4f8fc;
+    color: #102a43;
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+
+/* ================================
+   BRAND HEADER
+================================ */
+
+.risk-brand-header {
+    height: 70px;
+    padding: 0 30px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    background: linear-gradient(
+        135deg,
+        #0b2f5b,
+        #123f73
+    );
+
+    color: white;
+}
+
+.brand-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-logo {
+    width: 40px;
+    height: 40px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 10px;
+
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.brand-name {
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+}
+
+.brand-subtitle {
+    margin-top: 2px;
+
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.68);
+}
+
+.brand-page {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+
+    color: rgba(255, 255, 255, 0.72);
+}
+
+
+/* ================================
+   PAGE HEADER
+================================ */
+
+.risk-header {
+    padding: 28px 30px 20px;
+
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.page-label {
+    margin-bottom: 6px;
+
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+
+    color: #3976ad;
+}
+
+.risk-header h1 {
+    margin: 0;
+
+    font-size: 27px;
+    line-height: 1.2;
+
+    color: #102f50;
+}
+
+.risk-header p {
+    margin: 7px 0 0;
+
+    font-size: 13px;
+    color: #718096;
+}
+
+
+/* ================================
+   REFRESH BUTTON
+================================ */
+
+.refresh-button {
+    height: 38px;
+    padding: 0 15px;
+
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    border: 1px solid #cbdbea;
+    border-radius: 8px;
+
+    background: white;
+    color: #174a7c;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: 0.2s ease;
+}
+
+.refresh-button:hover {
+    border-color: #3976ad;
+    background: #f2f7fc;
+}
+
+
+/* ================================
+   STAT CARDS
+================================ */
+
+.risk-stats {
+    padding: 0 30px 20px;
+
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+}
+
+.risk-stat-card {
+    min-height: 78px;
+    padding: 15px;
+
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    background: white;
+
+    border: 1px solid #dce7f1;
+    border-radius: 10px;
+
+    box-shadow: 0 2px 8px rgba(20, 60, 100, 0.04);
+}
+
+.stat-icon {
+    width: 38px;
+    height: 38px;
+
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 9px;
+}
+
+.stat-icon.blue {
+    background: #e8f1fb;
+    color: #28649a;
+}
+
+.stat-icon.red {
+    background: #fff0f0;
+    color: #dc4444;
+}
+
+.stat-icon.orange {
+    background: #fff6e7;
+    color: #d88a18;
+}
+
+.stat-icon.green {
+    background: #eaf7ef;
+    color: #2d9460;
+}
+
+.risk-stat-card span {
+    display: block;
+
+    font-size: 11px;
+    font-weight: 600;
+
+    color: #718096;
+}
+
+.risk-stat-card strong {
+    display: block;
+
+    margin-top: 3px;
+
+    font-size: 21px;
+    color: #163c60;
+}
+
+
+/* ================================
+   MAIN CONTENT
+================================ */
+
+.risk-content {
+    padding: 0 30px 30px;
+
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 16px;
+}
+
+
+/* ================================
+   MAP CARD
+================================ */
+
+.map-card {
+    min-width: 0;
+
+    background: white;
+
+    border: 1px solid #dce7f1;
+    border-radius: 12px;
+
+    overflow: hidden;
+
+    box-shadow: 0 3px 12px rgba(20, 60, 100, 0.05);
+}
+
+
+/* ================================
+   MAP TOOLBAR
+================================ */
+
+.map-toolbar {
+    min-height: 62px;
+    padding: 11px 13px;
+
+    display: flex;
+    align-items: center;
+    gap: 9px;
+
+    border-bottom: 1px solid #e2eaf2;
+    background: #fbfdff;
+}
+
+.search-box {
+    height: 38px;
+
+    flex: 1;
+
+    min-width: 160px;
+
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 0 11px;
+
+    background: white;
+
+    border: 1px solid #d3e0ec;
+    border-radius: 8px;
+
+    color: #6d8297;
+}
+
+.search-box:focus-within {
+    border-color: #3976ad;
+    box-shadow: 0 0 0 3px rgba(57, 118, 173, 0.08);
+}
+
+.search-box input {
+    width: 100%;
+
+    border: none;
+    outline: none;
+
+    background: transparent;
+
+    font-size: 12px;
+    color: #173c5d;
+}
+
+.search-box input::placeholder {
+    color: #9aaabd;
+}
+
+.map-toolbar select {
+    height: 38px;
+
+    padding: 0 30px 0 10px;
+
+    border: 1px solid #d3e0ec;
+    border-radius: 8px;
+
+    background: white;
+    color: #31536f;
+
+    font-size: 11px;
+    font-weight: 600;
+
+    outline: none;
+
+    cursor: pointer;
+}
+
+.map-toolbar select:focus {
+    border-color: #3976ad;
+}
+
+
+/* ================================
+   MAP
+================================ */
+
+.map-wrapper {
+    height: 570px;
+    position: relative;
+}
+
+.risk-map {
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+
+/* IMPORTANT:
+   Leaflet needs an explicit height.
+*/
+
+.leaflet-container {
+    width: 100%;
+    height: 100%;
+    font-family: inherit;
+}
+
+
+/* ================================
+   POPUP
+================================ */
+
+.popup-content {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+
+    min-width: 130px;
+}
+
+.popup-content strong {
+    font-size: 13px;
+    color: #173c5d;
+}
+
+.popup-content span {
+    font-size: 11px;
+    color: #64748b;
+}
+
+
+/* ================================
+   LEGEND
+================================ */
+
+.map-legend {
+    position: absolute;
+
+    bottom: 18px;
+    left: 18px;
+
+    z-index: 1000;
+
+    padding: 12px 14px;
+
+    min-width: 110px;
+
+    background: rgba(255, 255, 255, 0.96);
+
+    border: 1px solid #d7e3ee;
+    border-radius: 9px;
+
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.1);
+}
+
+.legend-title {
+    margin-bottom: 7px;
+
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1px;
+
+    color: #61788e;
+}
+
+.map-legend > div:not(.legend-title) {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+
+    margin-top: 5px;
+
+    font-size: 10px;
+    color: #435b70;
+}
+
+.legend-dot {
+    width: 8px;
+    height: 8px;
+
+    display: inline-block;
+
+    border-radius: 50%;
+}
+
+.legend-dot.high {
+    background: #ef4444;
+}
+
+.legend-dot.medium {
+    background: #f59e0b;
+}
+
+.legend-dot.low {
+    background: #22c55e;
+}
+
+
+/* ================================
+   EMPTY / ERROR
+================================ */
+
+.map-empty-message,
+.map-error-message {
+    position: absolute;
+
+    top: 50%;
+    left: 50%;
+
+    transform: translate(-50%, -50%);
+
+    z-index: 900;
+
+    width: 270px;
+
+    padding: 22px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+
+    text-align: center;
+
+    background: rgba(255, 255, 255, 0.96);
+
+    border: 1px solid #d7e3ee;
+    border-radius: 10px;
+
+    box-shadow: 0 5px 20px rgba(20, 60, 100, 0.1);
+
+    color: #3976ad;
+}
+
+.map-empty-message strong,
+.map-error-message strong {
+    color: #244b6d;
+    font-size: 13px;
+}
+
+.map-empty-message span,
+.map-error-message span {
+    color: #75899c;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.map-error-message button {
+    margin-top: 5px;
+
+    padding: 7px 13px;
+
+    border: none;
+    border-radius: 6px;
+
+    background: #174a7c;
+    color: white;
+
+    font-size: 11px;
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+
+/* ================================
+   SIDE PANEL
+================================ */
+
+.zone-panel {
+    min-height: 300px;
+
+    background: white;
+
+    border: 1px solid #dce7f1;
+    border-radius: 12px;
+
+    box-shadow: 0 3px 12px rgba(20, 60, 100, 0.05);
+
+    overflow: hidden;
+}
+
+.panel-heading {
+    padding: 18px;
+
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    border-bottom: 1px solid #e2eaf2;
+
+    background: #fbfdff;
+
+    color: #3976ad;
+}
+
+.panel-heading span {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+}
+
+.panel-heading h2 {
+    margin: 5px 0 0;
+
+    font-size: 17px;
+    color: #173c5d;
+}
+
+
+/* ================================
+   ZONE DETAILS
+================================ */
+
+.zone-details {
+    padding: 18px;
+}
+
+.detail-row {
+    padding: 12px 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    border-bottom: 1px solid #edf2f7;
+}
+
+.detail-row span {
+    font-size: 11px;
+    color: #788da0;
+}
+
+.detail-row strong {
+    font-size: 12px;
+    color: #284c68;
+}
+
+.detail-description {
+    margin-top: 15px;
+    padding: 12px;
+
+    background: #f4f8fc;
+
+    border-radius: 8px;
+
+    font-size: 11px;
+    line-height: 1.6;
+
+    color: #64788b;
+}
+
+
+/* ================================
+   EMPTY PANEL
+================================ */
+
+.empty-zone {
+    padding: 45px 22px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    text-align: center;
+}
+
+.empty-icon {
+    width: 48px;
+    height: 48px;
+
+    margin-bottom: 12px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #eaf2fa;
+    color: #3976ad;
+}
+
+.empty-zone strong {
+    font-size: 13px;
+    color: #31536f;
+}
+
+.empty-zone p {
+    max-width: 210px;
+
+    margin: 6px 0 0;
+
+    font-size: 11px;
+    line-height: 1.5;
+
+    color: #8798a8;
+}
+
+
+/* ================================
+   RESPONSIVE
+================================ */
+
+@media (max-width: 1050px) {
+
+    .risk-content {
+        grid-template-columns: 1fr;
+    }
+
+    .zone-panel {
+        min-height: auto;
+    }
+
+    .risk-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+
+@media (max-width: 700px) {
+
+    .risk-brand-header {
+        padding: 0 16px;
+    }
+
+    .brand-page {
+        display: none;
+    }
+
+    .risk-header {
+        padding: 22px 16px 16px;
+
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .risk-stats {
+        padding: 0 16px 16px;
+
+        grid-template-columns: 1fr;
+    }
+
+    .risk-content {
+        padding: 0 16px 20px;
+    }
+
+    .map-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .map-toolbar select {
+        width: 100%;
+    }
+
+    .map-wrapper {
+        height: 500px;
+    }
+}

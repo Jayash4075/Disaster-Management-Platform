@@ -1,51 +1,55 @@
-import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-import api from "../api/axios";
+import { useNavigate } from "react-router-dom";
 import "./Emergency.css";
-import { io as socketIO } from "socket.io-client";
 
 function Emergency() {
     const navigate = useNavigate();
-    const { state } = useLocation();
 
-    const sosReport = state?.sosReport;
-    const location = state?.location;
-
-    // FIX: track status separately so socket updates can change what's rendered
-    const [liveStatus, setLiveStatus] = useState(sosReport?.status);
+    const [status, setStatus] = useState("Sending emergency request...");
+    const [location, setLocation] = useState(null);
+    const [locationError, setLocationError] = useState("");
 
     useEffect(() => {
-        if (!sosReport) {
-            navigate("/sos-form", { replace: true });
-            return; // FIX: stop here — don't try to open a socket with no report
+        // Get user's current location
+        if (!navigator.geolocation) {
+            setLocationError("Geolocation is not supported by your browser.");
+            setStatus("Unable to detect location");
+            return;
         }
 
-        const socket = socketIO(import.meta.env.VITE_API_URL || "http://localhost:5000");
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const latitude = position.coords.latitude;
+                const longitude = position.coords.longitude;
 
-        socket.on("connect", () => {
-            console.log("Citizen connected to socket:", socket.id);
-        });
+                setLocation({
+                    latitude,
+                    longitude,
+                    accuracy: Math.round(position.coords.accuracy),
+                });
 
-        socket.on("status-update", (update) => {
-            if (update.sosId === sosReport._id) {
-                console.log("Status updated:", update.status);
-                setLiveStatus(update.status); // FIX: actually update what's shown
+                // Frontend simulation
+                setTimeout(() => {
+                    setStatus("Emergency request received");
+                }, 1500);
+            },
+            () => {
+                setLocationError(
+                    "Unable to access your location. Please enable location permission."
+                );
+                setStatus("Location access required");
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0,
             }
-        });
+        );
+    }, []);
 
-        return () => socket.disconnect();
-    }, [sosReport, navigate]);
-
-    if (!sosReport) return null;
-
-    const handleCancel = async () => {
-        try {
-            await api.delete(`/api/sos/${sosReport._id}`);
-        } catch (error) {
-            console.error("Cancel SOS error:", error.response?.data || error.message);
-        }
-        navigate("/dashboard", { replace: true });
-    };
+const handleCancel = () => {
+navigate("/dashboard", { replace: true });
+};
 
     const handleCall = () => {
         window.location.href = "tel:112";
@@ -53,12 +57,19 @@ function Emergency() {
 
     const handleShareLocation = () => {
         if (!location) {
-            alert("Location is not available.");
+            alert("Location is not available yet.");
             return;
         }
-        const locationText = `My current location:\nLatitude: ${location.latitude}\nLongitude: ${location.longitude}`;
+
+        const locationText = `My current location:
+Latitude: ${location.latitude}
+Longitude: ${location.longitude}`;
+
         if (navigator.share) {
-            navigator.share({ title: "My Emergency Location", text: locationText });
+            navigator.share({
+                title: "My Emergency Location",
+                text: locationText,
+            });
         } else {
             navigator.clipboard.writeText(locationText);
             alert("Location copied to clipboard.");
@@ -67,32 +78,49 @@ function Emergency() {
 
     return (
         <div className="emergency-page">
+
+            {/* Header */}
             <header className="emergency-header">
                 <div>
                     <h1>ResQ</h1>
                     <p>Emergency Assistance</p>
                 </div>
-                <button className="back-dashboard-btn" onClick={() => navigate("/dashboard")}>
+
+                <button
+                    className="back-dashboard-btn"
+                    onClick={() => navigate("/dashboard")}
+                >
                     ← Dashboard
                 </button>
             </header>
 
+            {/* Emergency Status */}
             <main className="emergency-container">
+
                 <section className="emergency-status-card">
-                    <div className="status-icon">🚨</div>
+
+                    <div className="status-icon">
+                        🚨
+                    </div>
+
                     <h2>Emergency Assistance</h2>
+
                     <div className="status-badge">
                         <span className="status-dot"></span>
-                        {/* FIX: use liveStatus instead of the frozen sosReport.status */}
-                        {liveStatus === "pending" ? "Request received" : liveStatus}
+                        {status}
                     </div>
+
                     <p className="emergency-description">
-                        <h3>Severity: <strong>{sosReport.severityLabel}</strong></h3> — Rescue assistance
-                        will be coordinated using your current location.
+                        Your emergency request is being processed.
+                        Rescue assistance will be coordinated using your
+                        current location.
                     </p>
+
                 </section>
 
+                {/* Location */}
                 <section className="emergency-card">
+
                     <div className="card-heading">
                         <span>📍</span>
                         <h3>Your Location</h3>
@@ -100,31 +128,54 @@ function Emergency() {
 
                     {location ? (
                         <div className="location-details">
+
                             <div className="location-item">
                                 <span>Latitude</span>
-                                <strong>{location.latitude.toFixed(6)}</strong>
+                                <strong>
+                                    {location.latitude.toFixed(6)}
+                                </strong>
                             </div>
+
                             <div className="location-item">
                                 <span>Longitude</span>
-                                <strong>{location.longitude.toFixed(6)}</strong>
+                                <strong>
+                                    {location.longitude.toFixed(6)}
+                                </strong>
                             </div>
+
                             <div className="location-item">
                                 <span>Accuracy</span>
-                                <strong>{location.accuracy} m</strong>
+                                <strong>
+                                    {location.accuracy} m
+                                </strong>
                             </div>
+
                         </div>
                     ) : (
-                        <p>Location not available.</p>
+                        <div className="location-loading">
+                            <div className="loader"></div>
+                            <p>Detecting your current location...</p>
+                        </div>
                     )}
+
+                    {locationError && (
+                        <p className="location-error">
+                            {locationError}
+                        </p>
+                    )}
+
                 </section>
 
+                {/* Rescue Status */}
                 <section className="emergency-card">
+
                     <div className="card-heading">
                         <span>🛟</span>
                         <h3>Rescue Status</h3>
                     </div>
 
                     <div className="rescue-timeline">
+
                         <div className="timeline-step completed">
                             <div className="timeline-circle">✓</div>
                             <div>
@@ -132,7 +183,9 @@ function Emergency() {
                                 <p>Your emergency request has been created.</p>
                             </div>
                         </div>
+
                         <div className="timeline-line"></div>
+
                         <div className="timeline-step completed">
                             <div className="timeline-circle">✓</div>
                             <div>
@@ -140,45 +193,67 @@ function Emergency() {
                                 <p>Emergency services have received your request.</p>
                             </div>
                         </div>
+
                         <div className="timeline-line"></div>
-                        {/* FIX: all status-driven steps now use liveStatus */}
-                        <div className={`timeline-step ${liveStatus !== "pending" ? "completed" : "active"}`}>
+
+                        <div className="timeline-step active">
                             <div className="timeline-circle">3</div>
                             <div>
                                 <strong>Rescue Team Assignment</strong>
                                 <p>Finding the nearest available rescue team.</p>
                             </div>
                         </div>
+
                         <div className="timeline-line"></div>
-                        <div className={`timeline-step ${liveStatus === "in-progress" || liveStatus === "resolved" ? "completed" : liveStatus === "assigned" ? "active" : ""}`}>
+
+                        <div className="timeline-step">
                             <div className="timeline-circle">4</div>
                             <div>
                                 <strong>Team On The Way</strong>
                                 <p>Rescue team will be dispatched.</p>
                             </div>
                         </div>
+
                         <div className="timeline-line"></div>
-                        <div className={`timeline-step ${liveStatus === "resolved" ? "completed" : liveStatus === "in-progress" ? "active" : ""}`}>
+
+                        <div className="timeline-step">
                             <div className="timeline-circle">5</div>
                             <div>
                                 <strong>Help Arrived</strong>
                                 <p>Emergency assistance has reached you.</p>
                             </div>
                         </div>
+
                     </div>
+
                 </section>
 
+                {/* Emergency Actions */}
                 <section className="emergency-actions">
-                    <button className="call-btn" onClick={handleCall}>
+
+                    <button
+                        className="call-btn"
+                        onClick={handleCall}
+                    >
                         📞 Call Emergency Services
                     </button>
-                    <button className="share-btn" onClick={handleShareLocation}>
+
+                    <button
+                        className="share-btn"
+                        onClick={handleShareLocation}
+                    >
                         📍 Share My Location
                     </button>
-                    <button className="cancel-btn" onClick={handleCancel}>
+
+                    <button
+                        className="cancel-btn"
+                        onClick={handleCancel}
+                    >
                         Cancel SOS
                     </button>
+
                 </section>
+
             </main>
         </div>
     );
