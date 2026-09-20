@@ -12,74 +12,200 @@ function calculateRiskLevel(score) {
 async function getAuthorityDashboard() {
     const [habitations, relocationSites] = await Promise.all([
         Habitation.find({}).lean(),
-        RelocationSite.find({}).lean()   // FIXED: was missing entirely
+        RelocationSite.find({}).lean()
     ]);
 
-    const assessed = habitations.filter(h => typeof h.riskScore === "number");
-    const red = assessed.filter(h => h.riskLevel === "RED");
-    const orange = assessed.filter(h => h.riskLevel === "ORANGE");
-    const yellow = assessed.filter(h => h.riskLevel === "YELLOW");
-    const green = assessed.filter(h => h.riskLevel === "GREEN");
+    /*
+     * IMPORTANT:
+     * A village is considered assessed ONLY when the ML assessment
+     * has successfully completed.
+     *
+     * Do NOT use:
+     * typeof h.riskScore === "number"
+     *
+     * because seeded/demo risk values could already exist in MongoDB.
+     */
+    const assessed = habitations.filter(
+        habitation => habitation.assessmentStatus === "ASSESSED"
+    );
 
-    const peopleAtRisk = [...red, ...orange].reduce((sum, v) => sum + (v.population || 0), 0);
-    const immediateRelocation = assessed.filter(h => h.relocationPriority === "IMMEDIATE").length;
-    const safeSites = relocationSites.filter(site => (site.capacity?.available || 0) > 0).length;
+    const red = assessed.filter(
+        habitation => habitation.riskLevel === "RED"
+    );
 
+    const orange = assessed.filter(
+        habitation => habitation.riskLevel === "ORANGE"
+    );
+
+    const yellow = assessed.filter(
+        habitation => habitation.riskLevel === "YELLOW"
+    );
+
+    const green = assessed.filter(
+        habitation => habitation.riskLevel === "GREEN"
+    );
+
+    /*
+     * People at risk:
+     * Count population only from ML-assessed RED + ORANGE villages.
+     */
+    const peopleAtRisk = [...red, ...orange].reduce(
+        (sum, habitation) => sum + (habitation.population || 0),
+        0
+    );
+
+    /*
+     * Immediate relocation:
+     * Count only ML-assessed villages whose ML result says
+     * relocationPriority = IMMEDIATE.
+     */
+    const immediateRelocation = assessed.filter(
+        habitation =>
+            habitation.relocationPriority === "IMMEDIATE"
+    ).length;
+
+    /*
+     * Safe sites are independent of ML village assessment.
+     * They come from actual relocation-site records.
+     */
+    const safeSites = relocationSites.filter(
+        site => (site.capacity?.available || 0) > 0
+    ).length;
+
+    /*
+     * Average risk score of ML-assessed villages only.
+     */
     const overallRiskScore = assessed.length
-        ? Number((assessed.reduce((sum, v) => sum + (v.riskScore || 0), 0) / assessed.length).toFixed(2))
+        ? Number(
+              (
+                  assessed.reduce(
+                      (sum, habitation) =>
+                          sum + (habitation.riskScore || 0),
+                      0
+                  ) / assessed.length
+              ).toFixed(2)
+          )
         : 0;
 
+    /*
+     * Map should contain ONLY ML-assessed villages
+     * with valid GeoJSON coordinates.
+     */
     const features = assessed
-        .filter(v => Array.isArray(v.location?.coordinates) && v.location.coordinates.length === 2)
-        .map(v => ({
+        .filter(
+            habitation =>
+                Array.isArray(habitation.location?.coordinates) &&
+                habitation.location.coordinates.length === 2
+        )
+        .map(habitation => ({
             type: "Feature",
-            geometry: { type: "Point", coordinates: v.location.coordinates },
+
+            geometry: {
+                type: "Point",
+                coordinates: habitation.location.coordinates
+            },
+
             properties: {
-                habitationId: v.habitationId,
-                name: v.name,
-                population: v.population || 0,
-                riskScore: v.riskScore,
-                riskLevel: v.riskLevel,
-                vulnerabilityScore: v.vulnerabilityScore,
-                relocationPriority: v.relocationPriority,
-                capacityStatus: v.capacityStatus
+                habitationId: habitation.habitationId,
+                name: habitation.name,
+                population: habitation.population || 0,
+
+                riskScore: habitation.riskScore,
+                riskLevel: habitation.riskLevel,
+
+                vulnerabilityScore:
+                    habitation.vulnerabilityScore,
+
+                relocationPriority:
+                    habitation.relocationPriority,
+
+                capacityStatus:
+                    habitation.capacityStatus
             }
         }));
 
+    /*
+     * Check ML service health.
+     */
     let mlStatus = "unknown";
+
     try {
         const health = await getMLHealth();
+
         mlStatus = health.status || "unknown";
-    } catch {
+    } catch (error) {
+        console.error(
+            "ML health check failed:",
+            error.message
+        );
+
         mlStatus = "unavailable";
     }
 
     return {
         success: true,
-        systemStatus: mlStatus === "healthy" ? "operational" : "degraded",
+
+        systemStatus:
+            mlStatus === "healthy"
+                ? "operational"
+                : "degraded",
+
         dataSource: {
             mlService: mlStatus === "healthy",
+
+            // Total villages present in MongoDB
             villages: habitations.length,
+
+            // Villages successfully assessed by ML
             assessedVillages: assessed.length
         },
+
         summary: {
             criticalRedZones: red.length,
+
             peopleAtRisk,
+
             immediateRelocation,
+
             safeSites
         },
+
         riskOverview: {
-            overallRiskScore, // FIXED typo
-            riskLevel: calculateRiskLevel(overallRiskScore),
-            affectedVillages: red.length + orange.length,
-            criticalVillages: red.length,
-            highRiskVillages: orange.length,
-            totalVillages: habitations.length,
-            assessedVillages: assessed.length,
-            distribution: { red: red.length, orange: orange.length, yellow: yellow.length, green: green.length }
+            overallRiskScore,
+
+            riskLevel:
+                calculateRiskLevel(overallRiskScore),
+
+            affectedVillages:
+                red.length + orange.length,
+
+            criticalVillages:
+                red.length,
+
+            highRiskVillages:
+                orange.length,
+
+            totalVillages:
+                habitations.length,
+
+            assessedVillages:
+                assessed.length,
+
+            distribution: {
+                red: red.length,
+                orange: orange.length,
+                yellow: yellow.length,
+                green: green.length
+            }
         },
-        map: { type: "FeatureCollection", features }
+
+        map: {
+            type: "FeatureCollection",
+            features
+        }
     };
 }
 
-module.exports = { getAuthorityDashboard };
+module.exports = {
+    getAuthorityDashboard
+};
