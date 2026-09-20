@@ -24,6 +24,7 @@ import GISMonitoring from "./pages/GISMonitoring";
 import RiskIntelligence from "./pages/RiskIntelligence";
 import Relocation from "./pages/Relocation";
 import SafeSites from "./pages/SafeSites";
+import CreateHabitation from './components/CreateHabitation';
 
 function App() {
     return (
@@ -144,6 +145,8 @@ function App() {
                     path="/authority/safe-sites"
                     element={<SafeSites />}
                 />
+
+                <Route path="/authority/create-habitation" element={<ProtectedRoute allowedRoles={["authority"]}><CreateHabitation /></ProtectedRoute>} />
         </Routes>
         </BrowserRouter>
     );

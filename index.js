@@ -48,7 +48,7 @@ app.get("/api/health", (req, res) => {
 });
 
 app.use("/api/auth", require("./routes/authroutes.js"));
-app.use("/api/habitations", require("./routes/habitationRoutes.js"));
+app.use("/api/habitations", require("./routes/habitationroutes.js"));
 app.use("/api/relocation", require("./routes/relocationroutes.js"));
 app.use("/api/dashboard", require("./routes/dashboardroutes.js"));
 app.use("/api/sos", require("./routes/sosroutes.js"));

@@ -40,6 +40,9 @@ async function getHabitationPrediction(habitation) {
         return { success: false, error: "Required ML inputs are missing", missingFields };
     }
 
+    // GeoJSON coordinates are [longitude, latitude]
+    const [longitude, latitude] = habitation.location?.coordinates || [];
+
     const payload = {
         habitationId: habitation.habitationId,
         name: habitation.name,
@@ -50,12 +53,14 @@ async function getHabitationPrediction(habitation) {
         building_damage: Number(habitation.buildingDamage),
         vulnerable_population: Number(habitation.vulnerablePopulation),
         water_level: Number(habitation.waterLevel),
-        road_access: Number(habitation.roadAccess), // FIXED: was habitation.waterLevel
+        road_access: Number(habitation.roadAccess),
         hospital_distance: Number(habitation.hospitalDistance),
         shelter_capacity: Number(habitation.shelterCapacity),
         available_water: Number(habitation.availableWater),
         food_stock: Number(habitation.foodStock),
-        medical_capacity: Number(habitation.medicalCapacity)
+        medical_capacity: Number(habitation.medicalCapacity),
+        latitude: latitude ?? 0,
+        longitude: longitude ?? 0
     };
 
     return await mlPost("/predict/habitation", payload);

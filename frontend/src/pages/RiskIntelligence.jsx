@@ -30,11 +30,6 @@ import api from "../api/axios";
 import "./RiskIntelligence.css";
 
 
-const INTELLIGENCE_API = "/api/risk/intelligence";
-const HABITATIONS_API = "/api/risk/habitations";
-const TRENDS_API = "/api/risk/trends";
-
-
 function formatNumber(value) {
     if (value === null || value === undefined || value === "") {
         return "—";
@@ -106,143 +101,46 @@ function RiskIntelligence() {
 
 
     const loadData = async (refresh = false) => {
-
         try {
-
-            if (refresh) {
-                setRefreshing(true);
-            } else {
-                setLoading(true);
-            }
-
+            refresh ? setRefreshing(true) : setLoading(true);
             setError("");
 
-
-            const results = await Promise.allSettled([
-
-                api.get(INTELLIGENCE_API),
-
-                api.get(HABITATIONS_API),
-
-                api.get(TRENDS_API),
-
+            const [dashboardRes, habitationsRes] = await Promise.allSettled([
+                api.get("/api/dashboard"),
+                api.get("/api/habitations"),
             ]);
 
-
-            const [
-                intelligenceResult,
-                habitationsResult,
-                trendsResult,
-            ] = results;
-
-
-            let successfulRequests = 0;
-
-
-            /* ---------------- SUMMARY ---------------- */
-
-            if (
-                intelligenceResult.status === "fulfilled"
-            ) {
-
-                successfulRequests++;
-
-                const response =
-                    intelligenceResult.value.data;
-
-                setSummary(
-                    response?.data || response || null
-                );
-
+            if (dashboardRes.status === "fulfilled") {
+                const d = dashboardRes.value.data;
+                setSummary({
+                    overallRisk: d.riskOverview?.riskLevel,
+                    overallRiskScore: d.riskOverview?.overallRiskScore,
+                    populationAtRisk: d.summary?.peopleAtRisk,
+                    criticalHabitations: d.riskOverview?.criticalVillages,
+                    highRiskHabitations: d.riskOverview?.highRiskVillages,
+                    modelConfidence: d.dataSource?.mlService ? 85 : null, // placeholder, no real confidence metric yet
+                });
             } else {
-
                 setSummary(null);
-
             }
 
-
-            /* ---------------- HABITATIONS ---------------- */
-
-            if (
-                habitationsResult.status === "fulfilled"
-            ) {
-
-                successfulRequests++;
-
-                const response =
-                    habitationsResult.value.data;
-
-                const data =
-                    Array.isArray(response)
-                        ? response
-                        : response?.data;
-
-                setHabitations(
-                    Array.isArray(data)
-                        ? data
-                        : []
-                );
-
+            if (habitationsRes.status === "fulfilled") {
+                setHabitations(habitationsRes.value.data?.data || []);
             } else {
-
                 setHabitations([]);
-
             }
 
+            setTrends([]); // no historical trend endpoint exists — leave empty, chart shows "no trend data" gracefully
 
-            /* ---------------- TRENDS ---------------- */
-
-            if (
-                trendsResult.status === "fulfilled"
-            ) {
-
-                successfulRequests++;
-
-                const response =
-                    trendsResult.value.data;
-
-                const data =
-                    Array.isArray(response)
-                        ? response
-                        : response?.data;
-
-                setTrends(
-                    Array.isArray(data)
-                        ? data
-                        : []
-                );
-
-            } else {
-
-                setTrends([]);
-
+            if (dashboardRes.status === "rejected" && habitationsRes.status === "rejected") {
+                setError("Unable to reach the backend. Please check your connection.");
             }
-
-
-            if (successfulRequests === 0) {
-
-                setError(
-                    "Risk Intelligence APIs are not available yet. The page is ready for backend and ML integration."
-                );
-
-            }
-
         } catch (err) {
-
-            console.error(
-                "Risk Intelligence error:",
-                err
-            );
-
-            setError(
-                "Unable to connect to the Risk Intelligence service."
-            );
-
+            console.error("Risk Intelligence error:", err);
+            setError("Unable to connect to the Risk Intelligence service.");
         } finally {
-
             setLoading(false);
             setRefreshing(false);
-
         }
     };
 

@@ -560,3 +560,95 @@ module.exports.getMLServiceStatus = async (req, res) => {
         });
     }
 };
+
+module.exports.createHabitation = async (req, res) => {
+    try {
+        const {
+            habitationId, name, latitude, longitude,
+            population, rainfall, riverLevel, floodHistory, buildingDamage,
+            vulnerablePopulation, waterLevel, roadAccess, hospitalDistance,
+            shelterCapacity, availableWater, foodStock, medicalCapacity
+        } = req.body;
+
+        if (!habitationId || !name) {
+            return res.status(400).json({
+                success: false,
+                message: "habitationId and name are required"
+            });
+        }
+
+        const requiredNumericFields = {
+            population, rainfall, riverLevel, floodHistory, buildingDamage,
+            vulnerablePopulation, waterLevel, roadAccess, hospitalDistance,
+            shelterCapacity, availableWater, foodStock, medicalCapacity
+        };
+
+        const missing = Object.entries(requiredNumericFields)
+            .filter(([, value]) => value === undefined || value === null || value === "")
+            .map(([key]) => key);
+
+        if (missing.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Missing required fields",
+                missingFields: missing
+            });
+        }
+
+        const existing = await Habitation.findOne({ habitationId });
+        if (existing) {
+            return res.status(409).json({
+                success: false,
+                message: "A habitation with this ID already exists"
+            });
+        }
+
+        const habitation = new Habitation({
+            habitationId,
+            name,
+            location: {
+                type: "Point",
+                coordinates: (latitude != null && longitude != null)
+                    ? [Number(longitude), Number(latitude)]
+                    : undefined
+            },
+            population, rainfall, riverLevel, floodHistory, buildingDamage,
+            vulnerablePopulation, waterLevel, roadAccess, hospitalDistance,
+            shelterCapacity, availableWater, foodStock, medicalCapacity
+        });
+
+        await habitation.save();
+
+        // Immediately run through ML — this is the actual "authority submits, ML predicts" flow
+        const result = await assessHabitation(habitation);
+
+        if (!result.success) {
+            return res.status(201).json({
+                success: true,
+                message: "Habitation created, but ML assessment failed",
+                habitation,
+                assessmentError: result.error
+            });
+        }
+
+        const io = req.app.get("io");
+        if (io) {
+            io.emit("riskUpdated", {
+                habitationId: habitation.habitationId,
+                name: habitation.name,
+                riskScore: habitation.riskScore,
+                riskLevel: habitation.riskLevel,
+                relocationPriority: habitation.relocationPriority
+            });
+        }
+
+        res.status(201).json({
+            success: true,
+            message: "Habitation created and assessed",
+            habitation
+        });
+    } catch (error) {
+        console.error("Create habitation error:", error);
+        res.status(500).json({ success: false, message: "Failed to create habitation" });
+    }
+};

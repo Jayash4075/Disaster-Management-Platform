@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import api from "../api/axios";
 import {
     AlertTriangle,
     Building2,
@@ -31,11 +32,6 @@ import "leaflet/dist/leaflet.css";
 import "./GISMonitoring.css";
 
 
-/* =========================================================
-   API
-========================================================= */
-
-const GIS_API = "/api/gis/monitoring";
 
 
 /* =========================================================
@@ -224,158 +220,33 @@ function GISMonitoring() {
             setLoading(true);
             setError("");
 
-            const response = await fetch(
-                GIS_API,
-                {
-                    method: "GET",
-                    headers: {
-                        Accept:
-                            "application/json",
-                    },
-                }
-            );
-
-            if (!response.ok) {
-                throw new Error(
-                    `Backend returned ${response.status}`
-                );
-            }
-
-            const contentType =
-                response.headers.get(
-                    "content-type"
-                ) || "";
-
-            if (
-                !contentType.includes(
-                    "application/json"
-                )
-            ) {
-                throw new Error(
-                    "GIS API did not return JSON."
-                );
-            }
-
-            const result =
-                await response.json();
-
-
-            /*
-             * Expected backend structure:
-             *
-             * {
-             *   success: true,
-             *   data: {
-             *      habitations: [],
-             *      riskZones: [],
-             *      hospitals: [],
-             *      shelters: [],
-             *      emergencies: []
-             *   }
-             * }
-             */
-
-            const data =
-                result.data || result;
-
-
-            const habitations = Array.isArray(
-                data.habitations
-            )
-                ? data.habitations.map(
-                      normalizeLocation
-                  )
-                : [];
-
-
-            const hospitals = Array.isArray(
-                data.hospitals
-            )
-                ? data.hospitals.map(
-                      (item, index) =>
-                          normalizeLocation(
-                              {
-                                  ...item,
-                                  type: "hospital",
-                              },
-                              index
-                          )
-                  )
-                : [];
-
-
-            const shelters = Array.isArray(
-                data.shelters
-            )
-                ? data.shelters.map(
-                      (item, index) =>
-                          normalizeLocation(
-                              {
-                                  ...item,
-                                  type: "shelter",
-                              },
-                              index
-                          )
-                  )
-                : [];
-
-
-            const emergencies =
-                Array.isArray(
-                    data.emergencies
-                )
-                    ? data.emergencies.map(
-                          (item, index) =>
-                              normalizeLocation(
-                                  {
-                                      ...item,
-                                      type: "emergency",
-                                  },
-                                  index
-                              )
-                      )
-                    : [];
-
-
-            const riskZones =
-                Array.isArray(
-                    data.riskZones
-                )
-                    ? data.riskZones
-                    : [];
-
-
-            setLocations([
-                ...habitations,
-                ...hospitals,
-                ...shelters,
-                ...emergencies,
+            // your backend has no combined /gis endpoint — call habitations + relocation sites separately
+            const [habitationsRes, sitesRes] = await Promise.all([
+                api.get("/api/habitations"),
+                api.get("/api/relocation/sites").catch(() => ({ data: { data: [] } })) // fallback if this route doesn't exist yet
             ]);
 
+            const habitationData = (habitationsRes.data?.data || []).map((item, index) =>
+                normalizeLocation({
+                    ...item,
+                    type: "habitation",
+                    latitude: item.location?.coordinates?.[1],
+                    longitude: item.location?.coordinates?.[0],
+                    riskLevel: item.riskLevel,
+                    hazard: item.hazards ? Object.entries(item.hazards).sort((a, b) => b[1] - a[1])[0]?.[0] : "Unknown",
+                    affectedPopulation: ["RED", "ORANGE"].includes(item.riskLevel) ? item.population : 0,
+                    vulnerability: item.vulnerabilityScore,
+                    relocationPriority: item.relocationPriority,
+                }, index)
+            );
 
-            /*
-             * Store risk zones separately
-             * because they are geographic
-             * polygons/circles rather than
-             * individual locations.
-             */
-
-            setRiskZones(riskZones);
-
+            setLocations(habitationData);
+            setRiskZones([]); // no polygon endpoint yet — plain markers only for now
         } catch (err) {
-            console.error(
-                "GIS Monitoring API error:",
-                err
-            );
-
+            console.error("GIS Monitoring API error:", err);
             setLocations([]);
-
             setRiskZones([]);
-
-            setError(
-                err.message ||
-                    "Unable to load GIS monitoring data."
-            );
+            setError(err.response?.data?.message || err.message || "Unable to load GIS monitoring data.");
         } finally {
             setLoading(false);
         }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import api from "../api/axios";
 import {
     AlertTriangle,
     Building2,
@@ -18,78 +19,24 @@ import AuthorityTopbar from "../components/AuthorityTopbar";
 
 import "./Habitations.css";
 
-const HABITATIONS_API = "/api/habitations";
-
 function normalizeHabitation(item, index) {
     return {
-        id: item._id || item.id || `habitation-${index}`,
-
-        name:
-            item.name ||
-            item.habitationName ||
-            item.villageName ||
-            "Unnamed Habitation",
-
-        district:
-            item.district ||
-            item.location?.district ||
-            "Unknown",
-
+        id: item._id || item.habitationId || `habitation-${index}`,
+        name: item.name || "Unnamed Habitation",
+        district: item.location?.district || "Prayagraj",
         population: Number(item.population) || 0,
-
-        hazard:
-            item.hazard ||
-            item.primaryHazard ||
-            item.hazardType ||
-            "Unknown",
-
-        riskLevel:
-            item.riskLevel ||
-            item.risk ||
-            item.riskCategory ||
-            "Unknown",
-
-        vulnerability: Number(
-            item.vulnerability ??
-            item.vulnerabilityScore ??
-            0
-        ),
-
-        relocationPriority:
-            item.relocationPriority ||
-            item.priority ||
-            "Not assessed",
-
-        affectedPopulation: Number(
-            item.affectedPopulation ??
-            item.populationAtRisk ??
-            0
-        ),
-
-        latitude:
-            item.latitude ??
-            item.location?.latitude ??
-            null,
-
-        longitude:
-            item.longitude ??
-            item.location?.longitude ??
-            null,
-
-        riskFactors:
-            Array.isArray(item.riskFactors)
-                ? item.riskFactors
-                : [],
-
-        disasterHistory:
-            item.disasterHistory ||
-            item.history ||
-            [],
-
-        modelConfidence:
-            item.modelConfidence ??
-            item.confidence ??
-            null,
+        hazard: item.hazards
+            ? Object.entries(item.hazards).sort((a, b) => b[1] - a[1])[0]?.[0] || "Unknown"
+            : "Unknown",
+        riskLevel: item.riskLevel || "Unknown",
+        vulnerability: Number(item.vulnerabilityScore ?? 0),
+        relocationPriority: item.relocationPriority || "Not assessed",
+        affectedPopulation: ["RED", "ORANGE"].includes(item.riskLevel) ? (Number(item.population) || 0) : 0,
+        latitude: item.location?.coordinates?.[1] ?? null,
+        longitude: item.location?.coordinates?.[0] ?? null,
+        riskFactors: [],
+        disasterHistory: [],
+        modelConfidence: item.riskProbability != null ? Math.round(item.riskProbability * 100) : null,
     };
 }
 
@@ -129,84 +76,42 @@ function Habitations() {
     // FETCH DATA FROM BACKEND
     // ---------------------------------------------------------
 
-    useEffect(() => {
-        let cancelled = false;
+    
+                   
+            useEffect(() => {
+    let cancelled = false;
 
-        async function fetchHabitations() {
-            try {
-                setLoading(true);
-                setError("");
+    async function fetchHabitations() {
+        try {
+            setLoading(true);
+            setError("");
 
-                const response = await fetch(HABITATIONS_API, {
-                    method: "GET",
-                    headers: {
-                        Accept: "application/json",
-                    },
-                });
+            const response = await api.get("/api/habitations");
+            const rawData = response.data?.data || [];
 
-                if (!response.ok) {
-                    throw new Error(
-                        `Backend returned ${response.status}`
-                    );
-                }
-
-                const contentType =
-                    response.headers.get("content-type") || "";
-
-                if (!contentType.includes("application/json")) {
-                    throw new Error(
-                        "Habitation API did not return JSON."
-                    );
-                }
-
-                const result = await response.json();
-
-                const rawData = Array.isArray(result)
-                    ? result
-                    : result.data ||
-                      result.habitations ||
-                      result.results ||
-                      [];
-
-                if (!Array.isArray(rawData)) {
-                    throw new Error(
-                        "Invalid habitation data received from backend."
-                    );
-                }
-
-                const normalized = rawData.map(
-                    normalizeHabitation
-                );
-
-                if (!cancelled) {
-                    setHabitations(normalized);
-                }
-            } catch (err) {
-                console.error(
-                    "Habitations API error:",
-                    err
-                );
-
-                if (!cancelled) {
-                    setHabitations([]);
-                    setError(
-                        err.message ||
-                        "Unable to load habitation data."
-                    );
-                }
-            } finally {
-                if (!cancelled) {
-                    setLoading(false);
-                }
+            if (!Array.isArray(rawData)) {
+                throw new Error("Invalid habitation data received from backend.");
             }
+
+            const normalized = rawData.map(normalizeHabitation);
+
+            if (!cancelled) {
+                setHabitations(normalized);
+            }
+        } catch (err) {
+            console.error("Habitations API error:", err);
+            if (!cancelled) {
+                setHabitations([]);
+                setError(err.response?.data?.message || err.message || "Unable to load habitation data.");
+            }
+        } finally {
+            if (!cancelled) setLoading(false);
         }
+    }
 
-        fetchHabitations();
-
-        return () => {
-            cancelled = true;
-        };
-    }, []);
+    fetchHabitations();
+    return () => { cancelled = true; };
+}, []);
 
     // ---------------------------------------------------------
     // DYNAMIC FILTER OPTIONS
