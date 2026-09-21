@@ -5,9 +5,9 @@ const {
 } = require("../utils/mlService");
 
 
-// =====================================================
-// SAVE ML RESULT
-// =====================================================
+// ============================================================
+// APPLY ML PREDICTION TO HABITATION
+// ============================================================
 
 function applyPrediction(
     habitation,
@@ -15,7 +15,7 @@ function applyPrediction(
 ) {
 
     habitation.riskScore =
-        prediction.riskScore ?? 0;
+        Number(prediction.riskScore) || 0;
 
 
     habitation.riskLevel =
@@ -27,12 +27,13 @@ function applyPrediction(
 
 
     if (
-        prediction.vulnerabilityScore !==
-        undefined
+        prediction.vulnerabilityScore !== undefined &&
+        prediction.vulnerabilityScore !== null
     ) {
 
         habitation.vulnerabilityScore =
-            prediction.vulnerabilityScore;
+            Number(prediction.vulnerabilityScore);
+
     }
 
 
@@ -40,37 +41,42 @@ function applyPrediction(
         prediction.hazards || {};
 
 
-    if (prediction.details) {
+    // --------------------------------------------------------
+    // Carrying capacity / probability details
+    // --------------------------------------------------------
 
-        habitation.capacityRatio =
-            prediction.details
-                ?.carryingCapacity
-                ?.capacityRatio ?? null;
-
-
-        habitation.capacityStatus =
-            prediction.details
-                ?.carryingCapacity
-                ?.status ?? null;
+    habitation.capacityRatio =
+        prediction.details
+            ?.carryingCapacity
+            ?.capacityRatio ?? null;
 
 
-        habitation.riskProbability =
-            prediction.details
-                ?.riskProbability ?? null;
+    habitation.capacityStatus =
+        prediction.details
+            ?.carryingCapacity
+            ?.status ?? null;
 
 
-        habitation.relocationProbability =
-            prediction.details
-                ?.relocation
-                ?.probability ?? null;
+    habitation.riskProbability =
+        prediction.details
+            ?.riskProbability ?? null;
 
 
-        habitation.capacityProbability =
-            prediction.details
-                ?.carryingCapacity
-                ?.probability ?? null;
-    }
+    habitation.relocationProbability =
+        prediction.details
+            ?.relocation
+            ?.probability ?? null;
 
+
+    habitation.capacityProbability =
+        prediction.details
+            ?.carryingCapacity
+            ?.probability ?? null;
+
+
+    // --------------------------------------------------------
+    // Assessment metadata
+    // --------------------------------------------------------
 
     habitation.assessmentStatus =
         "ASSESSED";
@@ -86,12 +92,13 @@ function applyPrediction(
 
     habitation.lastAssessment =
         new Date();
+
 }
 
 
-// =====================================================
+// ============================================================
 // RUN ML ASSESSMENT
-// =====================================================
+// ============================================================
 
 async function assessHabitation(
     habitation
@@ -105,27 +112,52 @@ async function assessHabitation(
             );
 
 
-        // Missing input
-        if (!prediction.success) {
+        // ----------------------------------------------------
+        // ML returned an application-level failure
+        // ----------------------------------------------------
+
+        if (
+            !prediction ||
+            prediction.success === false
+        ) {
 
             habitation.assessmentStatus =
-                prediction.missingFields
+                prediction?.missingFields ||
+                prediction?.invalidFields
                     ? "INPUTS_MISSING"
                     : "ML_ERROR";
 
 
             habitation.assessmentError =
-                prediction.error;
+                prediction?.error ||
+                "ML prediction failed";
 
 
             await habitation.save();
 
 
-            return prediction;
+            return {
+
+                success: false,
+
+                error:
+                    habitation.assessmentError,
+
+                missingFields:
+                    prediction?.missingFields || [],
+
+                invalidFields:
+                    prediction?.invalidFields || []
+
+            };
+
         }
 
 
-        // Save ML result
+        // ----------------------------------------------------
+        // Save successful ML result
+        // ----------------------------------------------------
+
         applyPrediction(
             habitation,
             prediction
@@ -147,6 +179,12 @@ async function assessHabitation(
 
     } catch (error) {
 
+        console.error(
+            "Habitation ML assessment error:",
+            error.message
+        );
+
+
         habitation.assessmentStatus =
             "ML_ERROR";
 
@@ -159,13 +197,15 @@ async function assessHabitation(
 
 
         throw error;
+
     }
+
 }
 
 
-// =====================================================
-// UPDATE AUTHORITY INPUTS
-// =====================================================
+// ============================================================
+// UPDATE CURRENT CONDITIONS
+// ============================================================
 
 async function updateHabitationInputs(
     habitation,
@@ -201,32 +241,40 @@ async function updateHabitationInputs(
     ];
 
 
-    for (const field of allowedFields) {
+    for (
+        const field of allowedFields
+    ) {
 
         if (
-            inputData[field] !==
-            undefined
+            inputData[field] !== undefined
         ) {
 
             const value =
                 Number(inputData[field]);
 
 
-            if (Number.isNaN(value)) {
+            if (
+                Number.isNaN(value)
+            ) {
 
                 throw new Error(
                     `${field} must be a valid number`
                 );
+
             }
 
 
-            habitation[field] = value;
+            habitation[field] =
+                value;
+
         }
+
     }
 
 
-    // Inputs changed,
-    // previous ML result is no longer current
+    // --------------------------------------------------------
+    // Previous ML result is now outdated
+    // --------------------------------------------------------
 
     habitation.assessmentStatus =
         "NOT_ASSESSED";
@@ -240,8 +288,13 @@ async function updateHabitationInputs(
 
 
     return habitation;
+
 }
 
+
+// ============================================================
+// EXPORTS
+// ============================================================
 
 module.exports = {
 

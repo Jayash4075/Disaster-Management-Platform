@@ -58,6 +58,10 @@ app.use(
     "/api/shelters",
     require("./routes/shelterroutes.js")
 );
+app.use(
+    "/api/rescue-teams",
+    require("./routes/rescueroutes.js")
+);
 app.use("/api/resource-requests", require("./routes/resourcerequestroutes"));
 
 app.set("io", io);

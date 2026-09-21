@@ -2,11 +2,10 @@ const Habitation = require("../models/Habitation.js");
 const RelocationSite = require("../models/RelocationSite.js");
 
 const {
-    assessHabitation
+    assessHabitation, updateHabitationInputs
 } = require("../services/habitationAssessmentService.js");
 
-const {
-    getVillages, searchVillages, getHabitationPrediction, getMLHealth
+const { getHabitationPrediction, getMLHealth, getVillages, searchVillages
 } = require("../utils/mlService");
 
 

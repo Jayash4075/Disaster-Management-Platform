@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import api from "../api/axios";
 import {
     MapPin,
     ShieldCheck,
@@ -19,7 +20,7 @@ import AuthorityTopbar from "../components/AuthorityTopbar";
 
 import "./SafeSites.css";
 
-const API_ENDPOINT = "/api/safe-sites";
+const API_ENDPOINT = "/api/relocation/sites";
 
 const SafeSites = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -36,7 +37,7 @@ const SafeSites = () => {
             setLoading(true);
             setError("");
 
-            const response = await fetch(API_ENDPOINT);
+            const response = await api.get(API_ENDPOINT);
 
             if (!response.ok) {
                 throw new Error(
@@ -44,7 +45,7 @@ const SafeSites = () => {
                 );
             }
 
-            const data = await response.json();
+            const data = response.data();
 
             /*
              * Supports either:

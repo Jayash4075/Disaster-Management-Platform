@@ -124,3 +124,34 @@ module.exports.getAllSites = async (req, res) => {
         res.status(500).json({ success: false, message: "Failed to load relocation sites" });
     }
 };
+
+module.exports.getSafeSites = async (req, res) => {
+    try {
+        const sites = await RelocationSite.find({
+            "capacity.available": {
+                $gt: 0
+            }
+        })
+        .sort({
+            suitabilityScore: -1
+        })
+        .lean();
+
+        return res.status(200).json({
+            success: true,
+            count: sites.length,
+            sites
+        });
+
+    } catch (error) {
+        console.error(
+            "Safe sites error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to load safe sites"
+        });
+    }
+};

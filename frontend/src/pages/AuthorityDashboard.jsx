@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import socket from "../api/socket";
+
 import {
     AlertTriangle,
     ChevronRight,
@@ -74,8 +73,6 @@ function AuthorityDashboard() {
     const [selectedAlert, setSelectedAlert] =
         useState(null);
 
-    const navigate = useNavigate();
-
 
     // =========================================================
     // EXTRACT ARRAY FROM BACKEND RESPONSE
@@ -125,7 +122,7 @@ function AuthorityDashboard() {
 
             const response =
                 await api.get(
-                    "/api/dashboard"
+                    "/api/dashboard/authority"
                 );
 
             if (!response.data) {
@@ -253,15 +250,20 @@ function AuthorityDashboard() {
 
     useEffect(() => {
 
-        const handleRiskUpdate = () => {
-            fetchAuthorityDashboard();
+        const loadDashboard = async () => {
+
+            setLoading(true);
+
+            await Promise.all([
+                fetchAuthorityDashboard(),
+                fetchSupplementaryData(),
+            ]);
+
+            setLoading(false);
+
         };
 
-        socket.on("riskUpdated", handleRiskUpdate);
-
-        return () => {
-            socket.off("riskUpdated", handleRiskUpdate);
-        };
+        loadDashboard();
 
     }, []);
 
@@ -476,15 +478,6 @@ function AuthorityDashboard() {
                                 </div>
 
                             </div>
-
-                            <button
-                                className="refresh-button"
-                                onClick={() => navigate("/authority/assess-village")}
-                                style={{ background: "#1e3a8a", color: "#fff", borderColor: "#1e3a8a" }}
-                            >
-                                <ShieldAlert size={16} />
-                                Assess New Village
-                            </button>
 
 
                             <button
