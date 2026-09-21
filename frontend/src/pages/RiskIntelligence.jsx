@@ -106,8 +106,8 @@ function RiskIntelligence() {
             setError("");
 
             const [dashboardRes, habitationsRes] = await Promise.allSettled([
-                api.get("/api/dashboard"),
-                api.get("/api/habitations"),
+                api.get("/api/dashboard/authority"),
+                api.get("/api/habitations/ml-service-status"),
             ]);
 
             if (dashboardRes.status === "fulfilled") {

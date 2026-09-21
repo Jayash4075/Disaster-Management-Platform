@@ -114,3 +114,13 @@ module.exports.getPriorityVillages = async (req, res) => {
         return res.status(500).json({ success: false, message: "Failed to load relocation priorities" });
     }
 };
+
+module.exports.getAllSites = async (req, res) => {
+    try {
+        const sites = await RelocationSite.find({}).lean();
+        res.status(200).json({ success: true, data: sites });
+    } catch (error) {
+        console.error("Get all sites error:", error);
+        res.status(500).json({ success: false, message: "Failed to load relocation sites" });
+    }
+};

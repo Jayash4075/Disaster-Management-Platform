@@ -6,7 +6,7 @@ const {
 } = require("../services/habitationAssessmentService.js");
 
 const {
-    getMLHealth
+    getVillages, searchVillages, getHabitationPrediction, getMLHealth
 } = require("../utils/mlService");
 
 
@@ -134,51 +134,85 @@ module.exports.getHabitation = async (req, res) => {
 // ============================================================
 
 module.exports.recalculateRisk = async (req, res) => {
+
     try {
+
         const habitation =
             await Habitation.findOne({
                 habitationId: req.params.id
             });
 
+
         if (!habitation) {
+
             return res.status(404).json({
+
                 success: false,
+
                 message:
                     "Habitation not found"
+
             });
         }
 
-        /*
-         * Send habitation to ML service.
-         */
+
         const result =
             await assessHabitation(
                 habitation
             );
 
-        /*
-         * Required ML inputs are missing.
-         */
+
         if (!result.success) {
-            return res.status(422).json({
+
+            return res.status(400).json({
+
                 success: false,
 
                 message:
-                    result.error ||
-                    "Assessment failed",
+                    result.error,
 
                 missingFields:
                     result.missingFields || []
+
             });
         }
 
-        /*
-         * Real-time dashboard update.
-         */
-        const io = req.app.get("io");
+
+        // Real-time dashboard update
+        const io =
+            req.app.get("io");
+
 
         if (io) {
-            io.emit("riskUpdated", {
+
+            io.emit(
+                "riskUpdated",
+                {
+                    habitationId:
+                        habitation.habitationId,
+
+                    riskScore:
+                        habitation.riskScore,
+
+                    riskLevel:
+                        habitation.riskLevel,
+
+                    relocationPriority:
+                        habitation.relocationPriority
+                }
+            );
+        }
+
+
+        return res.status(200).json({
+
+            success: true,
+
+            message:
+                "Risk assessment completed successfully",
+
+            data: {
+
                 habitationId:
                     habitation.habitationId,
 
@@ -194,33 +228,50 @@ module.exports.recalculateRisk = async (req, res) => {
                 relocationPriority:
                     habitation.relocationPriority,
 
-                assessmentStatus:
-                    habitation.assessmentStatus
-            });
-        }
+                vulnerabilityScore:
+                    habitation.vulnerabilityScore,
 
-        res.status(200).json({
-            success: true,
+                riskProbability:
+                    habitation.riskProbability,
 
-            message:
-                "Risk recalculated successfully",
+                relocationProbability:
+                    habitation.relocationProbability,
 
-            habitation
+                capacityProbability:
+                    habitation.capacityProbability,
+
+                capacityRatio:
+                    habitation.capacityRatio,
+
+                capacityStatus:
+                    habitation.capacityStatus,
+
+                lastAssessment:
+                    habitation.lastAssessment,
+
+                modelVersion:
+                    habitation.modelVersion
+
+            }
+
         });
+
     } catch (error) {
+
         console.error(
-            "Recalculate error:",
+            "Risk recalculation error:",
             error
         );
 
-        res.status(503).json({
+
+        return res.status(500).json({
+
             success: false,
 
             message:
-                "ML assessment failed",
+                error.message ||
+                "Risk calculation failed"
 
-            detail:
-                error.message
         });
     }
 };
@@ -650,5 +701,461 @@ module.exports.createHabitation = async (req, res) => {
     } catch (error) {
         console.error("Create habitation error:", error);
         res.status(500).json({ success: false, message: "Failed to create habitation" });
+    }
+};
+
+module.exports.updateInputs = async (req, res) => {
+
+    try {
+
+        const habitation =
+            await Habitation.findOne({
+                habitationId: req.params.id
+            });
+
+
+        if (!habitation) {
+
+            return res.status(404).json({
+
+                success: false,
+
+                message:
+                    "Habitation not found"
+
+            });
+        }
+
+
+        const updatedHabitation =
+            await updateHabitationInputs(
+                habitation,
+                req.body
+            );
+
+
+        return res.status(200).json({
+
+            success: true,
+
+            message:
+                "Current habitation inputs updated successfully",
+
+            data: {
+
+                habitationId:
+                    updatedHabitation.habitationId,
+
+                name:
+                    updatedHabitation.name,
+
+                inputs: {
+
+                    rainfall:
+                        updatedHabitation.rainfall,
+
+                    riverLevel:
+                        updatedHabitation.riverLevel,
+
+                    floodHistory:
+                        updatedHabitation.floodHistory,
+
+                    buildingDamage:
+                        updatedHabitation.buildingDamage,
+
+                    vulnerablePopulation:
+                        updatedHabitation.vulnerablePopulation,
+
+                    waterLevel:
+                        updatedHabitation.waterLevel,
+
+                    roadAccess:
+                        updatedHabitation.roadAccess,
+
+                    hospitalDistance:
+                        updatedHabitation.hospitalDistance,
+
+                    shelterCapacity:
+                        updatedHabitation.shelterCapacity,
+
+                    availableWater:
+                        updatedHabitation.availableWater,
+
+                    foodStock:
+                        updatedHabitation.foodStock,
+
+                    medicalCapacity:
+                        updatedHabitation.medicalCapacity
+                },
+
+                assessmentStatus:
+                    updatedHabitation.assessmentStatus
+
+            }
+
+        });
+
+    } catch (error) {
+
+        console.error(
+            "Update habitation inputs error:",
+            error
+        );
+
+
+        return res.status(400).json({
+
+            success: false,
+
+            message:
+                error.message ||
+                "Unable to update habitation inputs"
+
+        });
+    }
+};
+
+module.exports.getMLVillages = async (req, res) => {
+
+    try {
+
+        const data =
+            await getVillages();
+
+
+        return res.status(200).json({
+
+            success: true,
+
+            data
+
+        });
+
+    } catch (error) {
+
+        console.error(
+            "Get ML villages error:",
+            error
+        );
+
+
+        return res.status(503).json({
+
+            success: false,
+
+            message:
+                "Unable to fetch villages from ML service"
+
+        });
+    }
+};
+
+module.exports.searchMLVillages = async (req, res) => {
+
+    try {
+
+        const query =
+            String(req.query.q || "")
+                .trim();
+
+
+        if (!query) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Search query is required"
+
+            });
+        }
+
+
+        const data =
+            await searchVillages(query);
+
+
+        return res.status(200).json({
+
+            success: true,
+
+            data
+
+        });
+
+    } catch (error) {
+
+        console.error(
+            "Village search error:",
+            error
+        );
+
+
+        return res.status(503).json({
+
+            success: false,
+
+            message:
+                "Unable to search villages"
+
+        });
+    }
+};
+
+module.exports.getAssessmentStatus = async (req, res) => {
+    try {
+        const total = await Habitation.countDocuments();
+
+        const assessed = await Habitation.countDocuments({
+            assessmentStatus: "ASSESSED"
+        });
+
+        const notAssessed = await Habitation.countDocuments({
+            assessmentStatus: "NOT_ASSESSED"
+        });
+
+        const missingInputs = await Habitation.countDocuments({
+            assessmentStatus: "INPUTS_MISSING"
+        });
+
+        const mlErrors = await Habitation.countDocuments({
+            assessmentStatus: "ML_ERROR"
+        });
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                total,
+                assessed,
+                notAssessed,
+                missingInputs,
+                mlErrors
+            }
+        });
+
+    } catch (error) {
+        console.error(
+            "Assessment status error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            message: "Unable to get assessment status"
+        });
+    }
+};
+
+exports.assessVillage = async (req, res) => {
+    try {
+        const {
+            villageCode,
+            villageName,
+            population,
+
+            rainfall,
+            riverLevel,
+            floodHistory,
+            buildingDamage,
+            vulnerablePopulation,
+            waterLevel,
+            roadAccess,
+            hospitalDistance,
+            shelterCapacity,
+            availableWater,
+            foodStock,
+            medicalCapacity
+        } = req.body;
+
+        if (!villageCode) {
+            return res.status(400).json({
+                success: false,
+                message: "Village code is required"
+            });
+        }
+
+        const requiredInputs = {
+            rainfall,
+            riverLevel,
+            floodHistory,
+            buildingDamage,
+            vulnerablePopulation,
+            waterLevel,
+            roadAccess,
+            hospitalDistance,
+            shelterCapacity,
+            availableWater,
+            foodStock,
+            medicalCapacity
+        };
+
+        const missingFields = Object.entries(requiredInputs)
+            .filter(
+                ([, value]) =>
+                    value === undefined ||
+                    value === null ||
+                    value === ""
+            )
+            .map(([key]) => key);
+
+        if (missingFields.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: "All current condition fields are required",
+                missingFields
+            });
+        }
+
+        /*
+         * Find existing assessment for this village.
+         * This prevents creating duplicate MongoDB documents
+         * every time authority reassesses the same village.
+         */
+
+        let habitation = await Habitation.findOne({
+            habitationId: String(villageCode)
+        });
+
+        if (!habitation) {
+            habitation = new Habitation({
+                habitationId: String(villageCode),
+                name: villageName,
+                population: Number(population) || 0,
+
+                assessmentStatus: "NOT_ASSESSED",
+
+                rainfall: Number(rainfall),
+                riverLevel: Number(riverLevel),
+                floodHistory: Number(floodHistory),
+                buildingDamage: Number(buildingDamage),
+                vulnerablePopulation: Number(vulnerablePopulation),
+                waterLevel: Number(waterLevel),
+                roadAccess: Number(roadAccess),
+                hospitalDistance: Number(hospitalDistance),
+                shelterCapacity: Number(shelterCapacity),
+                availableWater: Number(availableWater),
+                foodStock: Number(foodStock),
+                medicalCapacity: Number(medicalCapacity)
+            });
+        } else {
+            habitation.name = villageName;
+            habitation.population = Number(population) || 0;
+
+            habitation.rainfall = Number(rainfall);
+            habitation.riverLevel = Number(riverLevel);
+            habitation.floodHistory = Number(floodHistory);
+            habitation.buildingDamage = Number(buildingDamage);
+            habitation.vulnerablePopulation =
+                Number(vulnerablePopulation);
+            habitation.waterLevel = Number(waterLevel);
+            habitation.roadAccess = Number(roadAccess);
+            habitation.hospitalDistance =
+                Number(hospitalDistance);
+            habitation.shelterCapacity =
+                Number(shelterCapacity);
+            habitation.availableWater =
+                Number(availableWater);
+            habitation.foodStock = Number(foodStock);
+            habitation.medicalCapacity =
+                Number(medicalCapacity);
+        }
+
+        /*
+         * Ask ML service for prediction
+         */
+
+        const prediction = await getHabitationPrediction({
+            habitationId: String(villageCode),
+            name: villageName,
+            population: Number(population),
+
+            rainfall: Number(rainfall),
+            riverLevel: Number(riverLevel),
+            floodHistory: Number(floodHistory),
+            buildingDamage: Number(buildingDamage),
+            vulnerablePopulation: Number(vulnerablePopulation),
+            waterLevel: Number(waterLevel),
+            roadAccess: Number(roadAccess),
+            hospitalDistance: Number(hospitalDistance),
+            shelterCapacity: Number(shelterCapacity),
+            availableWater: Number(availableWater),
+            foodStock: Number(foodStock),
+            medicalCapacity: Number(medicalCapacity)
+        });
+
+        if (!prediction || prediction.success === false) {
+            habitation.assessmentStatus = "ML_ERROR";
+            habitation.assessmentError =
+                prediction?.error || "ML prediction failed";
+
+            await habitation.save();
+
+            return res.status(500).json({
+                success: false,
+                message: "ML prediction failed",
+                error: prediction?.error
+            });
+        }
+
+        /*
+         * Save ML result
+         */
+
+        habitation.riskScore = Number(prediction.riskScore) || 0;
+
+        habitation.riskLevel =
+            prediction.riskLevel || "GREEN";
+
+        habitation.relocationPriority =
+            prediction.relocationPriority || "MONITOR";
+
+        if (
+            prediction.vulnerabilityScore !== undefined &&
+            prediction.vulnerabilityScore !== null
+        ) {
+            habitation.vulnerabilityScore =
+                Number(prediction.vulnerabilityScore);
+        }
+
+        habitation.hazards = prediction.hazards || {};
+
+        habitation.riskProbability =
+            prediction.details?.riskProbability ?? null;
+
+        habitation.relocationProbability =
+            prediction.details?.relocation?.probability ?? null;
+
+        habitation.capacityProbability =
+            prediction.details?.carryingCapacity?.probability ?? null;
+
+        habitation.capacityRatio =
+            prediction.details?.carryingCapacity?.capacityRatio ?? null;
+
+        habitation.capacityStatus =
+            prediction.details?.carryingCapacity?.status ?? null;
+
+        habitation.assessmentStatus = "ASSESSED";
+        habitation.assessmentError = null;
+        habitation.modelVersion =
+            prediction.modelVersion || "unknown";
+        habitation.lastAssessment = new Date();
+
+        await habitation.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Village assessed successfully",
+            habitation
+        });
+
+    } catch (error) {
+        console.error("Assess village error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to assess village",
+            error: error.message
+        });
     }
 };

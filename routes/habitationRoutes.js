@@ -1,25 +1,22 @@
-const express = require('express');
-const router = express.Router();
-
-const rateLimit = require('express-rate-limit');
-
+const router = require('express').Router();
 const { protect, authorize } = require('../middleware/authmiddleware');
-const {getHabitations, getAuthorityStats, syncAllFromML, recalculateRisk, getHazardOverview, getMLServiceStatus, getHabitation, createHabitation} = require("../controllers/habitationController.js");
+const habitationController = require('../controllers/habitationController');
 
-const landingLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 30,
-  message: { success: false, message: "Too many requests, please try again shortly." }
-});
+// Specific routes BEFORE /:id — Express matches top-down
+router.get('/authority-stats', protect, authorize('authority'), habitationController.getAuthorityStats);
+router.get('/hazard-overview', protect, authorize('authority'), habitationController.getHazardOverview);
+router.get('/ml-service-status', protect, authorize('authority'), habitationController.getMLServiceStatus);
+router.get('/assessment-status', protect, authorize('authority'), habitationController.getAssessmentStatus);
+router.get('/ml-villages', protect, authorize('authority'), habitationController.getMLVillages);
+router.get('/ml-villages/search', protect, authorize('authority'), habitationController.searchMLVillages);
 
-router.get("/", protect, authorize("authority"), landingLimiter, getHabitations);
-router.get("/authority-stats", protect, authorize("authority"), getAuthorityStats);
-router.get("/hazard-overview", protect, authorize("authority"), getHazardOverview);
-router.get("/ml-health", protect, authorize("authority"), getMLServiceStatus);
-router.post("/sync-ml", protect, authorize("authority"), syncAllFromML);
-router.post('/', protect, authorize('authority'),createHabitation);
+router.post('/assess-village', protect, authorize('authority'), habitationController.assessVillage);
+router.post('/', protect, authorize('authority'), habitationController.createHabitation);
+router.post('/sync-ml', protect, authorize('authority'), habitationController.syncAllFromML);
 
-router.get("/:id", protect, authorize("authority"), getHabitation);
-router.post('/:id/recalculate', protect, authorize('authority'), recalculateRisk);
+router.get('/', protect, authorize('authority'), habitationController.getHabitations);
+router.get('/:id', protect, authorize('authority'), habitationController.getHabitation);
+router.post('/:id/recalculate', protect, authorize('authority'), habitationController.recalculateRisk);
+router.put('/:id/inputs', protect, authorize('authority'), habitationController.updateInputs);
 
 module.exports = router;

@@ -1,68 +1,254 @@
-const { getHabitationPrediction } = require("../utils/mlService");
+const Habitation = require("../models/Habitation");
 
-function normalizePrediction(prediction) {
-    const details = prediction?.details || {};
-    const capacity = details?.carryingCapacity || {}; // FIXED typo
-    const relocation = details?.relocation || {};
+const {
+    getHabitationPrediction
+} = require("../utils/mlService");
 
-    const riskScore = prediction.riskScore ?? details.riskScore ?? details.score ?? null;
-    const riskLevel = prediction.riskLevel ?? details.riskLevel ?? null;
-    const vulnerabilityScore = prediction.vulnerabilityScore ?? null;
 
-    const capacityRatio = prediction.capacityRatio ?? capacity.capacityRatio ?? null;
-    const capacityStatus = prediction.capacityStatus ?? capacity.status ?? null;
-    const capacityProbability = prediction.capacityProbability ?? capacity.probability ?? null;
+// =====================================================
+// SAVE ML RESULT
+// =====================================================
 
-    const relocationPriority = prediction.relocationPriority ?? relocation.priority ?? null;
-    const relocationProbability = prediction.relocationProbability ?? relocation.probability ?? null;
+function applyPrediction(
+    habitation,
+    prediction
+) {
 
-    const riskProbability = prediction.riskProbability ?? details.riskProbability ?? null;
-    const hazards = prediction.hazards || null;
+    habitation.riskScore =
+        prediction.riskScore ?? 0;
 
-    return {
-        riskScore, riskLevel, vulnerabilityScore, hazards, relocationPriority,
-        capacityRatio, capacityStatus, riskProbability, relocationProbability, capacityProbability, // FIXED typo
-        modelVersion: prediction.modelVersion || details.modelVersion || "unknown",
-        raw: prediction // FIXED typo
-    };
-}
 
-function applyPrediction(habitation, prediction) {
-    const result = normalizePrediction(prediction);
+    habitation.riskLevel =
+        prediction.riskLevel || "GREEN";
 
-    if (result.riskScore != null) habitation.riskScore = Number(result.riskScore);
-    if (result.riskLevel) habitation.riskLevel = String(result.riskLevel).toUpperCase();
-    if (result.vulnerabilityScore != null) habitation.vulnerabilityScore = Number(result.vulnerabilityScore);
-    if (result.hazards) habitation.hazards = result.hazards;
-    if (result.relocationPriority) habitation.relocationPriority = String(result.relocationPriority).toUpperCase();
-    if (result.capacityRatio != null) habitation.capacityRatio = Number(result.capacityRatio);
-    if (result.capacityStatus) habitation.capacityStatus = String(result.capacityStatus).toUpperCase();
-    if (result.riskProbability != null) habitation.riskProbability = Number(result.riskProbability);
-    if (result.relocationProbability != null) habitation.relocationProbability = Number(result.relocationProbability);
-    if (result.capacityProbability != null) habitation.capacityProbability = Number(result.capacityProbability);
 
-    habitation.modelVersion = result.modelVersion;
-    habitation.assessmentStatus = "ASSESSED";
-    habitation.assessmentError = undefined;
-    habitation.lastAssessment = new Date();
+    habitation.relocationPriority =
+        prediction.relocationPriority || "MONITOR";
 
-    return result;
-}
 
-async function assessHabitation(habitation) {
-    const prediction = await getHabitationPrediction(habitation);
+    if (
+        prediction.vulnerabilityScore !==
+        undefined
+    ) {
 
-    if (!prediction.success) {
-        habitation.assessmentStatus = prediction.missingFields ? "INPUTS_MISSING" : "ML_ERROR";
-        habitation.assessmentError = prediction.error;
-        await habitation.save();
-        return prediction;
+        habitation.vulnerabilityScore =
+            prediction.vulnerabilityScore;
     }
 
-    const normalized = applyPrediction(habitation, prediction);
-    await habitation.save();
 
-    return { success: true, prediction, normalized, habitation };
+    habitation.hazards =
+        prediction.hazards || {};
+
+
+    if (prediction.details) {
+
+        habitation.capacityRatio =
+            prediction.details
+                ?.carryingCapacity
+                ?.capacityRatio ?? null;
+
+
+        habitation.capacityStatus =
+            prediction.details
+                ?.carryingCapacity
+                ?.status ?? null;
+
+
+        habitation.riskProbability =
+            prediction.details
+                ?.riskProbability ?? null;
+
+
+        habitation.relocationProbability =
+            prediction.details
+                ?.relocation
+                ?.probability ?? null;
+
+
+        habitation.capacityProbability =
+            prediction.details
+                ?.carryingCapacity
+                ?.probability ?? null;
+    }
+
+
+    habitation.assessmentStatus =
+        "ASSESSED";
+
+
+    habitation.assessmentError =
+        null;
+
+
+    habitation.modelVersion =
+        prediction.modelVersion || "unknown";
+
+
+    habitation.lastAssessment =
+        new Date();
 }
 
-module.exports = { assessHabitation, applyPrediction, normalizePrediction };
+
+// =====================================================
+// RUN ML ASSESSMENT
+// =====================================================
+
+async function assessHabitation(
+    habitation
+) {
+
+    try {
+
+        const prediction =
+            await getHabitationPrediction(
+                habitation
+            );
+
+
+        // Missing input
+        if (!prediction.success) {
+
+            habitation.assessmentStatus =
+                prediction.missingFields
+                    ? "INPUTS_MISSING"
+                    : "ML_ERROR";
+
+
+            habitation.assessmentError =
+                prediction.error;
+
+
+            await habitation.save();
+
+
+            return prediction;
+        }
+
+
+        // Save ML result
+        applyPrediction(
+            habitation,
+            prediction
+        );
+
+
+        await habitation.save();
+
+
+        return {
+
+            success: true,
+
+            prediction,
+
+            habitation
+
+        };
+
+    } catch (error) {
+
+        habitation.assessmentStatus =
+            "ML_ERROR";
+
+
+        habitation.assessmentError =
+            error.message;
+
+
+        await habitation.save();
+
+
+        throw error;
+    }
+}
+
+
+// =====================================================
+// UPDATE AUTHORITY INPUTS
+// =====================================================
+
+async function updateHabitationInputs(
+    habitation,
+    inputData
+) {
+
+    const allowedFields = [
+
+        "rainfall",
+
+        "riverLevel",
+
+        "floodHistory",
+
+        "buildingDamage",
+
+        "vulnerablePopulation",
+
+        "waterLevel",
+
+        "roadAccess",
+
+        "hospitalDistance",
+
+        "shelterCapacity",
+
+        "availableWater",
+
+        "foodStock",
+
+        "medicalCapacity"
+
+    ];
+
+
+    for (const field of allowedFields) {
+
+        if (
+            inputData[field] !==
+            undefined
+        ) {
+
+            const value =
+                Number(inputData[field]);
+
+
+            if (Number.isNaN(value)) {
+
+                throw new Error(
+                    `${field} must be a valid number`
+                );
+            }
+
+
+            habitation[field] = value;
+        }
+    }
+
+
+    // Inputs changed,
+    // previous ML result is no longer current
+
+    habitation.assessmentStatus =
+        "NOT_ASSESSED";
+
+
+    habitation.assessmentError =
+        null;
+
+
+    await habitation.save();
+
+
+    return habitation;
+}
+
+
+module.exports = {
+
+    assessHabitation,
+
+    updateHabitationInputs,
+
+    applyPrediction
+
+};

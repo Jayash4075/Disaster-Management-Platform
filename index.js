@@ -54,6 +54,10 @@ app.use("/api/dashboard", require("./routes/dashboardroutes.js"));
 app.use("/api/sos", require("./routes/sosroutes.js"));
 app.use("/api/risk-zones", require("./routes/riskzoneroutes.js"));
 app.use("/api/resources", require("./routes/resourceroutes.js"));
+app.use(
+    "/api/shelters",
+    require("./routes/shelterroutes.js")
+);
 app.use("/api/resource-requests", require("./routes/resourcerequestroutes"));
 
 app.set("io", io);

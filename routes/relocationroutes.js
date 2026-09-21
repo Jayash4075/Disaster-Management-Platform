@@ -1,10 +1,9 @@
-const express = require('express');
-const router = express.Router();
+const router = require('express').Router();
+const { protect, authorize } = require('../middleware/authmiddleware');
+const relocationController = require('../controllers/relocationController');
 
-const {protect, authorize} = require('../middleware/authmiddleware');
-const {getRecommendedSite, getPriorityVillages} = require('../controllers/relocationController');
-
-router.get('/priorities', protect, authorize('authority'), getPriorityVillages);
-router.get('/:id/site', protect, authorize('authority'), getRecommendedSite);
+router.get('/sites', protect, authorize('authority'), relocationController.getAllSites);
+router.get('/priority-villages', protect, authorize('authority'), relocationController.getPriorityVillages);
+router.get('/:id/site', protect, authorize('authority'), relocationController.getRecommendedSite);
 
 module.exports = router;
