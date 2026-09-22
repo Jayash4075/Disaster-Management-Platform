@@ -1,89 +1,70 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
-    MapPin,
-    Users,
-    Home,
-    AlertTriangle,
-    ArrowRightLeft,
-    ShieldCheck,
-    Clock,
-    CheckCircle2,
-    ChevronRight,
+    MapPin, Users, Home, AlertTriangle, ArrowRightLeft,
+    ShieldCheck, Clock, CheckCircle2, ChevronRight,
 } from "lucide-react";
-
 import AuthoritySidebar from "../components/AuthoritySidebar";
 import AuthorityTopbar from "../components/AuthorityTopbar";
-
+import api from "../api/axios";
 import "./Relocation.css";
-
-const relocationData = [
-    {
-        id: 1,
-        habitation: "Riverbank Zone A",
-        location: "Prayagraj",
-        population: 1240,
-        risk: "Critical",
-        safeSite: "Community Shelter - Sector 4",
-        distance: "2.4 km",
-        progress: 72,
-        status: "In Progress",
-    },
-    {
-        id: 2,
-        habitation: "Lowland Settlement B",
-        location: "Prayagraj",
-        population: 860,
-        risk: "High",
-        safeSite: "Relief Camp - Sector 7",
-        distance: "3.1 km",
-        progress: 45,
-        status: "Planning",
-    },
-    {
-        id: 3,
-        habitation: "Canal Side Colony",
-        location: "Prayagraj",
-        population: 540,
-        risk: "High",
-        safeSite: "Government School - Zone 2",
-        distance: "1.8 km",
-        progress: 25,
-        status: "Planning",
-    },
-    {
-        id: 4,
-        habitation: "Floodplain Village",
-        location: "Prayagraj",
-        population: 920,
-        risk: "Medium",
-        safeSite: "Community Hall - Sector 5",
-        distance: "4.2 km",
-        progress: 90,
-        status: "Ready",
-    },
-];
 
 const Relocation = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [selectedHabitation, setSelectedHabitation] = useState(null);
+    const [selectedSite, setSelectedSite] = useState(null);
+    const [siteLoading, setSiteLoading] = useState(false);
+    const [relocationData, setRelocationData] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
-    const criticalCount = relocationData.filter(
-        (item) => item.risk === "Critical"
-    ).length;
+    useEffect(() => {
+        const fetchPriorities = async () => {
+            try {
+                setLoading(true);
+                setError("");
+                const response = await api.get("/api/relocation/priority-villages");
+                const villages = response.data?.villages || [];
+                setRelocationData(villages.map(v => ({
+                    id: v.habitationId,
+                    habitation: v.name,
+                    location: "Prayagraj",
+                    population: v.population || 0,
+                    risk: v.riskLevel === "RED" ? "Critical" : v.riskLevel === "ORANGE" ? "High" : "Medium",
+                    relocationPriority: v.relocationPriority,
+                    riskScore: v.riskScore,
+                })));
+            } catch (err) {
+                console.error("Relocation priorities error:", err);
+                setError(err.response?.data?.message || "Unable to load relocation priorities.");
+                setRelocationData([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchPriorities();
+    }, []);
 
-    const totalPopulation = relocationData.reduce(
-        (total, item) => total + item.population,
-        0
-    );
+    const handleSelectHabitation = async (item) => {
+        setSelectedHabitation(item);
+        setSelectedSite(null);
+        setSiteLoading(true);
+        try {
+            const response = await api.get(`/api/relocation/${item.id}/site`);
+            setSelectedSite(response.data);
+        } catch (err) {
+            console.error("Site recommendation error:", err);
+            setSelectedSite(null);
+        } finally {
+            setSiteLoading(false);
+        }
+    };
 
-    const completedCount = relocationData.filter(
-        (item) => item.progress >= 90
-    ).length;
-
-    const activePlans = relocationData.filter(
-        (item) => item.status === "In Progress" || item.status === "Planning"
-    ).length;
+    const criticalCount = relocationData.filter(item => item.risk === "Critical").length;
+    const totalPopulation = relocationData.reduce((total, item) => total + item.population, 0);
+    const immediateCount = relocationData.filter(item => item.relocationPriority === "IMMEDIATE").length;
+    const activePlans = relocationData.length; // every listed village is an active relocation concern
+    const readyCount = relocationData.filter(item => item.relocationPriority === "SHORT_TERM" || item.relocationPriority === "MEDIUM_TERM").length;
 
     return (
         <div className="authority-layout">
@@ -127,14 +108,14 @@ const Relocation = () => {
                                 from high-risk habitations to identified safe sites.
                             </p>
                         </div>
-
-                        <div className="header-action">
-                            <button className="primary-action">
-                                <ArrowRightLeft size={18} />
-                                Create Relocation Plan
-                            </button>
-                        </div>
                     </motion.section>
+
+                    {/* ERROR */}
+                    {error && (
+                        <div className="relocation-error" style={{ marginBottom: 16, color: "#b91c1c" }}>
+                            ⚠️ {error}
+                        </div>
+                    )}
 
                     {/* SUMMARY CARDS */}
                     <section className="relocation-stats">
@@ -151,7 +132,7 @@ const Relocation = () => {
 
                             <div>
                                 <span>Critical Zones</span>
-                                <strong>{criticalCount}</strong>
+                                <strong>{loading ? "—" : criticalCount}</strong>
                                 <small>Require immediate action</small>
                             </div>
                         </motion.div>
@@ -168,7 +149,7 @@ const Relocation = () => {
 
                             <div>
                                 <span>People Affected</span>
-                                <strong>{totalPopulation.toLocaleString()}</strong>
+                                <strong>{loading ? "—" : totalPopulation.toLocaleString()}</strong>
                                 <small>Across identified habitations</small>
                             </div>
                         </motion.div>
@@ -184,9 +165,9 @@ const Relocation = () => {
                             </div>
 
                             <div>
-                                <span>Active Plans</span>
-                                <strong>{activePlans}</strong>
-                                <small>Currently being coordinated</small>
+                                <span>Villages Needing Relocation</span>
+                                <strong>{loading ? "—" : activePlans}</strong>
+                                <small>Currently identified for planning</small>
                             </div>
                         </motion.div>
 
@@ -201,9 +182,9 @@ const Relocation = () => {
                             </div>
 
                             <div>
-                                <span>Ready Relocations</span>
-                                <strong>{completedCount}</strong>
-                                <small>Safe-site arrangements ready</small>
+                                <span>Immediate Priority</span>
+                                <strong>{loading ? "—" : immediateCount}</strong>
+                                <small>Require urgent relocation</small>
                             </div>
                         </motion.div>
 
@@ -224,7 +205,7 @@ const Relocation = () => {
                                 <div>
                                     <h2>Relocation Priority List</h2>
                                     <p>
-                                        Habititation-wise relocation requirements
+                                        Habitation-wise relocation requirements
                                     </p>
                                 </div>
 
@@ -236,55 +217,67 @@ const Relocation = () => {
 
                             <div className="habitation-list">
 
-                                {relocationData.map((item) => (
-                                    <motion.div
-                                        key={item.id}
-                                        className={`habitation-row ${
-                                            selectedHabitation?.id === item.id
-                                                ? "selected"
-                                                : ""
-                                        }`}
-                                        whileHover={{ y: -2 }}
-                                        onClick={() =>
-                                            setSelectedHabitation(item)
-                                        }
-                                    >
+                                {loading ? (
+                                    <p style={{ padding: 20 }}>Loading relocation priorities...</p>
+                                ) : relocationData.length === 0 ? (
+                                    <div className="empty-selection">
+                                        <div className="empty-icon">
+                                            <ShieldCheck size={30} />
+                                        </div>
+                                        <h3>No villages currently need relocation</h3>
+                                        <p>Assess villages to populate this list.</p>
+                                    </div>
+                                ) : (
+                                    relocationData.map((item) => (
+                                        <motion.div
+                                            key={item.id}
+                                            className={`habitation-row ${
+                                                selectedHabitation?.id === item.id
+                                                    ? "selected"
+                                                    : ""
+                                            }`}
+                                            whileHover={{ y: -2 }}
+                                            onClick={() =>
+                                                handleSelectHabitation(item)
+                                            }
+                                        >
 
-                                        <div className="habitation-main">
+                                            <div className="habitation-main">
 
-                                            <div className="location-icon">
-                                                <MapPin size={18} />
+                                                <div className="location-icon">
+                                                    <MapPin size={18} />
+                                                </div>
+
+                                                <div>
+                                                    <h3>{item.habitation}</h3>
+
+                                                    <span className="location-name">
+                                                        {item.location}
+                                                    </span>
+                                                </div>
+
+                                            </div>
+
+                                            <div className="population-info">
+                                                <Users size={15} />
+                                                {item.population.toLocaleString()}
                                             </div>
 
                                             <div>
-                                                <h3>{item.habitation}</h3>
-
-                                                <span className="location-name">
-                                                    {item.location}
+                                                <span
+                                                    className={`risk-badge ${item.risk.toLowerCase()}`}
+                                                >
+                                                    {item.risk}
                                                 </span>
                                             </div>
 
-                                        </div>
+                                            <div className="row-arrow">
+                                                <ChevronRight size={18} />
+                                            </div>
 
-                                        <div className="population-info">
-                                            <Users size={15} />
-                                            {item.population.toLocaleString()}
-                                        </div>
-
-                                        <div>
-                                            <span
-                                                className={`risk-badge ${item.risk.toLowerCase()}`}
-                                            >
-                                                {item.risk}
-                                            </span>
-                                        </div>
-
-                                        <div className="row-arrow">
-                                            <ChevronRight size={18} />
-                                        </div>
-
-                                    </motion.div>
-                                ))}
+                                        </motion.div>
+                                    ))
+                                )}
 
                             </div>
                         </motion.div>
@@ -342,42 +335,40 @@ const Relocation = () => {
                                             <Home size={18} />
                                             <span>Safe Site</span>
                                             <strong>
-                                                {selectedHabitation.safeSite}
+                                                {siteLoading
+                                                    ? "Calculating..."
+                                                    : selectedSite?.recommendedSite?.name || "No suitable site found"}
                                             </strong>
                                         </div>
 
                                         <div>
                                             <MapPin size={18} />
-                                            <span>Distance</span>
+                                            <span>Available Capacity</span>
                                             <strong>
-                                                {selectedHabitation.distance}
+                                                {siteLoading
+                                                    ? "—"
+                                                    : selectedSite?.recommendedSite?.capacity?.available ?? "—"}
                                             </strong>
                                         </div>
 
                                     </div>
 
-                                    <div className="progress-section">
-
-                                        <div className="progress-heading">
-                                            <span>Relocation Progress</span>
-                                            <strong>
-                                                {selectedHabitation.progress}%
-                                            </strong>
+                                    {selectedSite?.reasons?.length > 0 && (
+                                        <div className="progress-section">
+                                            <div className="progress-heading">
+                                                <span>Why this site</span>
+                                            </div>
+                                            <ul style={{ margin: 0, paddingLeft: 18 }}>
+                                                {selectedSite.reasons.map((reason, i) => (
+                                                    <li key={i}>{reason}</li>
+                                                ))}
+                                            </ul>
                                         </div>
+                                    )}
 
-                                        <div className="progress-bar">
-                                            <div
-                                                style={{
-                                                    width: `${selectedHabitation.progress}%`,
-                                                }}
-                                            ></div>
-                                        </div>
-
-                                        <div className="progress-status">
-                                            <Clock size={15} />
-                                            {selectedHabitation.status}
-                                        </div>
-
+                                    <div className="progress-status">
+                                        <Clock size={15} />
+                                        {selectedHabitation.relocationPriority || "Not yet prioritized"}
                                     </div>
 
                                     <div className="detail-actions">
@@ -427,7 +418,7 @@ const Relocation = () => {
                             <div>
                                 <h2>Relocation Workflow</h2>
                                 <p>
-                                    Track the progress of relocation operations
+                                    General stages of the relocation process
                                 </p>
                             </div>
                         </div>
@@ -442,7 +433,7 @@ const Relocation = () => {
                                 <div>
                                     <strong>Risk Identification</strong>
                                     <span>
-                                        High-risk habitation detected
+                                        High-risk habitation detected via ML assessment
                                     </span>
                                 </div>
                             </div>
@@ -508,7 +499,7 @@ const Relocation = () => {
                             <div>
                                 <h2>Relocation Plans</h2>
                                 <p>
-                                    Overview of current relocation operations
+                                    Overview of all villages currently flagged for relocation
                                 </p>
                             </div>
                         </div>
@@ -522,17 +513,15 @@ const Relocation = () => {
                                         <th>Habitation</th>
                                         <th>Population</th>
                                         <th>Risk</th>
-                                        <th>Safe Site</th>
-                                        <th>Distance</th>
-                                        <th>Progress</th>
-                                        <th>Status</th>
+                                        <th>Risk Score</th>
+                                        <th>Priority</th>
                                     </tr>
                                 </thead>
 
                                 <tbody>
 
                                     {relocationData.map((item) => (
-                                        <tr key={item.id}>
+                                        <tr key={item.id} onClick={() => handleSelectHabitation(item)} style={{ cursor: "pointer" }}>
 
                                             <td>
                                                 <div className="table-location">
@@ -556,36 +545,12 @@ const Relocation = () => {
                                             </td>
 
                                             <td>
-                                                {item.safeSite}
+                                                {item.riskScore ?? "—"}
                                             </td>
 
                                             <td>
-                                                {item.distance}
-                                            </td>
-
-                                            <td>
-                                                <div className="table-progress">
-                                                    <div className="mini-progress">
-                                                        <span
-                                                            style={{
-                                                                width: `${item.progress}%`,
-                                                            }}
-                                                        ></span>
-                                                    </div>
-
-                                                    <small>
-                                                        {item.progress}%
-                                                    </small>
-                                                </div>
-                                            </td>
-
-                                            <td>
-                                                <span
-                                                    className={`status-badge ${item.status
-                                                        .toLowerCase()
-                                                        .replace(" ", "-")}`}
-                                                >
-                                                    {item.status}
+                                                <span className={`status-badge ${(item.relocationPriority || "").toLowerCase().replace("_", "-")}`}>
+                                                    {item.relocationPriority || "—"}
                                                 </span>
                                             </td>
 

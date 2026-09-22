@@ -1,347 +1,519 @@
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import api from "../api/axios";
+import { useEffect, useMemo, useState } from "react";
+
 import {
+    Home,
     MapPin,
-    ShieldCheck,
     Users,
     Building2,
-    Navigation,
-    Search,
+    Plus,
+    X,
     RefreshCw,
     AlertCircle,
     CheckCircle2,
-    Clock,
-    XCircle,
+    Search,
+    Route,
+    Droplet,
+    UtensilsCrossed,
+    Stethoscope
 } from "lucide-react";
 
 import AuthoritySidebar from "../components/AuthoritySidebar";
 import AuthorityTopbar from "../components/AuthorityTopbar";
+import api from "../api/axios";
+import toast from "react-hot-toast";
 
 import "./SafeSites.css";
 
-const API_ENDPOINT = "/api/relocation/sites";
 
-const SafeSites = () => {
+function SafeSites() {
+
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-    const [safeSites, setSafeSites] = useState([]);
+    const [sites, setSites] = useState([]);
+
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+
     const [error, setError] = useState("");
 
-    const [searchTerm, setSearchTerm] = useState("");
+    const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
 
-    const fetchSafeSites = async () => {
+    const [showForm, setShowForm] = useState(false);
+
+    const [form, setForm] = useState({
+        siteId: "",
+        name: "",
+        latitude: "",
+        longitude: "",
+        total: "",
+        occupied: "0",
+        suitabilityScore: "70"
+    });
+
+
+    // ============================================================
+    // FETCH SAFE SITES
+    // ============================================================
+
+    const fetchSites = async (isRefresh = false) => {
+
         try {
-            setLoading(true);
-            setError("");
 
-            const response = await api.get(API_ENDPOINT);
-
-            if (!response.ok) {
-                throw new Error(
-                    `Failed to fetch safe sites (${response.status})`
-                );
+            if (isRefresh) {
+                setRefreshing(true);
+            } else {
+                setLoading(true);
             }
 
-            const data = response.data();
+            setError("");
 
-            /*
-             * Supports either:
-             *
-             * [
-             *   {...},
-             *   {...}
-             * ]
-             *
-             * OR
-             *
-             * {
-             *   safeSites: [...]
-             * }
-             */
+            const response = await api.get("/api/relocation/sites");
 
-            const sites = Array.isArray(data)
-                ? data
-                : data.safeSites || data.sites || data.data || [];
+            const data = response.data?.data;
 
-            setSafeSites(sites);
+            setSites(Array.isArray(data) ? data : []);
+
         } catch (err) {
-            console.error("Safe sites error:", err);
-            setError(err.message || "Unable to load safe sites.");
-            setSafeSites([]);
+
+            console.error("Fetch sites error:", err);
+
+            setSites([]);
+
+            const message =
+                err.response?.data?.message ||
+                err.response?.data?.error ||
+                err.message ||
+                "Failed to fetch safe sites";
+
+            setError(message);
+
         } finally {
+
             setLoading(false);
+            setRefreshing(false);
+
         }
     };
 
+
     useEffect(() => {
-        fetchSafeSites();
+
+        fetchSites();
+
     }, []);
 
-    /*
-     * Normalize backend values.
-     * This does NOT create data.
-     * It only allows the UI to work with slightly different
-     * backend field names.
-     */
 
-    const getSiteName = (site) =>
-        site.name ||
-        site.siteName ||
-        site.safeSiteName ||
-        site.locationName ||
-        "Unnamed Safe Site";
+    // ============================================================
+    // FORM CHANGE
+    // ============================================================
 
-    const getLocation = (site) =>
-        site.location ||
-        site.address ||
-        site.area ||
-        site.village ||
-        site.district ||
-        "Location unavailable";
+    const handleChange = (e) => {
 
-    const getCapacity = (site) =>
-        site.capacity ??
-        site.maxCapacity ??
-        site.totalCapacity ??
-        null;
+        const { name, value } = e.target;
 
-    const getOccupancy = (site) =>
-        site.occupancy ??
-        site.currentOccupancy ??
-        site.occupied ??
-        null;
+        setForm((previous) => ({
+            ...previous,
+            [name]: value
+        }));
 
-    const getType = (site) =>
-        site.type ||
-        site.siteType ||
-        site.category ||
-        "Safe Site";
+    };
 
-    const getStatus = (site) =>
-        String(site.status || "unknown").toLowerCase();
 
-    const getCoordinates = (site) => {
-        const latitude =
-            site.latitude ??
-            site.lat ??
-            site.coordinates?.latitude ??
-            site.coordinates?.lat;
+    // ============================================================
+    // RESET FORM
+    // ============================================================
 
-        const longitude =
-            site.longitude ??
-            site.lng ??
-            site.lon ??
-            site.coordinates?.longitude ??
-            site.coordinates?.lng ??
-            site.coordinates?.lon;
+    const resetForm = () => {
 
-        if (latitude == null || longitude == null) {
-            return null;
+        setForm({
+            siteId: "",
+            name: "",
+            latitude: "",
+            longitude: "",
+            total: "",
+            occupied: "0",
+            suitabilityScore: "70"
+        });
+
+    };
+
+
+    // ============================================================
+    // ADD SAFE SITE
+    // ============================================================
+
+    const handleSubmit = async (e) => {
+
+        e.preventDefault();
+
+        try {
+
+            const total = Number(form.total);
+            const occupied = Number(form.occupied);
+
+            if (total <= 0) {
+                toast.error("Total capacity must be greater than 0");
+                return;
+            }
+
+            if (occupied < 0 || occupied > total) {
+                toast.error("Occupied capacity must be between 0 and total capacity");
+                return;
+            }
+
+            await api.post("/api/relocation/sites", {
+
+                siteId: form.siteId.trim(),
+
+                name: form.name.trim(),
+
+                location: {
+                    coordinates: [
+                        Number(form.longitude),
+                        Number(form.latitude)
+                    ]
+                },
+
+                capacity: {
+                    total,
+                    occupied,
+                    available: total - occupied
+                },
+
+                suitabilityScore: Number(form.suitabilityScore)
+
+            });
+
+
+            toast.success("Safe site added successfully");
+
+            setShowForm(false);
+
+            resetForm();
+
+            await fetchSites(true);
+
+        } catch (err) {
+
+            console.error("Create site error:", err);
+
+            toast.error(
+                err.response?.data?.message ||
+                err.response?.data?.error ||
+                "Failed to add safe site"
+            );
+
+        }
+
+    };
+
+
+    // ============================================================
+    // CALCULATE SITE STATUS
+    // ============================================================
+
+    const getSiteStatus = (site) => {
+
+        const total = Number(site.capacity?.total) || 0;
+
+        const available = Number(site.capacity?.available) || 0;
+
+        if (total <= 0) {
+            return {
+                label: "UNKNOWN",
+                className: "status-unknown"
+            };
+        }
+
+        if (available <= 0) {
+            return {
+                label: "FULL",
+                className: "status-inactive"
+            };
+        }
+
+        const availabilityPercentage =
+            (available / total) * 100;
+
+        if (availabilityPercentage <= 20) {
+            return {
+                label: "LIMITED",
+                className: "status-warning"
+            };
         }
 
         return {
-            latitude,
-            longitude,
+            label: "OPERATIONAL",
+            className: "status-active"
         };
+
     };
 
-    const getAvailableCapacity = (site) => {
-        const capacity = getCapacity(site);
-        const occupancy = getOccupancy(site);
 
-        if (capacity == null || occupancy == null) {
-            return null;
+    // ============================================================
+    // FILTER SITES
+    // ============================================================
+
+    const filteredSites = useMemo(() => {
+
+        const query = search.trim().toLowerCase();
+
+        return sites.filter((site) => {
+
+            const status = getSiteStatus(site);
+
+            const matchesSearch =
+                !query ||
+                String(site.name || "")
+                    .toLowerCase()
+                    .includes(query) ||
+                String(site.siteId || "")
+                    .toLowerCase()
+                    .includes(query);
+
+            const matchesStatus =
+                statusFilter === "all" ||
+                status.label.toLowerCase() ===
+                statusFilter.toLowerCase();
+
+            return matchesSearch && matchesStatus;
+
+        });
+
+    }, [sites, search, statusFilter]);
+
+
+    // ============================================================
+    // STATISTICS
+    // ============================================================
+
+    const statistics = useMemo(() => {
+
+        let operational = 0;
+        let occupied = 0;
+        let totalCapacity = 0;
+
+        sites.forEach((site) => {
+
+            const total =
+                Number(site.capacity?.total) || 0;
+
+            const currentOccupied =
+                Number(site.capacity?.occupied) || 0;
+
+            totalCapacity += total;
+
+            occupied += currentOccupied;
+
+            const status = getSiteStatus(site);
+
+            if (status.label === "OPERATIONAL") {
+                operational++;
+            }
+
+        });
+
+        return {
+            totalSites: sites.length,
+            operational,
+            occupied,
+            totalCapacity
+        };
+
+    }, [sites]);
+
+
+    // ============================================================
+    // LOCATION TEXT
+    // ============================================================
+
+    const getLocationText = (site) => {
+
+        const coordinates =
+            site.location?.coordinates;
+
+        if (
+            Array.isArray(coordinates) &&
+            coordinates.length === 2
+        ) {
+
+            const longitude = Number(coordinates[0]);
+            const latitude = Number(coordinates[1]);
+
+            if (
+                Number.isFinite(latitude) &&
+                Number.isFinite(longitude)
+            ) {
+
+                return `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+
+            }
+
         }
 
-        return Math.max(Number(capacity) - Number(occupancy), 0);
+        return "Location not available";
+
     };
 
-    /*
-     * Filter only data received from backend.
-     */
 
-    const filteredSites = safeSites.filter((site) => {
-        const name = getSiteName(site).toLowerCase();
-        const location = getLocation(site).toLowerCase();
-        const status = getStatus(site);
+    // ============================================================
+    // OCCUPANCY PERCENTAGE
+    // ============================================================
 
-        const matchesSearch =
-            name.includes(searchTerm.toLowerCase()) ||
-            location.includes(searchTerm.toLowerCase());
+    const getOccupancyPercentage = (site) => {
 
-        const matchesStatus =
-            statusFilter === "all" ||
-            status === statusFilter;
+        const total =
+            Number(site.capacity?.total) || 0;
 
-        return matchesSearch && matchesStatus;
-    });
+        const occupied =
+            Number(site.capacity?.occupied) || 0;
 
-    /*
-     * Calculate dashboard statistics from backend data.
-     */
+        if (total <= 0) {
+            return 0;
+        }
 
-    const totalSites = safeSites.length;
-
-    const operationalSites = safeSites.filter((site) => {
-        const status = getStatus(site);
-
-        return (
-            status === "active" ||
-            status === "operational" ||
-            status === "available"
+        return Math.min(
+            100,
+            Math.max(
+                0,
+                Math.round((occupied / total) * 100)
+            )
         );
-    }).length;
 
-    const unavailableSites = safeSites.filter((site) => {
-        const status = getStatus(site);
-
-        return (
-            status === "inactive" ||
-            status === "unavailable" ||
-            status === "closed"
-        );
-    }).length;
-
-    const totalCapacity = safeSites.reduce((sum, site) => {
-        const capacity = getCapacity(site);
-
-        return capacity != null
-            ? sum + Number(capacity)
-            : sum;
-    }, 0);
-
-    const totalOccupancy = safeSites.reduce((sum, site) => {
-        const occupancy = getOccupancy(site);
-
-        return occupancy != null
-            ? sum + Number(occupancy)
-            : sum;
-    }, 0);
-
-    const getStatusClass = (status) => {
-        if (
-            status === "active" ||
-            status === "operational" ||
-            status === "available"
-        ) {
-            return "status-active";
-        }
-
-        if (
-            status === "inactive" ||
-            status === "unavailable" ||
-            status === "closed"
-        ) {
-            return "status-inactive";
-        }
-
-        if (
-            status === "maintenance" ||
-            status === "pending"
-        ) {
-            return "status-warning";
-        }
-
-        return "status-unknown";
     };
 
-    const getStatusLabel = (status) => {
-        if (!status || status === "unknown") {
-            return "Unknown";
-        }
 
-        return status.charAt(0).toUpperCase() + status.slice(1);
-    };
-
-    const openMap = (site) => {
-        const coordinates = getCoordinates(site);
-
-        if (!coordinates) {
-            return;
-        }
-
-        const url = `https://www.google.com/maps?q=${coordinates.latitude},${coordinates.longitude}`;
-
-        window.open(url, "_blank", "noopener,noreferrer");
-    };
+    // ============================================================
+    // RENDER
+    // ============================================================
 
     return (
-        <div className="authority-layout">
 
-            {/* SIDEBAR */}
+        <div
+            className={`authority-layout ${
+                sidebarCollapsed
+                    ? "sidebar-collapsed"
+                    : ""
+            }`}
+        >
 
             <AuthoritySidebar
                 collapsed={sidebarCollapsed}
-                setCollapsed={setSidebarCollapsed}
+                onToggle={() =>
+                    setSidebarCollapsed(
+                        (previous) => !previous
+                    )
+                }
             />
 
-            {/* MAIN AREA */}
 
-            <div
-                className={`authority-main ${
-                    sidebarCollapsed ? "sidebar-collapsed" : ""
-                }`}
-            >
+            <div className="authority-main">
 
                 <AuthorityTopbar />
 
+
                 <main className="safe-sites-page">
 
-                    {/* HEADER */}
 
-                    <motion.section
-                        className="safe-sites-header"
-                        initial={{ opacity: 0, y: 15 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4 }}
-                    >
+                    {/* ==================================================
+                        HEADER
+                    ================================================== */}
+
+                    <section className="safe-sites-header">
+
                         <div>
 
                             <div className="safe-sites-breadcrumb">
-                                Authority Dashboard
+
+                                <span>
+                                    Authority Dashboard
+                                </span>
+
                                 <span>/</span>
-                                Safe Sites
+
+                                <span>
+                                    Safe Sites
+                                </span>
+
                             </div>
 
-                            <h1>Safe Sites</h1>
+
+                            <h1>
+                                Safe Sites
+                            </h1>
+
 
                             <p>
-                                Monitor identified safe locations available
-                                for evacuation and population relocation.
+                                Monitor identified safe locations
+                                available for evacuation and
+                                population relocation.
                             </p>
 
                         </div>
 
-                        <button
-                            className="refresh-button"
-                            onClick={fetchSafeSites}
-                            disabled={loading}
-                        >
-                            <RefreshCw
-                                size={17}
-                                className={loading ? "spin" : ""}
-                            />
 
-                            Refresh
-                        </button>
+                        <div className="safe-sites-header-actions">
 
-                    </motion.section>
+                            <button
+                                className="refresh-button"
+                                onClick={() =>
+                                    fetchSites(true)
+                                }
+                                disabled={
+                                    loading ||
+                                    refreshing
+                                }
+                            >
+
+                                <RefreshCw
+                                    size={16}
+                                    className={
+                                        refreshing
+                                            ? "spin"
+                                            : ""
+                                    }
+                                />
+
+                                {refreshing
+                                    ? "Refreshing..."
+                                    : "Refresh"}
+
+                            </button>
 
 
-                    {/* ERROR */}
+                            <button
+                                className="primary-action"
+                                onClick={() =>
+                                    setShowForm(true)
+                                }
+                            >
+
+                                <Plus size={18} />
+
+                                Add Safe Site
+
+                            </button>
+
+                        </div>
+
+                    </section>
+
+
+                    {/* ==================================================
+                        ERROR
+                    ================================================== */}
 
                     {error && (
-                        <motion.div
-                            className="safe-sites-error"
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                        >
-                            <AlertCircle size={19} />
+
+                        <div className="safe-sites-error">
+
+                            <AlertCircle
+                                size={19}
+                            />
 
                             <div>
+
                                 <strong>
                                     Unable to load safe sites
                                 </strong>
@@ -349,134 +521,169 @@ const SafeSites = () => {
                                 <span>
                                     {error}
                                 </span>
+
                             </div>
 
-                            <button onClick={fetchSafeSites}>
+
+                            <button
+                                onClick={() =>
+                                    fetchSites(true)
+                                }
+                            >
                                 Retry
                             </button>
-                        </motion.div>
+
+                        </div>
+
                     )}
 
 
-                    {/* STAT CARDS */}
+                    {/* ==================================================
+                        STATISTICS
+                    ================================================== */}
 
                     <section className="safe-sites-stats">
 
-                        <motion.div
-                            className="safe-stat-card"
-                            initial={{ opacity: 0, y: 15 }}
-                            animate={{ opacity: 1, y: 0 }}
-                        >
+
+                        {/* TOTAL */}
+
+                        <div className="safe-stat-card">
+
                             <div className="safe-stat-icon blue">
-                                <ShieldCheck size={21} />
+
+                                <Home size={21} />
+
                             </div>
 
+
                             <div>
-                                <span>Total Safe Sites</span>
+
+                                <span>
+                                    Total Safe Sites
+                                </span>
 
                                 <strong>
-                                    {loading ? "—" : totalSites}
+                                    {statistics.totalSites}
                                 </strong>
 
                                 <small>
                                     Identified locations
                                 </small>
+
                             </div>
-                        </motion.div>
+
+                        </div>
 
 
-                        <motion.div
-                            className="safe-stat-card"
-                            initial={{ opacity: 0, y: 15 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.1 }}
-                        >
+                        {/* OPERATIONAL */}
+
+                        <div className="safe-stat-card">
+
                             <div className="safe-stat-icon green">
+
                                 <CheckCircle2 size={21} />
+
                             </div>
+
 
                             <div>
-                                <span>Operational</span>
+
+                                <span>
+                                    Operational
+                                </span>
 
                                 <strong>
-                                    {loading ? "—" : operationalSites}
+                                    {statistics.operational}
                                 </strong>
 
                                 <small>
                                     Currently available
                                 </small>
+
                             </div>
-                        </motion.div>
+
+                        </div>
 
 
-                        <motion.div
-                            className="safe-stat-card"
-                            initial={{ opacity: 0, y: 15 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2 }}
-                        >
+                        {/* OCCUPANCY */}
+
+                        <div className="safe-stat-card">
+
                             <div className="safe-stat-icon orange">
+
                                 <Users size={21} />
+
                             </div>
+
 
                             <div>
-                                <span>Current Occupancy</span>
+
+                                <span>
+                                    Current Occupancy
+                                </span>
 
                                 <strong>
-                                    {loading
-                                        ? "—"
-                                        : totalOccupancy.toLocaleString()}
+                                    {statistics.occupied}
                                 </strong>
 
                                 <small>
                                     People currently accommodated
                                 </small>
+
                             </div>
-                        </motion.div>
+
+                        </div>
 
 
-                        <motion.div
-                            className="safe-stat-card"
-                            initial={{ opacity: 0, y: 15 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.3 }}
-                        >
+                        {/* CAPACITY */}
+
+                        <div className="safe-stat-card">
+
                             <div className="safe-stat-icon purple">
+
                                 <Building2 size={21} />
+
                             </div>
+
 
                             <div>
-                                <span>Total Capacity</span>
+
+                                <span>
+                                    Total Capacity
+                                </span>
 
                                 <strong>
-                                    {loading
-                                        ? "—"
-                                        : totalCapacity.toLocaleString()}
+                                    {statistics.totalCapacity}
                                 </strong>
 
                                 <small>
                                     Combined site capacity
                                 </small>
+
                             </div>
-                        </motion.div>
+
+                        </div>
 
                     </section>
 
 
-                    {/* SEARCH / FILTER */}
+                    {/* ==================================================
+                        SEARCH / FILTER
+                    ================================================== */}
 
                     <section className="safe-sites-controls">
 
+
                         <div className="search-box">
 
-                            <Search size={18} />
+                            <Search size={17} />
 
                             <input
                                 type="text"
                                 placeholder="Search safe sites or locations..."
-                                value={searchTerm}
+                                value={search}
                                 onChange={(e) =>
-                                    setSearchTerm(e.target.value)
+                                    setSearch(e.target.value)
                                 }
                             />
 
@@ -489,454 +696,530 @@ const SafeSites = () => {
                                 setStatusFilter(e.target.value)
                             }
                         >
+
                             <option value="all">
                                 All Status
-                            </option>
-
-                            <option value="active">
-                                Active
                             </option>
 
                             <option value="operational">
                                 Operational
                             </option>
 
-                            <option value="available">
-                                Available
+                            <option value="limited">
+                                Limited
                             </option>
 
-                            <option value="maintenance">
-                                Maintenance
+                            <option value="full">
+                                Full
                             </option>
 
-                            <option value="inactive">
-                                Inactive
+                            <option value="unknown">
+                                Unknown
                             </option>
 
-                            <option value="closed">
-                                Closed
-                            </option>
                         </select>
 
                     </section>
 
 
-                    {/* SAFE SITE CONTENT */}
+                    {/* ==================================================
+                        MAIN PANEL
+                    ================================================== */}
 
-                    <section className="safe-sites-content">
+                    <section className="safe-sites-panel">
 
-                        <div className="safe-sites-panel">
 
-                            <div className="safe-panel-header">
+                        <div className="safe-panel-header">
 
-                                <div>
-                                    <h2>
-                                        Identified Safe Sites
-                                    </h2>
+                            <div>
 
-                                    <p>
-                                        Locations retrieved from the
-                                        TerraShield backend.
-                                    </p>
-                                </div>
+                                <h2>
+                                    Identified Safe Sites
+                                </h2>
 
-                                {!loading && (
-                                    <span className="site-count">
-                                        {filteredSites.length} sites
-                                    </span>
-                                )}
+                                <p>
+                                    Locations retrieved from the
+                                    TerraShield backend.
+                                </p>
 
                             </div>
 
 
-                            {/* LOADING */}
+                            <span className="site-count">
 
-                            {loading && (
-                                <div className="safe-sites-loading">
+                                {filteredSites.length} sites
 
-                                    <RefreshCw
-                                        size={28}
-                                        className="spin"
-                                    />
+                            </span>
+
+                        </div>
+
+
+                        {/* LOADING */}
+
+                        {loading && (
+
+                            <div className="safe-sites-loading">
+
+                                <RefreshCw
+                                    size={24}
+                                    className="spin"
+                                />
+
+                                <p>
+                                    Loading safe sites...
+                                </p>
+
+                            </div>
+
+                        )}
+
+
+                        {/* EMPTY */}
+
+                        {!loading &&
+                            filteredSites.length === 0 && (
+
+                                <div className="safe-sites-empty">
+
+                                    <div className="empty-site-icon">
+
+                                        <Home size={28} />
+
+                                    </div>
+
+
+                                    <h3>
+
+                                        {sites.length === 0
+                                            ? "No safe sites yet"
+                                            : "No matching safe sites"}
+
+                                    </h3>
+
 
                                     <p>
-                                        Loading safe-site information...
+
+                                        {sites.length === 0
+                                            ? "Add a relocation site to start recommending it to at-risk habitations."
+                                            : "Try changing your search or status filter."}
+
                                     </p>
 
                                 </div>
+
                             )}
 
 
-                            {/* EMPTY */}
+                        {/* SITE LIST */}
 
-                            {!loading &&
-                                !error &&
-                                filteredSites.length === 0 && (
-                                    <div className="safe-sites-empty">
+                        {!loading &&
+                            filteredSites.length > 0 && (
 
-                                        <div className="empty-site-icon">
-                                            <ShieldCheck size={28} />
-                                        </div>
+                                <div className="safe-sites-list">
 
-                                        <h3>
-                                            No safe sites found
-                                        </h3>
+                                    {filteredSites.map(
+                                        (site) => {
 
-                                        <p>
-                                            No safe-site records were
-                                            returned by the backend for
-                                            the current filters.
-                                        </p>
+                                            const status =
+                                                getSiteStatus(site);
 
-                                    </div>
-                                )}
+                                            const occupancy =
+                                                getOccupancyPercentage(
+                                                    site
+                                                );
+
+                                            const available =
+                                                Number(
+                                                    site.capacity?.available
+                                                ) || 0;
+
+                                            const total =
+                                                Number(
+                                                    site.capacity?.total
+                                                ) || 0;
+
+                                            return (
+
+                                                <div
+                                                    className="safe-site-card"
+                                                    key={
+                                                        site.siteId ||
+                                                        site._id
+                                                    }
+                                                >
 
 
-                            {/* SITE CARDS */}
+                                                    {/* CARD TOP */}
 
-                            {!loading &&
-                                filteredSites.length > 0 && (
-                                    <div className="safe-sites-list">
+                                                    <div className="site-card-top">
 
-                                        {filteredSites.map(
-                                            (site, index) => {
+                                                        <div className="site-title-area">
 
-                                                const name =
-                                                    getSiteName(site);
 
-                                                const location =
-                                                    getLocation(site);
+                                                            <div className="site-icon">
 
-                                                const capacity =
-                                                    getCapacity(site);
-
-                                                const occupancy =
-                                                    getOccupancy(site);
-
-                                                const available =
-                                                    getAvailableCapacity(
-                                                        site
-                                                    );
-
-                                                const status =
-                                                    getStatus(site);
-
-                                                const coordinates =
-                                                    getCoordinates(site);
-
-                                                const occupancyPercentage =
-                                                    capacity &&
-                                                    occupancy != null
-                                                        ? Math.min(
-                                                              (
-                                                                  Number(
-                                                                      occupancy
-                                                                  ) /
-                                                                  Number(
-                                                                      capacity
-                                                                  )
-                                                              ) *
-                                                                  100,
-                                                              100
-                                                          )
-                                                        : null;
-
-                                                return (
-                                                    <motion.article
-                                                        className="safe-site-card"
-                                                        key={
-                                                            site._id ||
-                                                            site.id ||
-                                                            index
-                                                        }
-                                                        initial={{
-                                                            opacity: 0,
-                                                            y: 10,
-                                                        }}
-                                                        animate={{
-                                                            opacity: 1,
-                                                            y: 0,
-                                                        }}
-                                                        transition={{
-                                                            delay:
-                                                                index *
-                                                                0.04,
-                                                        }}
-                                                    >
-
-                                                        {/* CARD TOP */}
-
-                                                        <div className="site-card-top">
-
-                                                            <div className="site-title-area">
-
-                                                                <div className="site-icon">
-                                                                    <ShieldCheck
-                                                                        size={
-                                                                            20
-                                                                        }
-                                                                    />
-                                                                </div>
-
-                                                                <div>
-                                                                    <h3>
-                                                                        {
-                                                                            name
-                                                                        }
-                                                                    </h3>
-
-                                                                    <div className="site-location">
-
-                                                                        <MapPin
-                                                                            size={
-                                                                                14
-                                                                            }
-                                                                        />
-
-                                                                        <span>
-                                                                            {
-                                                                                location
-                                                                            }
-                                                                        </span>
-
-                                                                    </div>
-                                                                </div>
+                                                                <Home
+                                                                    size={19}
+                                                                />
 
                                                             </div>
 
 
-                                                            <span
-                                                                className={`site-status ${getStatusClass(
-                                                                    status
-                                                                )}`}
-                                                            >
+                                                            <div>
 
-                                                                {status ===
-                                                                    "active" ||
-                                                                status ===
-                                                                    "operational" ||
-                                                                status ===
-                                                                    "available" ? (
-                                                                    <CheckCircle2
-                                                                        size={
-                                                                            13
-                                                                        }
-                                                                    />
-                                                                ) : status ===
-                                                                  "maintenance" ||
-                                                                  status ===
-                                                                      "pending" ? (
-                                                                    <Clock
-                                                                        size={
-                                                                            13
-                                                                        }
-                                                                    />
-                                                                ) : (
-                                                                    <XCircle
-                                                                        size={
-                                                                            13
-                                                                        }
-                                                                    />
-                                                                )}
+                                                                <h3>
+                                                                    {site.name ||
+                                                                        "Unnamed Safe Site"}
+                                                                </h3>
 
-                                                                {getStatusLabel(
-                                                                    status
-                                                                )}
 
+                                                                <div className="site-location">
+
+                                                                    <MapPin
+                                                                        size={12}
+                                                                    />
+
+                                                                    <span>
+                                                                        {getLocationText(
+                                                                            site
+                                                                        )}
+                                                                    </span>
+
+                                                                </div>
+
+                                                            </div>
+
+                                                        </div>
+
+
+                                                        <span
+                                                            className={`site-status ${status.className}`}
+                                                        >
+
+                                                            <CheckCircle2
+                                                                size={11}
+                                                            />
+
+                                                            {status.label}
+
+                                                        </span>
+
+                                                    </div>
+
+
+                                                    {/* INFORMATION */}
+
+                                                    <div className="site-info-grid">
+
+
+                                                        <div className="site-info-item">
+
+                                                            <Building2
+                                                                size={15}
+                                                            />
+
+                                                            <div>
+
+                                                                <span>
+                                                                    Total Capacity
+                                                                </span>
+
+                                                                <strong>
+                                                                    {total}
+                                                                </strong>
+
+                                                            </div>
+
+                                                        </div>
+
+
+                                                        <div className="site-info-item">
+
+                                                            <Users
+                                                                size={15}
+                                                            />
+
+                                                            <div>
+
+                                                                <span>
+                                                                    Available
+                                                                </span>
+
+                                                                <strong>
+                                                                    {available}
+                                                                </strong>
+
+                                                            </div>
+
+                                                        </div>
+
+
+                                                        <div className="site-info-item">
+
+                                                            <CheckCircle2
+                                                                size={15}
+                                                            />
+
+                                                            <div>
+
+                                                                <span>
+                                                                    Suitability
+                                                                </span>
+
+                                                                <strong>
+                                                                    {site.suitabilityScore ??
+                                                                        "—"}
+                                                                    %
+                                                                </strong>
+
+                                                            </div>
+
+                                                        </div>
+
+
+                                                        <div className="site-info-item">
+
+                                                            <MapPin
+                                                                size={15}
+                                                            />
+
+                                                            <div>
+
+                                                                <span>
+                                                                    Site ID
+                                                                </span>
+
+                                                                <strong>
+                                                                    {site.siteId ||
+                                                                        "—"}
+                                                                </strong>
+
+                                                            </div>
+
+                                                        </div>
+
+                                                    </div>
+
+
+                                                    {/* OCCUPANCY */}
+
+                                                    <div className="occupancy-section">
+
+                                                        <div className="occupancy-heading">
+
+                                                            <span>
+                                                                Occupancy
                                                             </span>
 
-                                                        </div>
-
-
-                                                        {/* SITE INFO */}
-
-                                                        <div className="site-info-grid">
-
-                                                            <div className="site-info-item">
-
-                                                                <Building2
-                                                                    size={
-                                                                        16
-                                                                    }
-                                                                />
-
-                                                                <div>
-                                                                    <span>
-                                                                        Type
-                                                                    </span>
-
-                                                                    <strong>
-                                                                        {
-                                                                            getType(
-                                                                                site
-                                                                            )
-                                                                        }
-                                                                    </strong>
-                                                                </div>
-
-                                                            </div>
-
-
-                                                            <div className="site-info-item">
-
-                                                                <Users
-                                                                    size={
-                                                                        16
-                                                                    }
-                                                                />
-
-                                                                <div>
-                                                                    <span>
-                                                                        Capacity
-                                                                    </span>
-
-                                                                    <strong>
-                                                                        {capacity !=
-                                                                        null
-                                                                            ? Number(
-                                                                                  capacity
-                                                                              ).toLocaleString()
-                                                                            : "—"}
-                                                                    </strong>
-                                                                </div>
-
-                                                            </div>
-
-
-                                                            <div className="site-info-item">
-
-                                                                <Users
-                                                                    size={
-                                                                        16
-                                                                    }
-                                                                />
-
-                                                                <div>
-                                                                    <span>
-                                                                        Occupied
-                                                                    </span>
-
-                                                                    <strong>
-                                                                        {occupancy !=
-                                                                        null
-                                                                            ? Number(
-                                                                                  occupancy
-                                                                              ).toLocaleString()
-                                                                            : "—"}
-                                                                    </strong>
-                                                                </div>
-
-                                                            </div>
-
-
-                                                            <div className="site-info-item">
-
-                                                                <ShieldCheck
-                                                                    size={
-                                                                        16
-                                                                    }
-                                                                />
-
-                                                                <div>
-                                                                    <span>
-                                                                        Available
-                                                                    </span>
-
-                                                                    <strong>
-                                                                        {available !=
-                                                                        null
-                                                                            ? available.toLocaleString()
-                                                                            : "—"}
-                                                                    </strong>
-                                                                </div>
-
-                                                            </div>
+                                                            <strong>
+                                                                {occupancy}%
+                                                            </strong>
 
                                                         </div>
 
 
-                                                        {/* OCCUPANCY */}
+                                                        <div className="occupancy-bar">
 
-                                                        {occupancyPercentage !==
-                                                            null && (
-                                                            <div className="occupancy-section">
-
-                                                                <div className="occupancy-heading">
-
-                                                                    <span>
-                                                                        Occupancy
-                                                                    </span>
-
-                                                                    <strong>
-                                                                        {Math.round(
-                                                                            occupancyPercentage
-                                                                        )}
-                                                                        %
-                                                                    </strong>
-
-                                                                </div>
-
-                                                                <div className="occupancy-bar">
-
-                                                                    <div
-                                                                        style={{
-                                                                            width: `${occupancyPercentage}%`,
-                                                                        }}
-                                                                    />
-
-                                                                </div>
-
-                                                            </div>
-                                                        )}
-
-
-                                                        {/* ACTIONS */}
-
-                                                        <div className="site-actions">
-
-                                                            <button
-                                                                className="site-map-button"
-                                                                onClick={() =>
-                                                                    openMap(
-                                                                        site
-                                                                    )
-                                                                }
-                                                                disabled={
-                                                                    !coordinates
-                                                                }
-                                                                title={
-                                                                    !coordinates
-                                                                        ? "Coordinates unavailable"
-                                                                        : "View location on map"
-                                                                }
-                                                            >
-                                                                <Navigation
-                                                                    size={
-                                                                        15
-                                                                    }
-                                                                />
-
-                                                                View on Map
-                                                            </button>
+                                                            <div
+                                                                style={{
+                                                                    width: `${occupancy}%`
+                                                                }}
+                                                            />
 
                                                         </div>
 
-                                                    </motion.article>
-                                                );
-                                            }
-                                        )}
+                                                    </div>
 
-                                    </div>
-                                )}
 
-                        </div>
+                                                    {/* ACTION */}
+
+                                                    <div className="site-actions">
+
+                                                        <button
+                                                            className="site-map-button"
+                                                            type="button"
+                                                            disabled
+                                                            title="Map integration can be connected here"
+                                                        >
+
+                                                            <MapPin
+                                                                size={13}
+                                                            />
+
+                                                            View on Map
+
+                                                        </button>
+
+                                                    </div>
+
+                                                </div>
+
+                                            );
+
+                                        }
+                                    )}
+
+                                </div>
+
+                            )}
 
                     </section>
 
                 </main>
+
             </div>
+
+
+            {/* ==========================================================
+                ADD SAFE SITE MODAL
+            ========================================================== */}
+
+            {showForm && (
+
+                <div
+                    className="modal-backdrop"
+                    onClick={() =>
+                        setShowForm(false)
+                    }
+                >
+
+                    <div
+                        className="modal"
+                        onClick={(e) =>
+                            e.stopPropagation()
+                        }
+                    >
+
+                        <button
+                            className="modal-close"
+                            onClick={() =>
+                                setShowForm(false)
+                            }
+                            type="button"
+                        >
+
+                            <X size={18} />
+
+                        </button>
+
+
+                        <h2>
+                            Add Safe Site
+                        </h2>
+
+
+                        <p className="modal-description">
+                            Add a new relocation location for
+                            evacuated populations.
+                        </p>
+
+
+                        <form
+                            onSubmit={handleSubmit}
+                        >
+
+                            <input
+                                name="siteId"
+                                placeholder="Site ID (e.g. S001)"
+                                value={form.siteId}
+                                onChange={handleChange}
+                                required
+                            />
+
+
+                            <input
+                                name="name"
+                                placeholder="Site Name"
+                                value={form.name}
+                                onChange={handleChange}
+                                required
+                            />
+
+
+                            <div className="modal-form-row">
+
+                                <input
+                                    name="latitude"
+                                    type="number"
+                                    step="any"
+                                    placeholder="Latitude"
+                                    value={form.latitude}
+                                    onChange={handleChange}
+                                    required
+                                />
+
+                                <input
+                                    name="longitude"
+                                    type="number"
+                                    step="any"
+                                    placeholder="Longitude"
+                                    value={form.longitude}
+                                    onChange={handleChange}
+                                    required
+                                />
+
+                            </div>
+
+
+                            <div className="modal-form-row">
+
+                                <input
+                                    name="total"
+                                    type="number"
+                                    min="1"
+                                    placeholder="Total Capacity"
+                                    value={form.total}
+                                    onChange={handleChange}
+                                    required
+                                />
+
+                                <input
+                                    name="occupied"
+                                    type="number"
+                                    min="0"
+                                    placeholder="Currently Occupied"
+                                    value={form.occupied}
+                                    onChange={handleChange}
+                                />
+
+                            </div>
+
+
+                            <input
+                                name="suitabilityScore"
+                                type="number"
+                                min="0"
+                                max="100"
+                                placeholder="Suitability Score (0-100)"
+                                value={form.suitabilityScore}
+                                onChange={handleChange}
+                            />
+
+
+                            <button
+                                type="submit"
+                                className="primary-action modal-submit"
+                            >
+
+                                <Plus size={17} />
+
+                                Save Site
+
+                            </button>
+
+                        </form>
+
+                    </div>
+
+                </div>
+
+            )}
+
         </div>
+
     );
-};
+
+}
+
 
 export default SafeSites;

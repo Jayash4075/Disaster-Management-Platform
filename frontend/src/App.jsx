@@ -146,6 +146,8 @@ function App() {
                     element={<SafeSites />}
                 />
 
+                <Route path="/authority/safe-sites" element={<ProtectedRoute allowedRoles={["authority"]}><SafeSites /></ProtectedRoute>} />
+
                 <Route path="/authority/assess-village" element={<ProtectedRoute allowedRoles={["authority"]}><HabitationRiskAssessment /></ProtectedRoute>} />
         </Routes>
         </BrowserRouter>

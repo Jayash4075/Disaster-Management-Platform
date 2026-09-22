@@ -155,3 +155,31 @@ module.exports.getSafeSites = async (req, res) => {
         });
     }
 };
+
+// relocationController.js — add alongside getAllSites
+module.exports.createSite = async (req, res) => {
+    try {
+        const { siteId, name, location, capacity, suitabilityScore } = req.body;
+        if (!siteId || !name || !location?.coordinates || capacity?.total == null) {
+            return res.status(400).json({ success: false, message: "siteId, name, location, and capacity.total are required" });
+        }
+        const existing = await RelocationSite.findOne({ siteId });
+        if (existing) {
+            return res.status(409).json({ success: false, message: "A site with this ID already exists" });
+        }
+        const site = await RelocationSite.create({
+            siteId, name,
+            location: { type: "Point", coordinates: location.coordinates },
+            capacity: {
+                total: capacity.total,
+                occupied: capacity.occupied || 0,
+                available: capacity.total - (capacity.occupied || 0)
+            },
+            suitabilityScore: suitabilityScore || 70
+        });
+        res.status(201).json({ success: true, site });
+    } catch (error) {
+        console.error("Create site error:", error);
+        res.status(500).json({ success: false, message: "Failed to create site" });
+    }
+};

@@ -10,6 +10,7 @@ router.get(
     authorize("authority"),
     relocationController.getSafeSites
 );
+router.post('/sites', protect, authorize('authority'), relocationController.createSite);
 router.get('/:id/site', protect, authorize('authority'), relocationController.getRecommendedSite);
 
 module.exports = router;
