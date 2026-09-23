@@ -14,17 +14,23 @@ function applyPrediction(
     prediction
 ) {
 
+    // ========================================================
+    // BASIC RISK RESULT
+    // ========================================================
+
     habitation.riskScore =
         Number(prediction.riskScore) || 0;
-
 
     habitation.riskLevel =
         prediction.riskLevel || "GREEN";
 
-
     habitation.relocationPriority =
         prediction.relocationPriority || "MONITOR";
 
+
+    // ========================================================
+    // VULNERABILITY
+    // ========================================================
 
     if (
         prediction.vulnerabilityScore !== undefined &&
@@ -37,13 +43,45 @@ function applyPrediction(
     }
 
 
-    habitation.hazards =
-        prediction.hazards || {};
+    // ========================================================
+    // HAZARDS
+    // ========================================================
+
+    if (prediction.hazards) {
+
+        habitation.hazards = {
+
+            flood:
+                prediction.hazards.flood ?? null,
+
+            landslide:
+                prediction.hazards.landslide ?? null,
+
+            erosion:
+                prediction.hazards.erosion ?? null,
+
+            cloudburst:
+                prediction.hazards.cloudburst ?? null
+
+        };
+
+    } else {
+
+        habitation.hazards = {
+
+            flood: null,
+            landslide: null,
+            erosion: null,
+            cloudburst: null
+
+        };
+
+    }
 
 
-    // --------------------------------------------------------
-    // Carrying capacity / probability details
-    // --------------------------------------------------------
+    // ========================================================
+    // CARRYING CAPACITY
+    // ========================================================
 
     habitation.capacityRatio =
         prediction.details
@@ -56,6 +94,10 @@ function applyPrediction(
             ?.carryingCapacity
             ?.status ?? null;
 
+
+    // ========================================================
+    // PROBABILITIES
+    // ========================================================
 
     habitation.riskProbability =
         prediction.details
@@ -74,21 +116,18 @@ function applyPrediction(
             ?.probability ?? null;
 
 
-    // --------------------------------------------------------
-    // Assessment metadata
-    // --------------------------------------------------------
+    // ========================================================
+    // ASSESSMENT METADATA
+    // ========================================================
 
     habitation.assessmentStatus =
         "ASSESSED";
 
-
     habitation.assessmentError =
         null;
 
-
     habitation.modelVersion =
         prediction.modelVersion || "unknown";
-
 
     habitation.lastAssessment =
         new Date();
@@ -106,15 +145,22 @@ async function assessHabitation(
 
     try {
 
+        console.log(
+            "Running ML assessment for:",
+            habitation.habitationId,
+            habitation.name
+        );
+
+
         const prediction =
             await getHabitationPrediction(
                 habitation
             );
 
 
-        // ----------------------------------------------------
-        // ML returned an application-level failure
-        // ----------------------------------------------------
+        // ====================================================
+        // ML APPLICATION-LEVEL FAILURE
+        // ====================================================
 
         if (
             !prediction ||
@@ -154,9 +200,9 @@ async function assessHabitation(
         }
 
 
-        // ----------------------------------------------------
-        // Save successful ML result
-        // ----------------------------------------------------
+        // ====================================================
+        // APPLY ML RESULT
+        // ====================================================
 
         applyPrediction(
             habitation,
@@ -164,7 +210,41 @@ async function assessHabitation(
         );
 
 
+        // ====================================================
+        // SAVE TO MONGODB
+        // ====================================================
+
         await habitation.save();
+
+
+        console.log(
+            "ML assessment saved:",
+            {
+                habitationId:
+                    habitation.habitationId,
+
+                name:
+                    habitation.name,
+
+                population:
+                    habitation.population,
+
+                riskScore:
+                    habitation.riskScore,
+
+                riskLevel:
+                    habitation.riskLevel,
+
+                relocationPriority:
+                    habitation.relocationPriority,
+
+                vulnerabilityScore:
+                    habitation.vulnerabilityScore,
+
+                assessmentStatus:
+                    habitation.assessmentStatus
+            }
+        );
 
 
         return {
@@ -187,7 +267,6 @@ async function assessHabitation(
 
         habitation.assessmentStatus =
             "ML_ERROR";
-
 
         habitation.assessmentError =
             error.message;
@@ -215,27 +294,16 @@ async function updateHabitationInputs(
     const allowedFields = [
 
         "rainfall",
-
         "riverLevel",
-
         "floodHistory",
-
         "buildingDamage",
-
         "vulnerablePopulation",
-
         "waterLevel",
-
         "roadAccess",
-
         "hospitalDistance",
-
         "shelterCapacity",
-
         "availableWater",
-
         "foodStock",
-
         "medicalCapacity"
 
     ];
@@ -272,13 +340,10 @@ async function updateHabitationInputs(
     }
 
 
-    // --------------------------------------------------------
     // Previous ML result is now outdated
-    // --------------------------------------------------------
 
     habitation.assessmentStatus =
         "NOT_ASSESSED";
-
 
     habitation.assessmentError =
         null;

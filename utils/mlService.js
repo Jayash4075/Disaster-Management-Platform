@@ -1,4 +1,10 @@
+
 const axios = require("axios");
+
+
+// ============================================================
+// ML SERVICE CONFIG
+// ============================================================
 
 const ML_SERVICE_URL =
     process.env.ML_SERVICE_URL ||
@@ -14,31 +20,59 @@ const ML_TIMEOUT =
 
 async function mlGet(endpoint) {
 
+    const url = `${ML_SERVICE_URL}${endpoint}`;
+
     try {
 
-        const response =
-            await axios.get(
+        console.log(`ML GET → ${url}`);
 
-                `${ML_SERVICE_URL}${endpoint}`,
+        const response = await axios.get(
+            url,
+            {
+                timeout: ML_TIMEOUT
+            }
+        );
 
-                {
-                    timeout: ML_TIMEOUT
-                }
-
-            );
+        console.log(
+            `ML GET SUCCESS [${endpoint}]`
+        );
 
         return response.data;
 
     } catch (error) {
 
         console.error(
-            `ML GET error [${endpoint}]:`,
-            error.response?.data ||
+            "========== ML GET ERROR =========="
+        );
+
+        console.error(
+            "URL:",
+            url
+        );
+
+        console.error(
+            "Status:",
+            error.response?.status
+        );
+
+        console.error(
+            "Response:",
+            error.response?.data
+        );
+
+        console.error(
+            "Message:",
             error.message
+        );
+
+        console.error(
+            "=================================="
         );
 
         throw new Error(
             error.response?.data?.error ||
+            error.response?.data?.message ||
+            error.message ||
             `ML service unavailable at ${endpoint}`
         );
 
@@ -56,41 +90,91 @@ async function mlPost(
     payload
 ) {
 
+    const url = `${ML_SERVICE_URL}${endpoint}`;
+
     try {
 
-        const response =
-            await axios.post(
+        console.log(
+            `ML POST → ${url}`
+        );
 
-                `${ML_SERVICE_URL}${endpoint}`,
+        console.log(
+            "ML Payload:",
+            JSON.stringify(payload, null, 2)
+        );
 
-                payload,
+        const response = await axios.post(
 
-                {
+            url,
 
-                    timeout: ML_TIMEOUT,
+            payload,
 
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    }
+            {
+                timeout: ML_TIMEOUT,
 
+                headers: {
+                    "Content-Type":
+                        "application/json"
                 }
+            }
 
-            );
+        );
+
+        console.log(
+            `ML POST SUCCESS [${endpoint}]`
+        );
+
+        console.log(
+            "ML Response:",
+            JSON.stringify(
+                response.data,
+                null,
+                2
+            )
+        );
 
         return response.data;
 
     } catch (error) {
 
         console.error(
-            `ML POST error [${endpoint}]:`,
-            error.response?.data ||
+            "========== ML POST ERROR =========="
+        );
+
+        console.error(
+            "URL:",
+            url
+        );
+
+        console.error(
+            "Status:",
+            error.response?.status
+        );
+
+        console.error(
+            "Response:",
+            error.response?.data
+        );
+
+        console.error(
+            "Message:",
             error.message
         );
 
+        console.error(
+            "==================================="
+        );
+
         throw new Error(
+
             error.response?.data?.error ||
+
+            error.response?.data?.message ||
+
+            error.message ||
+
             `ML service unavailable at ${endpoint}`
+
         );
 
     }
@@ -104,7 +188,9 @@ async function mlPost(
 
 async function getMLHealth() {
 
-    return await mlGet("/health");
+    return await mlGet(
+        "/health"
+    );
 
 }
 
@@ -116,6 +202,10 @@ async function getMLHealth() {
 async function getHabitationPrediction(
     habitation
 ) {
+
+    // --------------------------------------------------------
+    // REQUIRED INPUTS
+    // --------------------------------------------------------
 
     const requiredFields = [
 
@@ -136,18 +226,30 @@ async function getHabitationPrediction(
     ];
 
 
+    // --------------------------------------------------------
+    // CHECK MISSING FIELDS
+    // --------------------------------------------------------
+
     const missingFields =
         requiredFields.filter(
 
             field =>
+
                 habitation[field] === undefined ||
+
                 habitation[field] === null ||
+
                 habitation[field] === ""
 
         );
 
 
     if (missingFields.length > 0) {
+
+        console.error(
+            "Missing ML fields:",
+            missingFields
+        );
 
         return {
 
@@ -162,6 +264,10 @@ async function getHabitationPrediction(
 
     }
 
+
+    // --------------------------------------------------------
+    // CHECK NUMERIC FIELDS
+    // --------------------------------------------------------
 
     const numericFields = [
 
@@ -185,15 +291,26 @@ async function getHabitationPrediction(
     const invalidFields =
         numericFields.filter(
 
-            field =>
-                Number.isNaN(
-                    Number(habitation[field])
-                )
+            field => {
+
+                const value =
+                    Number(
+                        habitation[field]
+                    );
+
+                return !Number.isFinite(value);
+
+            }
 
         );
 
 
     if (invalidFields.length > 0) {
+
+        console.error(
+            "Invalid ML fields:",
+            invalidFields
+        );
 
         return {
 
@@ -209,28 +326,69 @@ async function getHabitationPrediction(
     }
 
 
+    // --------------------------------------------------------
+    // BUILD ML PAYLOAD
+    // --------------------------------------------------------
+
     const payload = {
 
         habitationId:
-            habitation.habitationId,
+            habitation.habitationId ||
+            habitation.villageCode ||
+            habitation.village_code ||
+            null,
 
         name:
-            habitation.name,
+            habitation.name ||
+            habitation.villageName ||
+            habitation.village_name ||
+            null,
+
+
+        // ----------------------------------------------------
+        // VILLAGE INFORMATION
+        // ----------------------------------------------------
+
+        villageCode:
+            habitation.villageCode ||
+            habitation.village_code ||
+            null,
+
+        villageName:
+            habitation.villageName ||
+            habitation.village_name ||
+            habitation.name ||
+            null,
+
+
+        // ----------------------------------------------------
+        // ML INPUT FEATURES
+        // ----------------------------------------------------
 
         population:
-            Number(habitation.population),
+            Number(
+                habitation.population
+            ),
 
         rainfall:
-            Number(habitation.rainfall),
+            Number(
+                habitation.rainfall
+            ),
 
         river_level:
-            Number(habitation.riverLevel),
+            Number(
+                habitation.riverLevel
+            ),
 
         flood_history:
-            Number(habitation.floodHistory),
+            Number(
+                habitation.floodHistory
+            ),
 
         building_damage:
-            Number(habitation.buildingDamage),
+            Number(
+                habitation.buildingDamage
+            ),
 
         vulnerable_population:
             Number(
@@ -238,10 +396,14 @@ async function getHabitationPrediction(
             ),
 
         water_level:
-            Number(habitation.waterLevel),
+            Number(
+                habitation.waterLevel
+            ),
 
         road_access:
-            Number(habitation.roadAccess),
+            Number(
+                habitation.roadAccess
+            ),
 
         hospital_distance:
             Number(
@@ -271,9 +433,41 @@ async function getHabitationPrediction(
     };
 
 
+    // --------------------------------------------------------
+    // FINAL PAYLOAD LOG
+    // --------------------------------------------------------
+
+    console.log(
+        "=========================================="
+    );
+
+    console.log(
+        "Sending habitation data to ML service:"
+    );
+
+    console.log(
+        JSON.stringify(
+            payload,
+            null,
+            2
+        )
+    );
+
+    console.log(
+        "=========================================="
+    );
+
+
+    // --------------------------------------------------------
+    // CALL ML SERVICE
+    // --------------------------------------------------------
+
     return await mlPost(
+
         "/predict/habitation",
+
         payload
+
     );
 
 }
@@ -296,10 +490,36 @@ async function getVillages() {
 // SEARCH VILLAGES
 // ============================================================
 
-async function searchVillages(query) {
+async function searchVillages(
+    query
+) {
+
+    if (
+        query === undefined ||
+        query === null ||
+        String(query).trim() === ""
+    ) {
+
+        return {
+
+            success: false,
+
+            error:
+                "Village search query is required",
+
+            villages: []
+
+        };
+
+    }
+
 
     return await mlGet(
-        `/api/villages/search?q=${encodeURIComponent(query)}`
+
+        `/api/villages/search?q=${encodeURIComponent(
+            String(query).trim()
+        )}`
+
     );
 
 }

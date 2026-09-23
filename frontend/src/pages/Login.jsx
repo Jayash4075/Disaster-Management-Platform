@@ -2,13 +2,17 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import toast from "react-hot-toast";
+import { useAuth } from "../context/AuthContext";
+import { getHomeRoute } from "../utils/roleRoutes";
 
 function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+
     const navigate = useNavigate();
+    const { login } = useAuth();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -19,21 +23,15 @@ function Login() {
             const response = await api.post("/api/auth/login", { email, password });
             const data = response.data;
 
-            localStorage.setItem("token", data.token);
-            localStorage.setItem("user", JSON.stringify(data.user));
-            localStorage.setItem("role", data.user.role);
+            login(data.token, data.user);
 
             toast.success(`Welcome back, ${data.user.name}!`);
 
-            if (data.user.role === "authority") {
-                navigate("/authority");
-            } else {
-                navigate("/dashboard");
-            }
+            navigate(getHomeRoute(data.user.role));
+
         } catch (err) {
             console.error("Login error:", err.response?.data || err.message);
 
-            // handle unverified-user case from your authController
             if (err.response?.status === 403 && err.response?.data?.userId) {
                 toast.error("Please verify your email first");
                 navigate("/signup", { state: { userId: err.response.data.userId, resumeOtp: true } });
@@ -51,7 +49,6 @@ function Login() {
     return (
         <div className="auth-page">
 
-            {/* LEFT SIDE */}
             <div className="auth-left">
                 <div className="resq-brand">
                     <h2>ResQ</h2>
@@ -59,24 +56,16 @@ function Login() {
                 </div>
 
                 <div className="hero-content">
-                    <h1>
-                        Emergency Response
-                        <br />
-                        & Relief Platform
-                    </h1>
+                    <h1>Emergency Response<br />& Relief Platform</h1>
                     <p>
-                        A unified platform connecting citizens,
-                        rescuers, authorities, NGOs and volunteers
-                        for faster and coordinated emergency response.
+                        A unified platform connecting citizens, rescuers, authorities,
+                        NGOs and volunteers for faster and coordinated emergency response.
                     </p>
                 </div>
 
-                <div className="footer-text">
-                    जन सेवा • आपदा प्रबंधन • सुरक्षित भारत
-                </div>
+                <div className="footer-text">जन सेवा • आपदा प्रबंधन • सुरक्षित भारत</div>
             </div>
 
-            {/* RIGHT SIDE */}
             <div className="auth-right">
                 <div className="auth-card">
                     <div className="card-header">
@@ -115,10 +104,7 @@ function Login() {
                     </form>
 
                     <div className="auth-switch">
-                        <p>
-                            Don't have an account?{" "}
-                            <Link to="/signup">Create an account</Link>
-                        </p>
+                        <p>Don't have an account? <Link to="/signup">Create an account</Link></p>
                     </div>
                 </div>
             </div>

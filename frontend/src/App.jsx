@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 
+import { AuthProvider } from "./context/AuthContext";
+
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -19,138 +21,190 @@ import VolunteerNGO from "./pages/VolunteerNGO";
 import NotFoundPage from "./pages/NotFoundPage";
 import RiskMap from "./pages/RiskMap";
 import Habitations from "./pages/Habitations";
+import AssessVillage from "./pages/AssessVillage";
 import Emergencies from "./pages/Emergencies";
 import GISMonitoring from "./pages/GISMonitoring";
 import RiskIntelligence from "./pages/RiskIntelligence";
 import Relocation from "./pages/Relocation";
 import SafeSites from "./pages/SafeSites";
-import HabitationRiskAssessment from './components/CreateHabitation';
+
+const CITIZEN_SIDE_ROLES = ["citizen", "rescuer", "ngo", "volunteer"];
 
 function App() {
     return (
-        
+        <AuthProvider>
         <BrowserRouter>
-        <Toaster position="top-center" toastOptions={{ duration: 4000 }} />
+            <Toaster position="top-center" toastOptions={{ duration: 4000 }} />
 
             <Routes>
-                
 
-                {/* Home */}
-                <Route
-                    path="/"
-                    element={<Home />}
-                />
+                {/* Public */}
+                <Route path="/" element={<Home />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/sos-form" element={<SOSForm />} />
 
-                {/* Authentication */}
-                <Route
-                    path="/login"
-                    element={<Login />}
-                />
-
-                <Route
-                    path="/signup"
-                    element={<Signup />}
-                />
-
-                {/* Citizen Dashboard */}
+                {/* Citizen-side */}
                 <Route
                     path="/dashboard"
-                    element={<ProtectedRoute> <CitizenDashboard /> </ProtectedRoute>}
-                />
-
-                <Route 
-    path="/authority" 
-    element={<AuthorityDashboard />} 
-/>
-
-                <Route 
-                    path="/emergency" 
-                    element={<ProtectedRoute> <Emergency /> </ProtectedRoute>} 
-                />
-
-                <Route 
-                    path="/sos-form"
-                    element={<SOSForm />}
-                />
-
-                <Route 
-                    path="/resources" 
-                    element={<ProtectedRoute> <Resources /> </ProtectedRoute>} 
-                />
-
-                <Route 
-                    path="/create-rescue-team" 
-                    element={<ProtectedRoute allowedRoles={["authority"]}> <CreateRescueTeam /> </ProtectedRoute>} 
-                />
-
-                <Route 
-                    path="/request-resource" 
-                    element={<ProtectedRoute><RequestResourceForm /></ProtectedRoute>} 
-                />
-                
-                <Route 
-                    path="/create-resource" 
-                    element={<ProtectedRoute><CreateResource /></ProtectedRoute>} 
-                />
-
-                <Route 
-                    path="/resource-requests" 
-                    element={<ProtectedRoute allowedRoles={["authority", "ngo"]}> <ResourceRequestsDashboard /> </ProtectedRoute>} 
+                    element={
+                        <ProtectedRoute allowedRoles={CITIZEN_SIDE_ROLES}>
+                            <CitizenDashboard />
+                        </ProtectedRoute>
+                    }
                 />
 
                 <Route
-                    path="/create-risk-zone"
-                    element={<CreateRiskZone />}
+                    path="/emergency"
+                    element={<ProtectedRoute><Emergency /></ProtectedRoute>}
+                />
+
+                <Route
+                    path="/resources"
+                    element={<ProtectedRoute><Resources /></ProtectedRoute>}
+                />
+
+                <Route
+                    path="/request-resource"
+                    element={<ProtectedRoute><RequestResourceForm /></ProtectedRoute>}
+                />
+
+                <Route
+                    path="/create-resource"
+                    element={<ProtectedRoute><CreateResource /></ProtectedRoute>}
                 />
 
                 <Route
                     path="/volunteers"
-                    element={<ProtectedRoute> <VolunteerNGO /> </ProtectedRoute>}
+                    element={<ProtectedRoute><VolunteerNGO /></ProtectedRoute>}
                 />
 
-                {/* Catch-all route for 404 Not Found */}
-                <Route 
-                    path="*" 
-                    element={<NotFoundPage />} 
+                {/* Authority-side */}
+                <Route
+                    path="/authority"
+                    element={
+                        <ProtectedRoute allowedRoles={["authority"]}>
+                            <AuthorityDashboard />
+                        </ProtectedRoute>
+                    }
                 />
 
-                <Route path="/authority/risk-map" element={<RiskMap />} />
+                <Route
+                    path="/authority/assess-village"
+                    element={
+                        <ProtectedRoute allowedRoles={["authority"]}>
+                            <AssessVillage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/authority/risk-map"
+                    element={
+                        <ProtectedRoute allowedRoles={["authority"]}>
+                            <RiskMap />
+                        </ProtectedRoute>
+                    }
+                />
 
                 <Route
                     path="/authority/habitations"
-                    element={<Habitations />}
+                    element={
+                        <ProtectedRoute allowedRoles={["authority"]}>
+                            <Habitations />
+                        </ProtectedRoute>
+                    }
                 />
 
                 <Route
                     path="/authority/emergencies"
-                    element={<Emergencies />}
+                    element={
+                        <ProtectedRoute allowedRoles={["authority"]}>
+                            <Emergencies />
+                        </ProtectedRoute>
+                    }
                 />
 
                 <Route
                     path="/authority/gis"
-                    element={<GISMonitoring />}
+                    element={
+                        <ProtectedRoute allowedRoles={["authority"]}>
+                            <GISMonitoring />
+                        </ProtectedRoute>
+                    }
                 />
 
                 <Route
                     path="/authority/risk-intelligence"
-                    element={<RiskIntelligence />}
+                    element={
+                        <ProtectedRoute allowedRoles={["authority"]}>
+                            <RiskIntelligence />
+                        </ProtectedRoute>
+                    }
                 />
 
                 <Route
                     path="/authority/relocation"
-                    element={<Relocation />}
+                    element={
+                        <ProtectedRoute allowedRoles={["authority"]}>
+                            <Relocation />
+                        </ProtectedRoute>
+                    }
                 />
 
                 <Route
                     path="/authority/safe-sites"
-                    element={<SafeSites />}
+                    element={
+                        <ProtectedRoute allowedRoles={["authority"]}>
+                            <SafeSites />
+                        </ProtectedRoute>
+                    }
                 />
 
-                <Route path="/authority/safe-sites" element={<ProtectedRoute allowedRoles={["authority"]}><SafeSites /></ProtectedRoute>} />
+                {/* Previously missing — sidebar linked here but no route existed,
+                    so these fell through to the catch-all */}
+                <Route
+                    path="/authority/teams"
+                    element={
+                        <ProtectedRoute allowedRoles={["authority"]}>
+                            <CreateRescueTeam />
+                        </ProtectedRoute>
+                    }
+                />
 
-                <Route path="/authority/assess-village" element={<ProtectedRoute allowedRoles={["authority"]}><HabitationRiskAssessment /></ProtectedRoute>} />
-        </Routes>
+                <Route
+                    path="/authority/resources"
+                    element={
+                        <ProtectedRoute allowedRoles={["authority"]}>
+                            <Resources />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/resource-requests"
+                    element={
+                        <ProtectedRoute allowedRoles={["authority", "ngo"]}>
+                            <ResourceRequestsDashboard />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/create-risk-zone"
+                    element={
+                        <ProtectedRoute allowedRoles={["authority"]}>
+                            <CreateRiskZone />
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* 404 */}
+                <Route path="*" element={<NotFoundPage />} />
+
+            </Routes>
         </BrowserRouter>
+        </AuthProvider>
     );
 }
 

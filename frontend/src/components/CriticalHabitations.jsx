@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, ClipboardCheck } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 
 export default function CriticalHabitations() {
     const [habitations, setHabitations] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchHabitations = async () => {
@@ -54,6 +57,15 @@ export default function CriticalHabitations() {
 
     return (
         <div className="habitations-table-wrapper">
+            <button
+                className="secondary-action"
+                onClick={() =>
+                    navigate("/authority/assess-village")
+                }
+            >
+                <ClipboardCheck size={17} />
+                Assess Village
+            </button>
             <table className="habitations-table">
                 <thead>
                     <tr>

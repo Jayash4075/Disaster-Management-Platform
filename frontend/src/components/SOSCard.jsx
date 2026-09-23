@@ -7,13 +7,7 @@ const SOSCard = () => {
   const navigate = useNavigate();
 
   const handleSOS = () => {
-    const confirmed = window.confirm(
-      "Are you sure you want to send an emergency SOS?"
-    );
-
-    if (confirmed) {
-      navigate("/emergency");
-    }
+    navigate("/sos-form");
   };
 
   return (

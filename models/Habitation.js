@@ -20,24 +20,24 @@ const HabitationSchema = new mongoose.Schema(
             default: 0
         },
 
-        // -------------------------
+        // ========================================================
         // LOCATION
-        // -------------------------
+        // ========================================================
 
         location: {
             type: {
                 type: String,
-                enum: ["Point"],
+                enum: ["Point"]
             },
 
             coordinates: {
-                type: [Number],
+                type: [Number]
             }
         },
 
-        // -------------------------
+        // ========================================================
         // ML / AUTHORITY INPUTS
-        // -------------------------
+        // ========================================================
 
         rainfall: {
             type: Number,
@@ -99,9 +99,9 @@ const HabitationSchema = new mongoose.Schema(
             default: null
         },
 
-        // -------------------------
+        // ========================================================
         // ML OUTPUT
-        // -------------------------
+        // ========================================================
 
         riskScore: {
             type: Number,
@@ -155,9 +155,35 @@ const HabitationSchema = new mongoose.Schema(
             default: null
         },
 
-        // -------------------------
+        // ========================================================
+        // HAZARD OUTPUT
+        // ========================================================
+
+        hazards: {
+            flood: {
+                type: Number,
+                default: null
+            },
+
+            landslide: {
+                type: Number,
+                default: null
+            },
+
+            erosion: {
+                type: Number,
+                default: null
+            },
+
+            cloudburst: {
+                type: Number,
+                default: null
+            }
+        },
+
+        // ========================================================
         // ASSESSMENT STATUS
-        // -------------------------
+        // ========================================================
 
         assessmentStatus: {
             type: String,
@@ -190,9 +216,20 @@ const HabitationSchema = new mongoose.Schema(
     }
 );
 
-HabitationSchema.index({
-    location: "2dsphere"},
-    { sparse: true }
+// ============================================================
+// GEO-SPATIAL INDEX
+// ============================================================
+
+HabitationSchema.index(
+    {
+        location: "2dsphere"
+    },
+    {
+        sparse: true
+    }
 );
 
-module.exports = mongoose.model("Habitation", HabitationSchema);
+module.exports = mongoose.model(
+    "Habitation",
+    HabitationSchema
+);

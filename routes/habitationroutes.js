@@ -14,6 +14,13 @@ router.post('/assess-village', protect, authorize('authority'), habitationContro
 router.post('/', protect, authorize('authority'), habitationController.createHabitation);
 router.post('/sync-ml', protect, authorize('authority'), habitationController.syncAllFromML);
 
+router.get(
+    '/risk-map',
+    protect,
+    authorize('authority'),
+    habitationController.getRiskMap
+);
+
 router.get('/', protect, authorize('authority'), habitationController.getHabitations);
 router.get('/:id', protect, authorize('authority'), habitationController.getHabitation);
 router.post('/:id/recalculate', protect, authorize('authority'), habitationController.recalculateRisk);

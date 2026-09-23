@@ -951,1022 +951,429 @@ function CitizenDashboard() {
     // RENDER
     // =====================================================
 
+        // ... (everything above `return (` is unchanged — keep as-is)
+
     return (
 
         <div className="dashboard-page">
 
-
             <Navbar />
-
 
             <main className="dashboard-container">
 
+                {/* ============================================= */}
+                {/* HEADER */}
+                {/* ============================================= */}
 
-                {/* =================================================
-                    HEADER
-                ================================================= */}
-
-                <div className="dashboard-header">
+                <header className="db-header">
 
                     <div>
-
-                        <h1>
-                            Welcome back, {userName}!
-                        </h1>
-
-                        <p>
-                            Stay informed and stay safe
-                            with ResQ.
-                        </p>
-
+                        <h1>Welcome back, {userName}</h1>
+                        <p>Here's what's happening around you right now.</p>
                     </div>
-
 
                     <button
-                        className="location-button"
-                        onClick={
-                            getCurrentLocation
-                        }
-                        disabled={
-                            locationLoading
-                        }
+                        className="btn-location"
+                        onClick={getCurrentLocation}
+                        disabled={locationLoading}
                     >
-
-                        📍{" "}
-
-                        {locationLoading
-                            ? "Detecting Location..."
-                            : "Use My Current Location"}
-
+                        📍 {locationLoading ? "Detecting location…" : "Use my current location"}
                     </button>
 
-                </div>
+                </header>
 
+                {(locationLoading || locationError || location) && (
+                    <div className="db-location-strip">
 
-                {/* =================================================
-                    LOCATION STATUS
-                ================================================= */}
-
-                <div className="location-status">
-
-                    {locationLoading && (
-
-                        <p>
-                            📍 Detecting your current
-                            location...
-                        </p>
-
-                    )}
-
-
-                    {locationError && (
-
-                        <div>
-
-                            <p className="location-error">
-                                ⚠️ {locationError}
-                            </p>
-
-                            <button
-                                className="location-button"
-                                onClick={
-                                    getCurrentLocation
-                                }
-                            >
-                                Try Again
-                            </button>
-
-                        </div>
-
-                    )}
-
-
-                    {location &&
-                        !locationLoading && (
-
-                            <div className="location-success">
-
-                                <p>
-                                    📍{" "}
-                                    <strong>
-                                        Location detected
-                                    </strong>
-                                </p>
-
-                                <p>
-                                    Latitude:{" "}
-                                    {location.latitude.toFixed(6)}
-                                </p>
-
-                                <p>
-                                    Longitude:{" "}
-                                    {location.longitude.toFixed(6)}
-                                </p>
-
-                                <p>
-                                    Accuracy: approximately{" "}
-                                    {locationAccuracy
-                                        ? Math.round(
-                                            locationAccuracy
-                                        )
-                                        : "--"}m
-                                </p>
-
-                            </div>
-
+                        {locationLoading && (
+                            <p>Detecting your current location…</p>
                         )}
 
-                </div>
+                        {locationError && (
+                            <div className="db-location-error">
+                                <p>⚠️ {locationError}</p>
+                                <button onClick={getCurrentLocation}>Try again</button>
+                            </div>
+                        )}
 
+                        {location && !locationLoading && (
+                            <p>
+                                📍 Location detected — accuracy ≈{" "}
+                                {locationAccuracy ? Math.round(locationAccuracy) : "--"}m
+                            </p>
+                        )}
 
-                {/* =================================================
-                    SAFETY STATUS
-                ================================================= */}
+                    </div>
+                )}
 
-                <section
-                    className={`safety-status-card ${safetyStatus.className}`}
-                >
+                {/* ============================================= */}
+                {/* HERO: SAFETY STATUS + RISK SCORE (one unit) */}
+                {/* ============================================= */}
 
-                    <div className="safety-status-icon">
+                <section className={`db-hero db-hero--${safetyStatus.className}`}>
 
-                        {safetyStatus.className ===
-                        "critical"
-                            ? "🚨"
-                            : safetyStatus.className ===
-                                "high"
-                                ? "⚠️"
-                                : safetyStatus.className ===
-                                    "moderate"
-                                    ? "🟡"
-                                    : safetyStatus.className ===
-                                        "low"
-                                        ? "🟢"
-                                        : "ℹ️"}
+                    <div className="db-hero-top">
+
+                        <div className="db-hero-icon">
+                            {safetyStatus.className === "critical" ? "🚨"
+                                : safetyStatus.className === "high" ? "⚠️"
+                                : safetyStatus.className === "moderate" ? "🟡"
+                                : safetyStatus.className === "low" ? "🟢"
+                                : "ℹ️"}
+                        </div>
+
+                        <div className="db-hero-text">
+                            <span className="db-hero-label">Current safety status</span>
+                            <h2>{safetyStatus.title}</h2>
+                            <p>{safetyStatus.description}</p>
+                        </div>
+
+                        {(safetyStatus.className === "critical" || safetyStatus.className === "high") && (
+                            <button
+                                className="btn-primary-inverse"
+                                onClick={() => handleQuickAction("/safe-routes")}
+                            >
+                                View safe route
+                            </button>
+                        )}
 
                     </div>
 
-
-                    <div className="safety-status-content">
-
-                        <span className="safety-label">
-                            CURRENT SAFETY STATUS
+                    <div className="db-hero-score">
+                        <div className="db-hero-score-row">
+                            <span>Risk score</span>
+                            <strong>{dataLoading ? "…" : `${getRiskScore()}/100`}</strong>
+                        </div>
+                        <div className="db-score-track">
+                            <div
+                                className="db-score-fill"
+                                style={{ width: `${dataLoading ? 0 : getRiskScore()}%` }}
+                            />
+                        </div>
+                        <span className="db-hero-caption">
+                            Based on current disaster and environmental conditions in your area.
                         </span>
-
-                        <h2>
-                            {safetyStatus.title}
-                        </h2>
-
-                        <p>
-                            {safetyStatus.description}
-                        </p>
-
                     </div>
 
-
-                    {(
-                        safetyStatus.className ===
-                            "critical" ||
-                        safetyStatus.className ===
-                            "high"
-                    ) && (
-
-                        <button
-                            className="relocation-button"
-                            onClick={() =>
-                                handleQuickAction(
-                                    "/safe-routes"
-                                )
-                            }
-                        >
-                            View Safe Route
-                        </button>
-
+                    {disasterError && (
+                        <p className="db-hero-note">⚠️ {disasterError}</p>
                     )}
 
                 </section>
 
+                {/* ============================================= */}
+                {/* SOS — always visible, one tap away */}
+                {/* ============================================= */}
 
-                {/* =================================================
-                    TOP CARDS
-                ================================================= */}
+                <section className="db-sos-strip">
+                    <SOSCard location={location} />
+                </section>
 
-                <div className="dashboard-cards">
+                {/* ============================================= */}
+                {/* HELP NEARBY */}
+                {/* ============================================= */}
 
+                <section className="db-section">
 
-                    <AlertCard
-                        count={
-                            dataLoading
-                                ? "..."
-                                : dashboardData.activeAlerts
-                        }
-                        title="Active Alerts"
-                        subtitle="Near your location"
-                    />
+                    <div className="db-section-heading">
+                        <h2>Help near you</h2>
+                        <p>Live counts for your current location.</p>
+                    </div>
 
+                    <div className="db-stat-row">
 
-                    <div className="dashboard-card">
-
-                        <div className="card-icon">
-                            🏥
+                        <div className="db-stat-tile">
+                            <span className="db-stat-icon">⚠️</span>
+                            <strong>{dataLoading ? "…" : dashboardData.activeAlerts}</strong>
+                            <span>Active alerts</span>
                         </div>
 
-                        <div>
+                        <div className="db-stat-tile">
+                            <span className="db-stat-icon">🏥</span>
+                            <strong>{dataLoading ? "…" : dashboardData.nearbyHospitals}</strong>
+                            <span>Nearby hospitals</span>
+                        </div>
 
-                            <h3>
-                                Nearby Hospitals
-                            </h3>
-
-                            <p className="card-number">
-                                {dataLoading
-                                    ? "..."
-                                    : dashboardData.nearbyHospitals}
-                            </p>
-
-                            <span>
-                                Near your location
-                            </span>
-
+                        <div className="db-stat-tile">
+                            <span className="db-stat-icon">🏠</span>
+                            <strong>{dataLoading ? "…" : dashboardData.nearbyShelters}</strong>
+                            <span>Nearby shelters</span>
                         </div>
 
                     </div>
 
+                </section>
 
-                    <div className="dashboard-card">
+                {/* ============================================= */}
+                {/* WHERE SHOULD I GO */}
+                {/* ============================================= */}
 
-                        <div className="card-icon">
-                            🏠
-                        </div>
+                <section className="db-section">
 
-                        <div>
-
-                            <h3>
-                                Nearby Shelters
-                            </h3>
-
-                            <p className="card-number">
-                                {dataLoading
-                                    ? "..."
-                                    : dashboardData.nearbyShelters}
-                            </p>
-
-                            <span>
-                                Near your location
-                            </span>
-
-                        </div>
-
+                    <div className="db-section-heading">
+                        <h2>Where should I go?</h2>
+                        <p>Your area's risk profile and the nearest recommended safer site.</p>
                     </div>
 
+                    <div className="db-go-grid">
 
-                    <RiskCard
-                        riskLevel={
-                            dataLoading
-                                ? "..."
-                                : getRiskLevel()
-                        }
-                        riskScore={
-                            getRiskScore()
-                        }
-                    />
+                        {/* --- Area risk profile --- */}
+                        <div className="db-card">
 
-                </div>
+                            <span className="db-card-kicker">Your area</span>
 
-
-                {/* =================================================
-                    VULNERABILITY + RELOCATION
-                ================================================= */}
-
-                <div className="sih-intelligence-grid">
-
-
-                    <section className="dashboard-section vulnerability-section">
-
-                        <div className="section-heading">
-
-                            <div>
-
-                                <span className="section-label">
-                                    SIH 191
-                                </span>
-
-                                <h2>
-                                    Vulnerable Habitation
-                                </h2>
-
-                                <p>
-                                    Vulnerable communities
-                                    near your current location.
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
-                        {currentHabitation ? (
-
-                            <div className="vulnerability-card">
-
-                                <div className="vulnerability-header">
-
-                                    <div>
-
-                                        <span className="small-label">
-                                            HABITATION
-                                        </span>
-
+                            {currentHabitation ? (
+                                <>
+                                    <div className="db-card-title-row">
                                         <h3>
                                             {currentHabitation.name ||
                                                 currentHabitation.village ||
                                                 currentHabitation.habitation ||
-                                                "Priority Habitation"}
+                                                "Nearest assessed area"}
                                         </h3>
-
-                                    </div>
-
-
-                                    <span
-                                        className={`priority-badge ${
-                                            String(
+                                        <span
+                                            className={`db-badge db-badge--${String(
                                                 currentHabitation.relocationPriority ||
                                                 currentHabitation.priority ||
-                                                "HIGH"
-                                            ).toLowerCase()
-                                        }`}
-                                    >
-
-                                        {currentHabitation.relocationPriority ||
-                                            currentHabitation.priority ||
-                                            "HIGH"}
-
-                                    </span>
-
-                                </div>
-
-
-                                <div className="vulnerability-details">
-
-
-                                    <div>
-
-                                        <span>
-                                            Population
+                                                "monitor"
+                                            ).toLowerCase()}`}
+                                        >
+                                            {currentHabitation.relocationPriority ||
+                                                currentHabitation.priority ||
+                                                "MONITOR"}
                                         </span>
-
-                                        <strong>
-                                            {currentHabitation.population ??
-                                                "--"}
-                                        </strong>
-
                                     </div>
 
-
-                                    <div>
-
-                                        <span>
-                                            Risk Level
-                                        </span>
-
-                                        <strong>
-                                            {currentHabitation.riskLevel ||
-                                                currentHabitation.risk ||
-                                                getRiskLevel()}
-                                        </strong>
-
+                                    <div className="db-card-stats">
+                                        <div>
+                                            <span>Population</span>
+                                            <strong>{currentHabitation.population ?? "--"}</strong>
+                                        </div>
+                                        <div>
+                                            <span>Risk level</span>
+                                            <strong>
+                                                {currentHabitation.riskLevel ||
+                                                    currentHabitation.risk ||
+                                                    getRiskLevel()}
+                                            </strong>
+                                        </div>
+                                        <div>
+                                            <span>Vulnerability</span>
+                                            <strong>
+                                                {currentHabitation.vulnerabilityScore ??
+                                                    currentHabitation.vulnerability?.score ??
+                                                    "--"}
+                                            </strong>
+                                        </div>
                                     </div>
 
-
-                                    <div>
-
-                                        <span>
-                                            Vulnerability
-                                        </span>
-
-                                        <strong>
-                                            {currentHabitation.vulnerabilityScore ??
-                                                currentHabitation.vulnerability?.score ??
-                                                "--"}
-                                        </strong>
-
-                                    </div>
-
-                                </div>
-
-
-                                <p className="vulnerability-note">
-
-                                    ⚠️ This habitation has
-                                    been identified as
-                                    potentially vulnerable.
-
+                                    <p className="db-card-note">
+                                        This area has been flagged as potentially vulnerable —
+                                        keep an eye on alerts below.
+                                    </p>
+                                </>
+                            ) : (
+                                <p className="db-card-empty">
+                                    No assessed area found near your location yet.
                                 </p>
-
-                            </div>
-
-                        ) : (
-
-                            <div className="empty-state">
-
-                                <div>
-                                    ✓
-                                </div>
-
-                                <p>
-                                    No priority vulnerable
-                                    habitation has been
-                                    returned for your location.
-                                </p>
-
-                            </div>
-
-                        )}
-
-                    </section>
-
-
-                    {/* =================================================
-                        RELOCATION
-                    ================================================= */}
-
-                    <section className="dashboard-section relocation-section">
-
-                        <div className="section-heading">
-
-                            <div>
-
-                                <span className="section-label">
-                                    SIH 191
-                                </span>
-
-                                <h2>
-                                    Safer Relocation Site
-                                </h2>
-
-                                <p>
-                                    Recommended safer site
-                                    based on available capacity.
-                                </p>
-
-                            </div>
+                            )}
 
                         </div>
 
+                        {/* --- Recommended relocation site --- */}
+                        <div className="db-card">
 
-                        {recommendedSite ? (
+                            <span className="db-card-kicker">Recommended site</span>
 
-                            <div className="relocation-site-card">
-
-                                <div className="relocation-site-header">
-
-                                    <div>
-
-                                        <span className="small-label">
-                                            RECOMMENDED SITE
-                                        </span>
-
+                            {recommendedSite ? (
+                                <>
+                                    <div className="db-card-title-row">
                                         <h3>
                                             {recommendedSite.name ||
                                                 recommendedSite.siteName ||
-                                                "Safer Alternative Site"}
+                                                "Safer alternative site"}
                                         </h3>
-
+                                        <span className="db-badge db-badge--safe">SAFE</span>
                                     </div>
 
-
-                                    <span className="safe-badge">
-                                        SAFE
-                                    </span>
-
-                                </div>
-
-
-                                <div className="relocation-site-info">
-
-
-                                    <div>
-
-                                        <span>
-                                            📍 Distance
-                                        </span>
-
-                                        <strong>
-                                            {recommendedSite.distance != null
-                                                ? `${recommendedSite.distance} km`
-                                                : "--"}
-                                        </strong>
-
-                                    </div>
-
-
-                                    <div>
-
-                                        <span>
-                                            Capacity
-                                        </span>
-
-                                        <strong>
-                                            {getTotalCapacity(
-                                                recommendedSite
-                                            ) ?? "--"}
-                                        </strong>
-
-                                    </div>
-
-
-                                    <div>
-
-                                        <span>
-                                            Available
-                                        </span>
-
-                                        <strong>
-                                            {getSiteCapacity(
-                                                recommendedSite
-                                            ) ?? "--"}
-                                        </strong>
-
-                                    </div>
-
-                                </div>
-
-
-                                {getOccupiedCapacity(
-                                    recommendedSite
-                                ) !== null && (
-
-                                    <div className="capacity-bar-container">
-
-                                        <div className="capacity-label">
-
-                                            <span>
-                                                Occupancy
-                                            </span>
-
-                                            <span>
-
-                                                {
-                                                    getOccupiedCapacity(
-                                                        recommendedSite
-                                                    )
-                                                }
-
-                                                {" / "}
-
-                                                {
-                                                    getTotalCapacity(
-                                                        recommendedSite
-                                                    ) ??
-                                                    "--"
-                                                }
-
-                                            </span>
-
+                                    <div className="db-card-stats">
+                                        <div>
+                                            <span>Distance</span>
+                                            <strong>
+                                                {recommendedSite.distance != null
+                                                    ? `${recommendedSite.distance} km`
+                                                    : "--"}
+                                            </strong>
                                         </div>
+                                        <div>
+                                            <span>Capacity</span>
+                                            <strong>{getTotalCapacity(recommendedSite) ?? "--"}</strong>
+                                        </div>
+                                        <div>
+                                            <span>Available</span>
+                                            <strong>{getSiteCapacity(recommendedSite) ?? "--"}</strong>
+                                        </div>
+                                    </div>
 
-
-                                        <div className="capacity-bar">
-
+                                    {getOccupiedCapacity(recommendedSite) !== null && (
+                                        <div className="db-score-track db-score-track--small">
                                             <div
-                                                className="capacity-fill"
+                                                className="db-score-fill"
                                                 style={{
-                                                    width:
-                                                        getTotalCapacity(
-                                                            recommendedSite
-                                                        )
-                                                            ? `${Math.min(
-                                                                100,
-                                                                (
-                                                                    getOccupiedCapacity(
-                                                                        recommendedSite
-                                                                    ) /
-                                                                    getTotalCapacity(
-                                                                        recommendedSite
-                                                                    )
-                                                                ) *
-                                                                100
-                                                            )}%`
-                                                            : "0%"
+                                                    width: getTotalCapacity(recommendedSite)
+                                                        ? `${Math.min(
+                                                            100,
+                                                            (getOccupiedCapacity(recommendedSite) /
+                                                                getTotalCapacity(recommendedSite)) * 100
+                                                        )}%`
+                                                        : "0%"
                                                 }}
                                             />
-
                                         </div>
+                                    )}
 
-                                    </div>
-
-                                )}
-
-
-                                <button
-                                    className="relocation-button full-width"
-                                    onClick={() =>
-                                        handleQuickAction(
-                                            "/safe-routes"
-                                        )
-                                    }
-                                >
-                                    🛣️ View Safe Route
-                                </button>
-
-                            </div>
-
-                        ) : (
-
-                            <div className="empty-state">
-
-                                <div>
-                                    📍
-                                </div>
-
-                                <p>
-                                    No specific relocation
-                                    recommendation is currently
-                                    available.
-                                </p>
-
-                                <button
-                                    className="secondary-action-button"
-                                    onClick={() =>
-                                        handleQuickAction(
-                                            "/shelters"
-                                        )
-                                    }
-                                >
-                                    View Nearby Shelters
-                                </button>
-
-                            </div>
-
-                        )}
-
-                    </section>
-
-                </div>
-
-
-                {/* =================================================
-                    WEATHER
-                ================================================= */}
-
-                {dashboardData.weather && (
-
-                    <div className="dashboard-section">
-
-                        <div className="section-heading">
-
-                            <div>
-
-                                <h2>
-                                    Current Environmental Conditions
-                                </h2>
-
-                                <p>
-                                    Environmental data returned
-                                    by the dashboard backend.
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
-                        <div className="dashboard-cards">
-
-
-                            <div className="dashboard-card">
-
-                                <div className="card-icon">
-                                    🌧️
-                                </div>
-
-                                <div>
-
-                                    <h3>
-                                        Rainfall
-                                    </h3>
-
-                                    <p className="card-number">
-                                        {dashboardData.weather.rainfall ??
-                                            "--"}
+                                    <button
+                                        className="btn-primary full-width"
+                                        onClick={() => handleQuickAction("/safe-routes")}
+                                    >
+                                        View safe route
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <p className="db-card-empty">
+                                        No recommended site near you yet.
                                     </p>
-
-                                    <span>
-                                        mm
-                                    </span>
-
-                                </div>
-
-                            </div>
-
-
-                            <div className="dashboard-card">
-
-                                <div className="card-icon">
-                                    💧
-                                </div>
-
-                                <div>
-
-                                    <h3>
-                                        Humidity
-                                    </h3>
-
-                                    <p className="card-number">
-                                        {dashboardData.weather.humidity ??
-                                            "--"}
-                                    </p>
-
-                                    <span>
-                                        %
-                                    </span>
-
-                                </div>
-
-                            </div>
-
-
-                            <div className="dashboard-card">
-
-                                <div className="card-icon">
-                                    🌡️
-                                </div>
-
-                                <div>
-
-                                    <h3>
-                                        Temperature
-                                    </h3>
-
-                                    <p className="card-number">
-                                        {dashboardData.weather.temperature ??
-                                            "--"}
-                                    </p>
-
-                                    <span>
-                                        °C
-                                    </span>
-
-                                </div>
-
-                            </div>
+                                    <button
+                                        className="btn-secondary full-width"
+                                        onClick={() => handleQuickAction("/shelters")}
+                                    >
+                                        Browse nearby shelters
+                                    </button>
+                                </>
+                            )}
 
                         </div>
 
                     </div>
 
-                )}
+                </section>
 
+                {/* ============================================= */}
+                {/* MAP */}
+                {/* ============================================= */}
 
-                {/* =================================================
-                    ML ERROR
-                ================================================= */}
+                <section className="db-section">
 
-                {disasterError && (
-
-                    <div className="location-error">
-
-                        ⚠️ Disaster prediction:
-
-                        {" "}
-
-                        {disasterError}
-
+                    <div className="db-section-heading">
+                        <h2>Live risk & relocation map</h2>
+                        <p>Hazard zones, vulnerable areas, safe sites and emergency resources.</p>
                     </div>
 
-                )}
-
-
-                {/* =================================================
-                    MAP + SOS
-                ================================================= */}
-
-                <div className="map-sos-layout">
-
-
-                    <section className="dashboard-section map-section">
-
-                        <div className="section-heading">
-
-                            <div>
-
-                                <span className="section-label">
-                                    SIH 191
-                                </span>
-
-                                <h2>
-                                    Live Risk & Relocation Map
-                                </h2>
-
-                                <p>
-                                    View hazard zones,
-                                    vulnerable habitations,
-                                    relocation sites and
-                                    emergency resources.
-                                </p>
-
-                            </div>
-
-                        </div>
-
-
+                    <div className="db-card db-card--flush">
                         <Map
                             location={location}
-                            alerts={
-                                dashboardData.alerts
-                            }
-                            hospitals={
-                                dashboardData.hospitals
-                            }
-                            shelters={
-                                dashboardData.shelters
-                            }
-                            hazardZones={
-                                dashboardData.hazardZones
-                            }
-                            vulnerableHabitations={
-                                dashboardData.vulnerableHabitations
-                            }
-                            relocationSites={
-                                dashboardData.relocationSites
-                            }
+                            alerts={dashboardData.alerts}
+                            hospitals={dashboardData.hospitals}
+                            shelters={dashboardData.shelters}
+                            hazardZones={dashboardData.hazardZones}
+                            vulnerableHabitations={dashboardData.vulnerableHabitations}
+                            relocationSites={dashboardData.relocationSites}
                         />
+                    </div>
 
-                    </section>
+                </section>
 
+                {/* ============================================= */}
+                {/* QUICK ACTIONS */}
+                {/* ============================================= */}
 
-                    <section className="dashboard-section sos-section">
+                <section className="db-section">
 
-                        <SOSCard
-                            location={location}
-                        />
+                    <div className="db-section-heading">
+                        <h2>More ways to get help</h2>
+                    </div>
 
-                    </section>
+                    <div className="db-actions-grid">
 
-                </div>
-
-
-                {/* =================================================
-                    QUICK ACTIONS
-                ================================================= */}
-
-                <section className="dashboard-section">
-
-                    <h2>
-                        Emergency Actions
-                    </h2>
-
-
-                    <div className="quick-actions">
-
-
-                        <div
-                            className="quick-action-wrapper"
-                            onClick={() =>
-                                handleQuickAction(
-                                    "/safe-routes"
-                                )
-                            }
-                        >
-
-                            <QuickActionCard
-                                title="Safe Routes"
-                                icon="🛣️"
-                                path="/safe-routes"
-                            />
-
-                        </div>
-
-
-                        <div
-                            className="quick-action-wrapper"
-                            onClick={() =>
-                                handleQuickAction(
-                                    "/hospitals"
-                                )
-                            }
-                        >
-
-                            <QuickActionCard
-                                title="Hospitals"
-                                icon="🏥"
-                                path="/hospitals"
-                            />
-
-                        </div>
-
-
-                        <div
-                            className="quick-action-wrapper"
-                            onClick={() =>
-                                handleQuickAction(
-                                    "/shelters"
-                                )
-                            }
-                        >
-
-                            <QuickActionCard
-                                title="Safer Sites"
-                                icon="🏠"
-                                path="/shelters"
-                            />
-
-                        </div>
-
-
-                        <div
-                            className="quick-action-wrapper"
-                            onClick={() =>
-                                handleQuickAction(
-                                    "/resources"
-                                )
-                            }
-                        >
-
-                            <QuickActionCard
-                                title="Emergency Resources"
-                                icon="📦"
-                                path="/resources"
-                            />
-
-                        </div>
-
-
-                        <div
-                            className="quick-action-wrapper"
-                            onClick={() =>
-                                handleQuickAction(
-                                    "/volunteers"
-                                )
-                            }
-                        >
-
-                            <QuickActionCard
-                                title="Volunteers & NGOs"
-                                icon="🤝"
-                                path="/volunteers"
-                            />
-
-                        </div>
+                        {[
+                            { title: "Safe Routes", icon: "🛣️", path: "/safe-routes" },
+                            { title: "Hospitals", icon: "🏥", path: "/hospitals" },
+                            { title: "Safer Sites", icon: "🏠", path: "/shelters" },
+                            { title: "Emergency Resources", icon: "📦", path: "/resources" },
+                            { title: "Volunteers & NGOs", icon: "🤝", path: "/volunteers" }
+                        ].map((action) => (
+                            <button
+                                key={action.path}
+                                className="db-action-card"
+                                onClick={() => handleQuickAction(action.path)}
+                            >
+                                <span className="db-action-icon">{action.icon}</span>
+                                <span>{action.title}</span>
+                            </button>
+                        ))}
 
                     </div>
 
                 </section>
 
+                {/* ============================================= */}
+                {/* ENVIRONMENTAL CONDITIONS (secondary — kept low-priority) */}
+                {/* ============================================= */}
 
-                {/* =================================================
-                    ALERTS
-                ================================================= */}
+                {dashboardData.weather && (
+                    <section className="db-section">
 
-                <section className="dashboard-section">
-
-                    <div className="section-heading">
-
-                        <div>
-
-                            <h2>
-                                Disaster Alerts
-                            </h2>
-
-                            <p>
-                                Alerts affecting your area.
-                            </p>
-
+                        <div className="db-section-heading">
+                            <h2>Environmental conditions</h2>
+                            <p>Latest readings for your area.</p>
                         </div>
 
+                        <div className="db-stat-row">
+                            <div className="db-stat-tile">
+                                <span className="db-stat-icon">🌧️</span>
+                                <strong>{dashboardData.weather.rainfall ?? "--"}</strong>
+                                <span>Rainfall (mm)</span>
+                            </div>
+                            <div className="db-stat-tile">
+                                <span className="db-stat-icon">💧</span>
+                                <strong>{dashboardData.weather.humidity ?? "--"}</strong>
+                                <span>Humidity (%)</span>
+                            </div>
+                            <div className="db-stat-tile">
+                                <span className="db-stat-icon">🌡️</span>
+                                <strong>{dashboardData.weather.temperature ?? "--"}</strong>
+                                <span>Temperature (°C)</span>
+                            </div>
+                        </div>
+
+                    </section>
+                )}
+
+                {/* ============================================= */}
+                {/* ALERTS */}
+                {/* ============================================= */}
+
+                <section className="db-section">
+
+                    <div className="db-section-heading">
+                        <h2>Disaster alerts</h2>
+                        <p>Updates affecting your area, most recent first.</p>
                     </div>
 
-
-                    <div className="alerts-list">
-
+                    <div className="db-alerts-list">
 
                         {dashboardData.alerts.length === 0 && (
-
-                            <p className="no-alerts">
-                                No active alerts near
-                                your location.
-                            </p>
-
+                            <p className="db-card-empty">No active alerts near your location.</p>
                         )}
 
-
-                        {dashboardData.alerts.map(
-                            (alert, index) => (
-
-                                <DisasterAlert
-                                    key={
-                                        alert._id ||
-                                        alert.id ||
-                                        index
-                                    }
-                                    alert={alert}
-                                />
-
-                            )
-                        )}
+                        {dashboardData.alerts.map((alert, index) => (
+                            <DisasterAlert key={alert._id || alert.id || index} alert={alert} />
+                        ))}
 
                     </div>
 
                 </section>
-
 
             </main>
 
@@ -1975,6 +1382,5 @@ function CitizenDashboard() {
     );
 
 }
-
 
 export default CitizenDashboard;

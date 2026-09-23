@@ -53,6 +53,14 @@ function AuthorityDashboard() {
 
 
     // =========================================================
+    // RISK MAP DATA
+    // =========================================================
+
+    const [riskMapFeatures, setRiskMapFeatures] =
+        useState([]);
+
+
+    // =========================================================
     // OPTIONAL INCIDENT / FACILITY DATA
     // =========================================================
 
@@ -80,7 +88,8 @@ function AuthorityDashboard() {
 
     const extractArray = (response) => {
 
-        const data = response?.data;
+        const data =
+            response?.data;
 
         if (Array.isArray(data)) {
             return data;
@@ -107,6 +116,7 @@ function AuthorityDashboard() {
         }
 
         return [];
+
     };
 
 
@@ -126,10 +136,17 @@ function AuthorityDashboard() {
                 );
 
             if (!response.data) {
+
                 throw new Error(
                     "Empty authority dashboard response."
                 );
+
             }
+
+            console.log(
+                "Authority dashboard response:",
+                response.data
+            );
 
             setDashboardData(
                 response.data
@@ -150,6 +167,55 @@ function AuthorityDashboard() {
             );
 
             setDashboardData(null);
+
+        }
+
+    };
+
+
+    // =========================================================
+    // FETCH RISK MAP
+    // =========================================================
+
+    const fetchRiskMap = async () => {
+
+        try {
+
+            const response =
+                await api.get(
+                    "/api/habitations/risk-map"
+                );
+
+            console.log(
+                "Risk map response:",
+                response.data
+            );
+
+
+            const features =
+                response.data?.map?.features;
+
+
+            if (Array.isArray(features)) {
+
+                setRiskMapFeatures(
+                    features
+                );
+
+            } else {
+
+                setRiskMapFeatures([]);
+
+            }
+
+        } catch (err) {
+
+            console.error(
+                "Risk map error:",
+                err.response?.data || err
+            );
+
+            setRiskMapFeatures([]);
 
         }
 
@@ -189,7 +255,9 @@ function AuthorityDashboard() {
                     results[0].value
                 );
 
-            setAlerts(sosData);
+            setAlerts(
+                sosData
+            );
 
         } else {
 
@@ -233,7 +301,7 @@ function AuthorityDashboard() {
 
 
         // ---------------------------------------------
-        // Hospitals
+        // HOSPITALS
         //
         // Hospital data is not part of the new authority
         // dashboard contract, so don't invent hospital data.
@@ -257,6 +325,7 @@ function AuthorityDashboard() {
             await Promise.all([
                 fetchAuthorityDashboard(),
                 fetchSupplementaryData(),
+                fetchRiskMap(),
             ]);
 
             setLoading(false);
@@ -279,6 +348,7 @@ function AuthorityDashboard() {
         await Promise.all([
             fetchAuthorityDashboard(),
             fetchSupplementaryData(),
+            fetchRiskMap(),
         ]);
 
         setRefreshing(false);
@@ -307,6 +377,19 @@ function AuthorityDashboard() {
 
 
     // =========================================================
+    // MAP DATA
+    //
+    // Prefer the dedicated risk-map endpoint.
+    // Fall back to dashboard map if available.
+    // =========================================================
+
+    const mapFeatures =
+        riskMapFeatures.length > 0
+            ? riskMapFeatures
+            : dashboardData?.map?.features || [];
+
+
+    // =========================================================
     // FILTER INCIDENTS
     // =========================================================
 
@@ -328,14 +411,6 @@ function AuthorityDashboard() {
             );
 
         }, [alerts, search]);
-
-
-    // =========================================================
-    // MAP DATA
-    // =========================================================
-
-    const mapFeatures =
-        dashboardData?.map?.features || [];
 
 
     // =========================================================
@@ -1038,13 +1113,12 @@ function AuthorityDashboard() {
                             ) : (
 
                                 <Map
-                                    location={null}
-                                    alerts={alerts}
+                                    riskZones={mapFeatures}
+                                    sosRequests={alerts}
                                     hospitals={hospitals}
                                     shelters={shelters}
-                                    hazardZones={mapFeatures}
-                                    vulnerableHabitations={[]}
-                                    relocationSites={[]}
+                                    rescueTeams={[]}
+                                    resources={[]}
                                 />
 
                             )}
@@ -1451,6 +1525,7 @@ function AuthorityDashboard() {
 
         </div>
     );
+
 }
 
 

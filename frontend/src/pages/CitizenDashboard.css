@@ -1,1114 +1,343 @@
-/* =========================================================
-   CITIZEN DASHBOARD
-   SIH 191 - Intelligent Hazard Identification & Relocation
-   ========================================================= */
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap");
 
-/* -------------------------
-   GLOBAL DASHBOARD
-   ------------------------- */
+:root {
+    --paper: #F6F5F1;
+    --surface: #FFFFFF;
+    --ink: #1B2430;
+    --ink-soft: #5C6673;
+    --border: #E3E0D8;
 
-.citizen-dashboard {
-  min-height: 100vh;
-  background: #f4f7fb;
-  color: #172033;
-  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+    --brand: #204E6D;
+    --brand-dark: #163A52;
+    --danger: #C43E2E;
+
+    --green: #2F8F5B;   --green-bg: #E9F5EE;
+    --yellow: #B8860B;  --yellow-bg: #FBF3DD;
+    --orange: #C7621E;  --orange-bg: #FCEEE2;
+    --red: #C0362C;     --red-bg: #FBE9E7;
+    --unknown: #6B7280; --unknown-bg: #F1F1EF;
 }
 
-/* -------------------------
-   DASHBOARD CONTAINER
-   ------------------------- */
+.dashboard-page {
+    background: var(--paper);
+    min-height: 100vh;
+    font-family: "Inter", sans-serif;
+    color: var(--ink);
+}
 
 .dashboard-container {
-  width: 92%;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 30px 0 60px;
-}
-
-/* -------------------------
-   HEADER
-   ------------------------- */
-
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
-  margin-bottom: 28px;
-  padding: 24px 28px;
-  background: #ffffff;
-  border-radius: 16px;
-  border: 1px solid #e5eaf1;
-  box-shadow: 0 5px 18px rgba(15, 35, 70, 0.06);
-}
-
-.dashboard-header h1 {
-  margin: 0 0 6px;
-  font-size: 30px;
-  font-weight: 750;
-  color: #102a56;
-}
-
-.dashboard-header p {
-  margin: 0;
-  color: #64748b;
-  font-size: 15px;
-}
-
-.dashboard-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-/* -------------------------
-   BUTTONS
-   ------------------------- */
-
-button {
-  font-family: inherit;
-}
-
-.refresh-button {
-  border: none;
-  background: #0d47a1;
-  color: white;
-  padding: 11px 18px;
-  border-radius: 9px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.refresh-button:hover {
-  background: #08377d;
-  transform: translateY(-1px);
-}
-
-.refresh-button:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* -------------------------
-   LOADING / ERROR
-   ------------------------- */
-
-.loading-container {
-  min-height: 300px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: #64748b;
-  font-size: 16px;
-}
-
-.error-message {
-  padding: 16px 20px;
-  background: #fff1f2;
-  border: 1px solid #fecdd3;
-  border-radius: 10px;
-  color: #b42318;
-  margin-bottom: 20px;
-}
-
-/* =========================================================
-   TOP STATISTICS
-   ========================================================= */
-
-.dashboard-stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 18px;
-  margin-bottom: 28px;
-}
-
-.stat-card {
-  background: #ffffff;
-  border: 1px solid #e5eaf1;
-  border-radius: 14px;
-  padding: 22px;
-  box-shadow: 0 5px 16px rgba(15, 35, 70, 0.05);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.stat-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 9px 22px rgba(15, 35, 70, 0.09);
-}
-
-.stat-card h3 {
-  margin: 0 0 8px;
-  font-size: 13px;
-  color: #64748b;
-  font-weight: 650;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.stat-card .stat-value {
-  font-size: 28px;
-  font-weight: 750;
-  color: #102a56;
-}
-
-.stat-card .stat-description {
-  margin-top: 6px;
-  font-size: 13px;
-  color: #94a3b8;
-}
-
-/* =========================================================
-   SECTION HEADINGS
-   ========================================================= */
-
-.dashboard-section {
-  margin-bottom: 28px;
-}
-
-.section-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 20px;
-  margin-bottom: 15px;
-}
-
-.section-heading h2 {
-  margin: 0;
-  color: #102a56;
-  font-size: 21px;
-  font-weight: 750;
-}
-
-.section-heading p {
-  margin: 5px 0 0;
-  color: #64748b;
-  font-size: 14px;
-}
-
-.section-label {
-  display: inline-block;
-  margin-bottom: 6px;
-  color: #ef6c00;
-  font-size: 12px;
-  font-weight: 750;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-/* =========================================================
-   SIH INTELLIGENCE GRID
-   ========================================================= */
-
-.sih-intelligence-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-  margin-bottom: 28px;
-}
-
-/* =========================================================
-   SAFETY STATUS
-   ========================================================= */
-
-.safety-status-card {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  padding: 22px;
-  border-radius: 16px;
-  border: 1px solid #e5eaf1;
-  background: #ffffff;
-  box-shadow: 0 5px 18px rgba(15, 35, 70, 0.06);
-  transition: all 0.2s ease;
-}
-
-.safety-status-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 22px rgba(15, 35, 70, 0.09);
-}
-
-.safety-status-icon {
-  width: 54px;
-  height: 54px;
-  min-width: 54px;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 24px;
-  font-weight: 700;
-  background: #e8f5e9;
-}
-
-.safety-status-content {
-  flex: 1;
-}
-
-.safety-label {
-  margin: 0 0 5px;
-  font-size: 12px;
-  font-weight: 750;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #64748b;
-}
-
-.safety-status-content h3 {
-  margin: 0;
-  font-size: 19px;
-  font-weight: 750;
-  color: #172033;
-}
-
-.safety-status-content p {
-  margin: 5px 0 0;
-  font-size: 13px;
-  line-height: 1.5;
-  color: #64748b;
-}
-
-/* Safety states */
-
-.safety-status-card.critical {
-  border-left: 5px solid #d32f2f;
-  background: #fff8f8;
-}
-
-.safety-status-card.critical .safety-status-icon {
-  background: #ffebee;
-  color: #c62828;
-}
-
-.safety-status-card.high {
-  border-left: 5px solid #ef6c00;
-  background: #fffaf5;
-}
-
-.safety-status-card.high .safety-status-icon {
-  background: #fff3e0;
-  color: #ef6c00;
-}
-
-.safety-status-card.moderate {
-  border-left: 5px solid #f9a825;
-  background: #fffdf5;
-}
-
-.safety-status-card.moderate .safety-status-icon {
-  background: #fff8e1;
-  color: #f9a825;
-}
-
-.safety-status-card.low {
-  border-left: 5px solid #2e7d32;
-  background: #f8fff8;
-}
-
-.safety-status-card.low .safety-status-icon {
-  background: #e8f5e9;
-  color: #2e7d32;
-}
-
-.safety-status-card.unknown {
-  border-left: 5px solid #78909c;
-}
-
-.safety-status-card.unknown .safety-status-icon {
-  background: #eceff1;
-  color: #546e7a;
-}
-
-/* =========================================================
-   RELOCATION BUTTON
-   ========================================================= */
-
-.relocation-button {
-  border: none;
-  background: #ef6c00;
-  color: #ffffff;
-  padding: 11px 16px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.relocation-button:hover {
-  background: #d85f00;
-  transform: translateY(-1px);
-}
-
-/* =========================================================
-   VULNERABLE HABITATION
-   ========================================================= */
-
-.vulnerability-section {
-  margin-bottom: 28px;
-}
-
-.vulnerability-card {
-  background: #ffffff;
-  border: 1px solid #e5eaf1;
-  border-radius: 15px;
-  padding: 22px;
-  box-shadow: 0 5px 18px rgba(15, 35, 70, 0.05);
-}
-
-.vulnerability-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 15px;
-  margin-bottom: 18px;
-}
-
-.vulnerability-header h3 {
-  margin: 0;
-  color: #102a56;
-  font-size: 19px;
-  font-weight: 750;
-}
-
-.vulnerability-header p {
-  margin: 5px 0 0;
-  color: #64748b;
-  font-size: 13px;
-}
-
-.small-label {
-  display: block;
-  margin-bottom: 5px;
-  color: #94a3b8;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.priority-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 11px;
-  border-radius: 20px;
-  background: #fff3e0;
-  color: #e65100;
-  font-size: 12px;
-  font-weight: 750;
-  white-space: nowrap;
-}
-
-.vulnerability-details {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
-}
-
-.vulnerability-details > div {
-  padding: 14px;
-  background: #f8fafc;
-  border-radius: 9px;
-  border: 1px solid #edf0f4;
-}
-
-.vulnerability-details strong {
-  display: block;
-  color: #172033;
-  font-size: 15px;
-}
-
-.vulnerability-note {
-  margin-top: 16px;
-  padding: 13px 15px;
-  border-left: 4px solid #ef6c00;
-  background: #fff8f1;
-  border-radius: 5px;
-  color: #7a4a16;
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-/* =========================================================
-   RELOCATION SECTION
-   ========================================================= */
-
-.relocation-section {
-  margin-bottom: 28px;
-}
-
-.relocation-site-card {
-  background: #ffffff;
-  border: 1px solid #dcefe0;
-  border-radius: 15px;
-  padding: 22px;
-  box-shadow: 0 5px 18px rgba(15, 35, 70, 0.05);
-  transition: all 0.2s ease;
-}
-
-.relocation-site-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 9px 23px rgba(15, 35, 70, 0.09);
-}
-
-.relocation-site-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 15px;
-  margin-bottom: 18px;
-}
-
-.relocation-site-header h3 {
-  margin: 0;
-  font-size: 19px;
-  color: #102a56;
-  font-weight: 750;
-}
-
-.relocation-site-header p {
-  margin: 5px 0 0;
-  color: #64748b;
-  font-size: 13px;
-}
-
-.safe-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 12px;
-  border-radius: 20px;
-  background: #e8f5e9;
-  color: #2e7d32;
-  font-size: 12px;
-  font-weight: 750;
-  white-space: nowrap;
-}
-
-.relocation-site-info {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
-  margin-bottom: 20px;
-}
-
-.relocation-site-info > div {
-  padding: 14px;
-  background: #f8fafc;
-  border-radius: 9px;
-  border: 1px solid #edf0f4;
-}
-
-.relocation-site-info strong {
-  display: block;
-  font-size: 15px;
-  color: #172033;
-}
-
-/* =========================================================
-   CARRYING CAPACITY BAR
-   ========================================================= */
-
-.capacity-bar-container {
-  margin-top: 8px;
-}
-
-.capacity-label {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 7px;
-  font-size: 12px;
-  color: #64748b;
-  font-weight: 650;
-}
-
-.capacity-bar {
-  width: 100%;
-  height: 9px;
-  overflow: hidden;
-  background: #e8edf2;
-  border-radius: 20px;
-}
-
-.capacity-fill {
-  height: 100%;
-  border-radius: 20px;
-  background: #43a047;
-  transition: width 0.5s ease;
-}
-
-.capacity-fill.high {
-  background: #ef6c00;
-}
-
-.capacity-fill.critical {
-  background: #d32f2f;
-}
-
-/* =========================================================
-   EMPTY STATES
-   ========================================================= */
-
-.empty-state {
-  padding: 30px 20px;
-  text-align: center;
-  background: #ffffff;
-  border: 1px dashed #cbd5e1;
-  border-radius: 12px;
-  color: #64748b;
-  font-size: 14px;
-}
-
-.empty-state strong {
-  display: block;
-  margin-bottom: 5px;
-  color: #334155;
-}
-
-/* =========================================================
-   MAP SECTION
-   ========================================================= */
-
-.map-section {
-  background: #ffffff;
-  border: 1px solid #e5eaf1;
-  border-radius: 16px;
-  padding: 22px;
-  margin-bottom: 28px;
-  box-shadow: 0 5px 18px rgba(15, 35, 70, 0.05);
-}
-
-.map-section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  margin-bottom: 16px;
-}
-
-.map-section-header h2 {
-  margin: 0;
-  color: #102a56;
-  font-size: 21px;
-  font-weight: 750;
-}
-
-.map-section-header p {
-  margin: 5px 0 0;
-  color: #64748b;
-  font-size: 13px;
-}
-
-.map-wrapper {
-  width: 100%;
-  min-height: 480px;
-  overflow: hidden;
-  border-radius: 12px;
-}
-
-/* Leaflet */
-
-.leaflet-container {
-  width: 100%;
-  height: 480px;
-  border-radius: 12px;
-  z-index: 1;
-}
-
-.leaflet-popup-content-wrapper {
-  border-radius: 10px;
-}
-
-.leaflet-popup-content {
-  font-family: "Inter", "Segoe UI", Arial, sans-serif;
-  font-size: 13px;
-}
-
-/* =========================================================
-   QUICK ACTIONS
-   ========================================================= */
-
-.quick-actions-section {
-  margin-bottom: 28px;
-}
-
-.quick-actions-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 15px;
-}
-
-.quick-action-card {
-  background: #ffffff;
-  border: 1px solid #e5eaf1;
-  border-radius: 13px;
-  padding: 20px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 14px rgba(15, 35, 70, 0.04);
-}
-
-.quick-action-card:hover {
-  transform: translateY(-3px);
-  border-color: #b8c9e5;
-  box-shadow: 0 8px 20px rgba(15, 35, 70, 0.08);
-}
-
-.quick-action-card h3 {
-  margin: 10px 0 5px;
-  font-size: 15px;
-  color: #172033;
-}
-
-.quick-action-card p {
-  margin: 0;
-  font-size: 12px;
-  line-height: 1.4;
-  color: #64748b;
-}
-
-/* =========================================================
-   ALERTS
-   ========================================================= */
-
-.alerts-section {
-  margin-bottom: 28px;
-}
-
-.alerts-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-}
-
-.alert-card {
-  background: #ffffff;
-  border: 1px solid #e5eaf1;
-  border-radius: 13px;
-  padding: 18px;
-  box-shadow: 0 4px 14px rgba(15, 35, 70, 0.04);
-}
-
-/* =========================================================
-   HOSPITAL / SHELTER CARDS
-   ========================================================= */
-
-.nearby-section {
-  margin-bottom: 28px;
-}
-
-.nearby-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
-}
-
-.nearby-card {
-  background: #ffffff;
-  border: 1px solid #e5eaf1;
-  border-radius: 14px;
-  padding: 20px;
-  box-shadow: 0 5px 15px rgba(15, 35, 70, 0.04);
-}
-
-.nearby-card h3 {
-  margin: 0 0 14px;
-  color: #102a56;
-  font-size: 17px;
-}
-
-.nearby-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.nearby-item {
-  padding: 12px;
-  background: #f8fafc;
-  border-radius: 8px;
-  border: 1px solid #edf0f4;
-}
-
-.nearby-item strong {
-  display: block;
-  color: #172033;
-  font-size: 14px;
-}
-
-.nearby-item span {
-  display: block;
-  margin-top: 3px;
-  color: #64748b;
-  font-size: 12px;
-}
-
-/* =========================================================
-   RISK CARD
-   ========================================================= */
-
-.risk-section {
-  margin-bottom: 28px;
-}
-
-.risk-card {
-  background: #ffffff;
-  border: 1px solid #e5eaf1;
-  border-radius: 15px;
-  padding: 22px;
-  box-shadow: 0 5px 18px rgba(15, 35, 70, 0.05);
-}
-
-.risk-level {
-  display: inline-flex;
-  padding: 7px 13px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 750;
-  text-transform: uppercase;
-}
-
-/* =========================================================
-   WEATHER
-   ========================================================= */
-
-.weather-card {
-  background: #ffffff;
-  border: 1px solid #e5eaf1;
-  border-radius: 15px;
-  padding: 22px;
-  box-shadow: 0 5px 18px rgba(15, 35, 70, 0.05);
-}
-
-.weather-info {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-}
-
-.weather-info h3 {
-  margin: 0;
-  color: #102a56;
-  font-size: 20px;
-}
-
-.weather-info p {
-  margin: 5px 0 0;
-  color: #64748b;
-  font-size: 13px;
-}
-
-/* =========================================================
-   SOS SECTION
-   ========================================================= */
-
-.sos-section {
-  margin-bottom: 28px;
-}
-
-.sos-card {
-  background: #ffffff;
-  border: 1px solid #e5eaf1;
-  border-radius: 15px;
-  padding: 22px;
-  box-shadow: 0 5px 18px rgba(15, 35, 70, 0.05);
-}
-
-.sos-button {
-  border: none;
-  background: #d32f2f;
-  color: white;
-  padding: 13px 22px;
-  border-radius: 9px;
-  font-size: 14px;
-  font-weight: 750;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.sos-button:hover {
-  background: #b71c1c;
-  transform: translateY(-1px);
-}
-
-/* =========================================================
-   SECONDARY ACTION
-   ========================================================= */
-
-.secondary-action-button {
-  border: 1px solid #b8c9e5;
-  background: #ffffff;
-  color: #0d47a1;
-  padding: 10px 15px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.secondary-action-button:hover {
-  background: #edf4ff;
-  border-color: #0d47a1;
-}
-
-/* =========================================================
-   FULL WIDTH
-   ========================================================= */
-
-.full-width {
-  width: 100%;
-}
-
-/* =========================================================
-   GENERAL CARDS
-   ========================================================= */
-
-.dashboard-card {
-  background: #ffffff;
-  border: 1px solid #e5eaf1;
-  border-radius: 15px;
-  padding: 22px;
-  box-shadow: 0 5px 18px rgba(15, 35, 70, 0.05);
-}
-
-/* =========================================================
-   STATUS BADGES
-   ========================================================= */
-
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 5px 10px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 750;
-}
-
-.status-active {
-  background: #ffebee;
-  color: #c62828;
-}
-
-.status-warning {
-  background: #fff3e0;
-  color: #e65100;
-}
-
-.status-safe {
-  background: #e8f5e9;
-  color: #2e7d32;
-}
-
-.status-info {
-  background: #e3f2fd;
-  color: #1565c0;
-}
-
-/* =========================================================
-   ANIMATIONS
-   ========================================================= */
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.dashboard-card,
-.stat-card,
-.safety-status-card,
-.vulnerability-card,
-.relocation-site-card,
-.map-section,
-.quick-action-card {
-  animation: fadeInUp 0.35s ease both;
-}
-
-/* =========================================================
-   TABLET
-   ========================================================= */
-
-@media (max-width: 1100px) {
-  .dashboard-stats {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .sih-intelligence-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .quick-actions-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .vulnerability-details {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .relocation-site-info {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* =========================================================
-   MOBILE / SMALL TABLET
-   ========================================================= */
-
-@media (max-width: 768px) {
-  .dashboard-container {
-    width: 94%;
-    padding-top: 20px;
-  }
-
-  .dashboard-header {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+    display: flex;
     flex-direction: column;
+    gap: 28px;
+}
+
+h1, h2, h3 {
+    font-family: "Manrope", sans-serif;
+    font-weight: 700;
+    margin: 0;
+}
+
+/* ---------- HEADER ---------- */
+
+.db-header {
+    display: flex;
+    justify-content: space-between;
     align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.db-header h1 { font-size: 26px; color: var(--brand-dark); }
+.db-header p { margin: 4px 0 0; color: var(--ink-soft); font-size: 15px; }
+
+.btn-location {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--brand-dark);
+    font-weight: 600;
+    font-size: 14px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.btn-location:disabled { opacity: 0.6; cursor: default; }
+
+.db-location-strip {
+    font-size: 13px;
+    color: var(--ink-soft);
+}
+
+.db-location-error { color: var(--red); display: flex; gap: 10px; align-items: center; }
+.db-location-error button {
+    border: 1px solid var(--red);
+    background: none;
+    color: var(--red);
+    border-radius: 8px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+/* ---------- HERO ---------- */
+
+.db-hero {
+    border-radius: 20px;
+    padding: 28px;
+    border: 1px solid var(--border);
+    background: var(--unknown-bg);
+}
+
+.db-hero--critical, .db-hero--high { background: var(--red-bg); }
+.db-hero--moderate { background: var(--yellow-bg); }
+.db-hero--low { background: var(--green-bg); }
+.db-hero--unknown { background: var(--unknown-bg); }
+
+.db-hero-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.db-hero-icon { font-size: 30px; line-height: 1; }
+
+.db-hero-text { flex: 1; }
+
+.db-hero-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-soft);
+}
+
+.db-hero-text h2 { font-size: 22px; margin: 4px 0 6px; }
+.db-hero-text p { margin: 0; color: var(--ink-soft); font-size: 15px; line-height: 1.5; max-width: 60ch; }
+
+.btn-primary-inverse {
+    background: var(--brand-dark);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.db-hero-score {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(0,0,0,0.08);
+}
+
+.db-hero-score-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.db-score-track {
+    height: 8px;
+    background: rgba(0,0,0,0.08);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.db-score-track--small { height: 6px; margin: 8px 0 14px; }
+
+.db-score-fill {
+    height: 100%;
+    background: var(--brand);
+    border-radius: 999px;
+}
+
+.db-hero-caption {
+    display: block;
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--ink-soft);
+}
+
+.db-hero-note {
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--red);
+}
+
+/* ---------- SOS ---------- */
+
+.db-sos-strip {
+    border: 2px solid var(--danger);
+    border-radius: 20px;
+    background: var(--surface);
+}
+
+/* ---------- SECTIONS ---------- */
+
+.db-section-heading h2 { font-size: 19px; }
+.db-section-heading p { margin: 4px 0 14px; color: var(--ink-soft); font-size: 14px; }
+
+.db-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
     padding: 20px;
-  }
-
-  .dashboard-header h1 {
-    font-size: 25px;
-  }
-
-  .dashboard-header-actions {
-    width: 100%;
-  }
-
-  .refresh-button {
-    width: 100%;
-  }
-
-  .dashboard-stats {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
-
-  .stat-card {
-    padding: 17px;
-  }
-
-  .stat-card .stat-value {
-    font-size: 23px;
-  }
-
-  .section-heading {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .vulnerability-header,
-  .relocation-site-header {
-    flex-direction: column;
-  }
-
-  .vulnerability-details {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .relocation-site-info {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .quick-actions-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .alerts-grid,
-  .nearby-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .map-section {
-    padding: 15px;
-  }
-
-  .leaflet-container {
-    height: 400px;
-  }
 }
 
-/* =========================================================
-   SMALL MOBILE
-   ========================================================= */
+.db-card--flush { padding: 0; overflow: hidden; }
 
-@media (max-width: 480px) {
-  .dashboard-container {
-    width: 95%;
-  }
+.db-card-kicker {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-soft);
+}
 
-  .dashboard-header {
-    padding: 17px;
-  }
+.db-card-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 6px 0 14px;
+    gap: 12px;
+}
 
-  .dashboard-header h1 {
-    font-size: 22px;
-  }
+.db-card-title-row h3 { font-size: 17px; }
 
-  .dashboard-stats {
-    grid-template-columns: 1fr;
-  }
-
-  .safety-status-card {
-    padding: 17px;
-  }
-
-  .safety-status-icon {
-    width: 46px;
-    height: 46px;
-    min-width: 46px;
-    font-size: 20px;
-  }
-
-  .safety-status-content h3 {
-    font-size: 17px;
-  }
-
-  .vulnerability-card,
-  .relocation-site-card,
-  .dashboard-card,
-  .risk-card,
-  .weather-card,
-  .sos-card {
-    padding: 17px;
-  }
-
-  .vulnerability-details,
-  .relocation-site-info {
-    grid-template-columns: 1fr;
-  }
-
-  .quick-actions-grid {
-    grid-template-columns: 1fr 1fr;
+.db-card-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
     gap: 10px;
-  }
+    margin-bottom: 12px;
+}
 
-  .quick-action-card {
-    padding: 15px 10px;
-  }
+.db-card-stats span { display: block; font-size: 12px; color: var(--ink-soft); }
+.db-card-stats strong { font-size: 16px; }
 
-  .map-section {
-    padding: 12px;
-  }
+.db-card-note {
+    font-size: 13px;
+    color: var(--orange);
+    background: var(--orange-bg);
+    padding: 8px 12px;
+    border-radius: 10px;
+    margin: 0;
+}
 
-  .leaflet-container {
-    height: 330px;
-  }
+.db-card-empty {
+    color: var(--ink-soft);
+    font-size: 14px;
+    margin: 8px 0 14px;
+}
 
-  .map-section-header h2 {
-    font-size: 18px;
-  }
+/* ---------- STAT TILES ---------- */
 
-  .section-heading h2 {
-    font-size: 18px;
-  }
+.db-stat-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 14px;
+}
+
+.db-stat-tile {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.db-stat-icon { font-size: 20px; }
+.db-stat-tile strong { font-size: 22px; }
+.db-stat-tile span:last-child { font-size: 13px; color: var(--ink-soft); }
+
+/* ---------- GO GRID ---------- */
+
+.db-go-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+@media (max-width: 720px) {
+    .db-go-grid { grid-template-columns: 1fr; }
+}
+
+/* ---------- BADGES ---------- */
+
+.db-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--unknown-bg);
+    color: var(--unknown);
+    white-space: nowrap;
+}
+
+.db-badge--immediate { background: var(--red-bg); color: var(--red); }
+.db-badge--short_term { background: var(--orange-bg); color: var(--orange); }
+.db-badge--medium_term { background: var(--yellow-bg); color: var(--yellow); }
+.db-badge--monitor { background: var(--green-bg); color: var(--green); }
+.db-badge--safe { background: var(--green-bg); color: var(--green); }
+
+/* ---------- BUTTONS ---------- */
+
+.btn-primary {
+    background: var(--brand);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--brand-dark);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.full-width { width: 100%; }
+
+/* ---------- ACTIONS GRID ---------- */
+
+.db-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 14px;
+}
+
+.db-action-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    cursor: pointer;
+}
+
+.db-action-icon { font-size: 24px; }
+
+/* ---------- ALERTS ---------- */
+
+.db-alerts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }

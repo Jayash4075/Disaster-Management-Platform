@@ -12,7 +12,9 @@ import {
     Settings,
     Shield,
     Users,
+    ClipboardCheck
 } from "lucide-react";
+
 
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -59,6 +61,7 @@ function AuthoritySidebar({ collapsed, onToggle }) {
                     icon: AlertTriangle,
                     path: "/authority/emergencies",
                 },
+
             ],
         },
 
@@ -71,6 +74,11 @@ function AuthoritySidebar({ collapsed, onToggle }) {
                     path: "/authority/habitations",
                 },
                 {
+                    label: "Assess Village",
+                    icon: ClipboardCheck,
+                    path: "/authority/assess-village"
+                },
+                {
                     label: "GIS Monitoring",
                     icon: Map,
                     path: "/authority/gis",
@@ -80,6 +88,7 @@ function AuthoritySidebar({ collapsed, onToggle }) {
                     icon: BarChart3,
                     path: "/authority/risk-intelligence",
                 },
+                
             ],
         },
 
