@@ -2,6 +2,10 @@ const mongoose = require("mongoose");
 
 const HabitationSchema = new mongoose.Schema(
     {
+        // ====================================================
+        // BASIC INFORMATION
+        // ====================================================
+
         habitationId: {
             type: String,
             required: true,
@@ -15,14 +19,20 @@ const HabitationSchema = new mongoose.Schema(
             trim: true
         },
 
+        villageCode: {
+            type: String,
+            default: null,
+            index: true
+        },
+
         population: {
             type: Number,
             default: 0
         },
 
-        // ========================================================
+        // ====================================================
         // LOCATION
-        // ========================================================
+        // ====================================================
 
         location: {
             type: {
@@ -35,9 +45,9 @@ const HabitationSchema = new mongoose.Schema(
             }
         },
 
-        // ========================================================
-        // ML / AUTHORITY INPUTS
-        // ========================================================
+        // ====================================================
+        // RAW DISASTER INPUTS
+        // ====================================================
 
         rainfall: {
             type: Number,
@@ -99,9 +109,9 @@ const HabitationSchema = new mongoose.Schema(
             default: null
         },
 
-        // ========================================================
-        // ML OUTPUT
-        // ========================================================
+        // ====================================================
+        // ML RISK OUTPUT
+        // ====================================================
 
         riskScore: {
             type: Number,
@@ -110,19 +120,13 @@ const HabitationSchema = new mongoose.Schema(
 
         riskLevel: {
             type: String,
-            enum: ["GREEN", "YELLOW", "ORANGE", "RED"],
-            default: "GREEN"
-        },
-
-        relocationPriority: {
-            type: String,
             enum: [
-                "IMMEDIATE",
-                "SHORT_TERM",
-                "MEDIUM_TERM",
-                "MONITOR"
+                "GREEN",
+                "YELLOW",
+                "ORANGE",
+                "RED"
             ],
-            default: "MONITOR"
+            default: "GREEN"
         },
 
         vulnerabilityScore: {
@@ -145,6 +149,17 @@ const HabitationSchema = new mongoose.Schema(
             default: null
         },
 
+        relocationPriority: {
+            type: String,
+            enum: [
+                "IMMEDIATE",
+                "SHORT_TERM",
+                "MEDIUM_TERM",
+                "MONITOR"
+            ],
+            default: "MONITOR"
+        },
+
         capacityRatio: {
             type: Number,
             default: null
@@ -155,9 +170,9 @@ const HabitationSchema = new mongoose.Schema(
             default: null
         },
 
-        // ========================================================
-        // HAZARD OUTPUT
-        // ========================================================
+        // ====================================================
+        // HAZARD BREAKDOWN
+        // ====================================================
 
         hazards: {
             flood: {
@@ -181,9 +196,9 @@ const HabitationSchema = new mongoose.Schema(
             }
         },
 
-        // ========================================================
+        // ====================================================
         // ASSESSMENT STATUS
-        // ========================================================
+        // ====================================================
 
         assessmentStatus: {
             type: String,
@@ -217,7 +232,7 @@ const HabitationSchema = new mongoose.Schema(
 );
 
 // ============================================================
-// GEO-SPATIAL INDEX
+// GEOSPATIAL INDEX
 // ============================================================
 
 HabitationSchema.index(
@@ -229,7 +244,8 @@ HabitationSchema.index(
     }
 );
 
-module.exports = mongoose.model(
-    "Habitation",
-    HabitationSchema
-);
+module.exports =
+    mongoose.model(
+        "Habitation",
+        HabitationSchema
+    );

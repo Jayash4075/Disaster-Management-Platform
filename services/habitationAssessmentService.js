@@ -1,5 +1,5 @@
 const Habitation = require("../models/Habitation");
-
+const { syncRelocationSiteForHabitation } = require("./relocationSiteSync");
 const {
     getHabitationPrediction
 } = require("../utils/mlService");
@@ -180,6 +180,16 @@ async function assessHabitation(
 
 
             await habitation.save();
+
+            try {
+                    await syncRelocationSiteForHabitation(habitation);
+                } catch (syncError) {
+                    // Never let a relocation-site sync failure block
+                    // or fail the actual risk assessment
+                    console.error("RelocationSite sync error:", syncError.message);
+                }
+
+                console.log("ML assessment saved:", { /* ...unchanged... */ });
 
 
             return {

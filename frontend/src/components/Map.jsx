@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-
 import {
     MapContainer,
     TileLayer,
     Marker,
     Popup,
     Circle,
+    useMap,
 } from "react-leaflet";
 
 import L from "leaflet";
@@ -13,30 +13,56 @@ import "leaflet/dist/leaflet.css";
 
 import "./Map.css";
 
-
 /* =========================================================
    CURRENT LOCATION ICON
    ========================================================= */
 
 const currentLocationIcon = L.divIcon({
-
-    className:
-        "current-location-icon-wrapper",
-
+    className: "current-location-icon-wrapper",
     html: `
         <div class="current-location-icon">
             <div class="current-location-pulse"></div>
             <div class="current-location-dot"></div>
         </div>
     `,
-
     iconSize: [24, 24],
-
     iconAnchor: [12, 12],
-
     popupAnchor: [0, -12],
-
 });
+
+
+/* =========================================================
+   MAP RECENTER COMPONENT
+   ========================================================= */
+
+function RecenterMap({ location }) {
+    const map = useMap();
+
+    useEffect(() => {
+        if (!location) return;
+
+        const latitude = Number(location.latitude);
+        const longitude = Number(location.longitude);
+
+        if (
+            !Number.isFinite(latitude) ||
+            !Number.isFinite(longitude)
+        ) {
+            return;
+        }
+
+        map.flyTo(
+            [latitude, longitude],
+            14,
+            {
+                animate: true,
+                duration: 1.2,
+            }
+        );
+    }, [location, map]);
+
+    return null;
+}
 
 
 /* =========================================================
@@ -44,48 +70,31 @@ const currentLocationIcon = L.divIcon({
    ========================================================= */
 
 export default function Map({
-
     riskZones = [],
-
     sosRequests = [],
-
     rescueTeams = [],
-
     hospitals = [],
-
     shelters = [],
-
     resources = [],
-
 }) {
 
-
-    /* =====================================================
+    /* -----------------------------------------------------
        USER LOCATION
-       ===================================================== */
+       ----------------------------------------------------- */
 
-    const [userLocation, setUserLocation] =
-        useState(null);
+    const [userLocation, setUserLocation] = useState(null);
 
-    const [locationStatus, setLocationStatus] =
-        useState("requesting");
+    const [locationStatus, setLocationStatus] = useState(
+        "requesting"
+    );
 
-    const [locationError, setLocationError] =
-        useState("");
+    const [locationError, setLocationError] = useState("");
 
-    const [locationAccuracy, setLocationAccuracy] =
-        useState(null);
+    const [locationAccuracy, setLocationAccuracy] = useState(null);
 
 
     /* =====================================================
        GET ACTUAL USER LOCATION
-       
-       NOTE:
-       The authority risk map itself does NOT automatically
-       recenter to this location.
-       
-       We still keep the user's location marker available
-       when browser geolocation is permitted.
        ===================================================== */
 
     useEffect(() => {
@@ -99,125 +108,106 @@ export default function Map({
             );
 
             return;
-
         }
 
 
         setLocationStatus("requesting");
 
 
-        const watchId =
-            navigator.geolocation.watchPosition(
+        const watchId = navigator.geolocation.watchPosition(
 
-                (position) => {
+            (position) => {
 
-                    const {
-                        latitude,
-                        longitude,
-                        accuracy,
-                    } = position.coords;
-
-
-                    const actualLocation = {
-
-                        latitude,
-
-                        longitude,
-
-                    };
+                const {
+                    latitude,
+                    longitude,
+                    accuracy,
+                } = position.coords;
 
 
-                    console.log(
-                        "Actual user location:",
-                        actualLocation
-                    );
+                const actualLocation = {
+                    latitude,
+                    longitude,
+                };
 
 
-                    setUserLocation(
-                        actualLocation
-                    );
+                console.log(
+                    "Actual user location:",
+                    actualLocation
+                );
 
 
-                    setLocationAccuracy(
-                        accuracy
-                    );
+                setUserLocation(actualLocation);
+
+                setLocationAccuracy(accuracy);
+
+                setLocationStatus("success");
+
+                setLocationError("");
+            },
 
 
-                    setLocationStatus(
-                        "success"
-                    );
+            (error) => {
+
+                console.error(
+                    "Geolocation error:",
+                    error
+                );
 
 
-                    setLocationError("");
-
-                },
+                setLocationStatus("error");
 
 
-                (error) => {
+                switch (error.code) {
 
-                    console.error(
-                        "Geolocation error:",
-                        error
-                    );
+                    case error.PERMISSION_DENIED:
 
+                        setLocationError(
+                            "Location permission was denied. Please allow location access for this website."
+                        );
 
-                    setLocationStatus(
-                        "error"
-                    );
+                        break;
 
 
-                    switch (error.code) {
+                    case error.POSITION_UNAVAILABLE:
 
-                        case error.PERMISSION_DENIED:
+                        setLocationError(
+                            "Your current location is unavailable."
+                        );
 
-                            setLocationError(
-                                "Location permission was denied."
-                            );
-
-                            break;
+                        break;
 
 
-                        case error.POSITION_UNAVAILABLE:
+                    case error.TIMEOUT:
 
-                            setLocationError(
-                                "Your current location is unavailable."
-                            );
+                        setLocationError(
+                            "Location request timed out. Trying again..."
+                        );
 
-                            break;
-
-
-                        case error.TIMEOUT:
-
-                            setLocationError(
-                                "Location request timed out."
-                            );
-
-                            break;
+                        break;
 
 
-                        default:
+                    default:
 
-                            setLocationError(
-                                "Unable to determine your current location."
-                            );
-
-                    }
-
-                },
-
-
-                {
-
-                    enableHighAccuracy: true,
-
-                    maximumAge: 5000,
-
-                    timeout: 20000,
-
+                        setLocationError(
+                            "Unable to determine your current location."
+                        );
                 }
+            },
 
-            );
 
+            {
+                enableHighAccuracy: true,
+                maximumAge: 5000,
+                timeout: 20000,
+            }
+
+        );
+
+
+        /* -------------------------------------------------
+           CLEANUP
+           ------------------------------------------------- */
 
         return () => {
 
@@ -231,13 +221,17 @@ export default function Map({
 
 
     /* =====================================================
-       INITIAL MAP CENTER
-       
-       India center.
-       
-       The map will NOT automatically fly to the browser
-       user's location.
+       MAP CENTER
        ===================================================== */
+
+    /*
+       This is ONLY the initial map position.
+
+       It is NOT treated as the user's location.
+
+       As soon as GPS is available, RecenterMap moves
+       the map to the actual user location.
+    */
 
     const initialCenter = useMemo(
         () => [20.5937, 78.9629],
@@ -249,40 +243,29 @@ export default function Map({
        VALIDATE BACKEND DATA
        ===================================================== */
 
-    const validRiskZones =
-        Array.isArray(riskZones)
-            ? riskZones
-            : [];
+    const validRiskZones = Array.isArray(riskZones)
+        ? riskZones
+        : [];
 
+    const validSOSRequests = Array.isArray(sosRequests)
+        ? sosRequests
+        : [];
 
-    const validSOSRequests =
-        Array.isArray(sosRequests)
-            ? sosRequests
-            : [];
+    const validRescueTeams = Array.isArray(rescueTeams)
+        ? rescueTeams
+        : [];
 
+    const validHospitals = Array.isArray(hospitals)
+        ? hospitals
+        : [];
 
-    const validRescueTeams =
-        Array.isArray(rescueTeams)
-            ? rescueTeams
-            : [];
+    const validShelters = Array.isArray(shelters)
+        ? shelters
+        : [];
 
-
-    const validHospitals =
-        Array.isArray(hospitals)
-            ? hospitals
-            : [];
-
-
-    const validShelters =
-        Array.isArray(shelters)
-            ? shelters
-            : [];
-
-
-    const validResources =
-        Array.isArray(resources)
-            ? resources
-            : [];
+    const validResources = Array.isArray(resources)
+        ? resources
+        : [];
 
 
     /* =====================================================
@@ -291,342 +274,143 @@ export default function Map({
 
     const getCoordinates = (item) => {
 
-        if (!item) {
-            return null;
-        }
+        if (!item) return null;
 
 
-        /* -------------------------------------------------
-           FORMAT 1
+        /*
+           Supports multiple backend structures.
 
+           Example 1:
            {
                latitude: 25.4358,
                longitude: 81.8463
            }
-        ------------------------------------------------- */
 
-        if (
-
-            Number.isFinite(
-                Number(item.latitude)
-            )
-
-            &&
-
-            Number.isFinite(
-                Number(item.longitude)
-            )
-
-        ) {
-
-            return [
-
-                Number(item.latitude),
-
-                Number(item.longitude),
-
-            ];
-
-        }
-
-
-        /* -------------------------------------------------
-           FORMAT 2
-
+           Example 2:
            {
                lat: 25.4358,
                lng: 81.8463
            }
-        ------------------------------------------------- */
 
-        if (
-
-            Number.isFinite(
-                Number(item.lat)
-            )
-
-            &&
-
-            Number.isFinite(
-                Number(item.lng)
-            )
-
-        ) {
-
-            return [
-
-                Number(item.lat),
-
-                Number(item.lng),
-
-            ];
-
-        }
-
-
-        /* -------------------------------------------------
-           FORMAT 3
-
-           MongoDB GeoJSON
-
+           Example 3:
            {
                location: {
-                   coordinates: [
-                       longitude,
-                       latitude
-                   ]
+                   coordinates: [81.8463, 25.4358]
                }
            }
-        ------------------------------------------------- */
 
-        if (
-
-            item.location &&
-
-            Array.isArray(
-                item.location.coordinates
-            )
-
-            &&
-
-            item.location.coordinates.length >= 2
-
-        ) {
-
-            const longitude =
-                Number(
-                    item.location.coordinates[0]
-                );
-
-
-            const latitude =
-                Number(
-                    item.location.coordinates[1]
-                );
-
-
-            if (
-
-                Number.isFinite(latitude)
-
-                &&
-
-                Number.isFinite(longitude)
-
-            ) {
-
-                return [
-
-                    latitude,
-
-                    longitude,
-
-                ];
-
-            }
-
-        }
-
-
-        /* -------------------------------------------------
-           FORMAT 4
-
+           Example 4:
            {
                location: {
                    latitude: 25.4358,
                    longitude: 81.8463
                }
            }
-        ------------------------------------------------- */
+        */
+
 
         if (
-
-            item.location
-
-            &&
-
-            Number.isFinite(
-                Number(
-                    item.location.latitude
-                )
-            )
-
-            &&
-
-            Number.isFinite(
-                Number(
-                    item.location.longitude
-                )
-            )
-
+            Number.isFinite(Number(item.latitude)) &&
+            Number.isFinite(Number(item.longitude))
         ) {
 
             return [
-
-                Number(
-                    item.location.latitude
-                ),
-
-                Number(
-                    item.location.longitude
-                ),
-
+                Number(item.latitude),
+                Number(item.longitude),
             ];
-
         }
 
 
-        /* -------------------------------------------------
-           FORMAT 5 — GEOJSON FEATURE
+        if (
+            Number.isFinite(Number(item.lat)) &&
+            Number.isFinite(Number(item.lng))
+        ) {
 
-           {
-               geometry: {
-                   type: "Point",
-                   coordinates: [
-                       longitude,
-                       latitude
-                   ]
-               }
-           }
+            return [
+                Number(item.lat),
+                Number(item.lng),
+            ];
+        }
 
-           IMPORTANT:
-           GeoJSON uses [longitude, latitude]
-           Leaflet uses [latitude, longitude].
-        ------------------------------------------------- */
 
         if (
-
-            item.geometry
-
-            &&
-
-            item.geometry.type === "Point"
-
-            &&
-
-            Array.isArray(
-                item.geometry.coordinates
-            )
-
-            &&
-
-            item.geometry.coordinates.length >= 2
-
+            item.location &&
+            Array.isArray(item.location.coordinates) &&
+            item.location.coordinates.length >= 2
         ) {
 
             const longitude =
-                Number(
-                    item.geometry.coordinates[0]
-                );
-
+                Number(item.location.coordinates[0]);
 
             const latitude =
-                Number(
-                    item.geometry.coordinates[1]
-                );
+                Number(item.location.coordinates[1]);
 
 
             if (
-
-                Number.isFinite(latitude)
-
-                &&
-
+                Number.isFinite(latitude) &&
                 Number.isFinite(longitude)
-
             ) {
 
                 return [
-
                     latitude,
-
                     longitude,
-
                 ];
-
             }
+        }
 
+
+        if (
+            item.location &&
+            Number.isFinite(
+                Number(item.location.latitude)
+            ) &&
+            Number.isFinite(
+                Number(item.location.longitude)
+            )
+        ) {
+
+            return [
+                Number(item.location.latitude),
+                Number(item.location.longitude),
+            ];
         }
 
 
         return null;
-
     };
 
 
     /* =====================================================
-       RISK COLOR
+       RISK ZONE COLOR
        ===================================================== */
 
     const getRiskColor = (risk) => {
 
-        const value =
-            String(
-                risk || ""
-            ).toUpperCase();
+        const value = String(
+            risk || ""
+        ).toLowerCase();
 
-
-        /* RED */
 
         if (
-
-            value === "RED"
-
-            ||
-
-            value === "CRITICAL"
-
-            ||
-
-            value === "HIGH"
-
-            ||
-
-            value === "SEVERE"
-
+            value.includes("high") ||
+            value.includes("critical") ||
+            value.includes("severe")
         ) {
 
             return "#dc2626";
-
         }
 
 
-        /* ORANGE */
-
         if (
-
-            value === "ORANGE"
-
-            ||
-
-            value === "MEDIUM"
-
-            ||
-
-            value === "MODERATE"
-
+            value.includes("medium") ||
+            value.includes("moderate")
         ) {
 
             return "#f59e0b";
-
         }
 
-
-        /* YELLOW */
-
-        if (
-            value === "YELLOW"
-        ) {
-
-            return "#eab308";
-
-        }
-
-
-        /* GREEN / DEFAULT */
 
         return "#16a34a";
-
     };
 
 
@@ -641,7 +425,7 @@ export default function Map({
 
             {/* =================================================
                MAP STATUS BAR
-            ================================================= */}
+               ================================================= */}
 
             <div className="map-status-bar">
 
@@ -661,7 +445,7 @@ export default function Map({
 
 
                         {locationStatus === "success" &&
-                            "Live location available"}
+                            "Live location active"}
 
 
                         {locationStatus === "error" &&
@@ -672,10 +456,8 @@ export default function Map({
                 </div>
 
 
-                {locationStatus === "success"
-                    &&
-                    locationAccuracy
-                    && (
+                {locationStatus === "success" &&
+                    locationAccuracy && (
 
                     <span className="map-accuracy">
 
@@ -695,7 +477,7 @@ export default function Map({
 
             {/* =================================================
                LOCATION ERROR
-            ================================================= */}
+               ================================================= */}
 
             {locationStatus === "error" && (
 
@@ -703,7 +485,7 @@ export default function Map({
 
                     <div className="map-error-title">
 
-                        Location access unavailable
+                        Location access required
 
                     </div>
 
@@ -721,7 +503,7 @@ export default function Map({
 
             {/* =================================================
                LEAFLET MAP
-            ================================================= */}
+               ================================================= */}
 
             <MapContainer
 
@@ -739,10 +521,9 @@ export default function Map({
 
             >
 
-
                 {/* =============================================
                    MAP TILES
-                ============================================= */}
+                   ============================================= */}
 
                 <TileLayer
 
@@ -754,13 +535,17 @@ export default function Map({
 
 
                 {/* =============================================
+                   RECENTER TO ACTUAL USER LOCATION
+                   ============================================= */}
+
+                <RecenterMap
+                    location={userLocation}
+                />
+
+
+                {/* =============================================
                    ACTUAL USER LOCATION
-                   
-                   We show the marker if available.
-                   
-                   We DO NOT recenter the authority map
-                   automatically to this location.
-                ============================================= */}
+                   ============================================= */}
 
                 {userLocation && (
 
@@ -769,16 +554,11 @@ export default function Map({
                         <Marker
 
                             position={[
-
                                 userLocation.latitude,
-
                                 userLocation.longitude,
-
                             ]}
 
-                            icon={
-                                currentLocationIcon
-                            }
+                            icon={currentLocationIcon}
 
                         >
 
@@ -791,25 +571,19 @@ export default function Map({
                                     </strong>
 
                                     <span>
-
                                         Latitude:
                                         {" "}
-
                                         {userLocation.latitude.toFixed(
                                             6
                                         )}
-
                                     </span>
 
                                     <span>
-
                                         Longitude:
                                         {" "}
-
                                         {userLocation.longitude.toFixed(
                                             6
                                         )}
-
                                     </span>
 
                                 </div>
@@ -821,18 +595,15 @@ export default function Map({
 
                         {/* -------------------------------------
                            ACCURACY CIRCLE
-                        ------------------------------------- */}
+                           ------------------------------------- */}
 
                         {locationAccuracy && (
 
                             <Circle
 
                                 center={[
-
                                     userLocation.latitude,
-
                                     userLocation.longitude,
-
                                 ]}
 
                                 radius={
@@ -840,19 +611,10 @@ export default function Map({
                                 }
 
                                 pathOptions={{
-
-                                    color:
-                                        "#2563eb",
-
-                                    fillColor:
-                                        "#2563eb",
-
-                                    fillOpacity:
-                                        0.08,
-
-                                    weight:
-                                        1,
-
+                                    color: "#2563eb",
+                                    fillColor: "#2563eb",
+                                    fillOpacity: 0.08,
+                                    weight: 1,
                                 }}
 
                             />
@@ -865,88 +627,25 @@ export default function Map({
 
 
                 {/* =================================================
-                   BACKEND RISK ZONES / VILLAGE FEATURES
-                   
-                   Supports GeoJSON returned from:
-
-                   /api/habitations/risk-map
-                ================================================= */}
+                   BACKEND RISK ZONES
+                   ================================================= */}
 
                 {validRiskZones.map(
                     (zone, index) => {
 
                         const coordinates =
-                            getCoordinates(
-                                zone
-                            );
+                            getCoordinates(zone);
 
 
                         if (!coordinates) {
-
-                            console.warn(
-                                "Risk zone has no valid coordinates:",
-                                zone
-                            );
-
                             return null;
-
                         }
-
-
-                        /*
-                           GeoJSON properties are stored here.
-                        */
-
-                        const properties =
-                            zone.properties || {};
 
 
                         const risk =
                             zone.riskLevel ||
-
                             zone.risk ||
-
-                            zone.level ||
-
-                            properties.riskLevel ||
-
-                            properties.risk ||
-
-                            properties.level ||
-
-                            "GREEN";
-
-
-                        const name =
-                            zone.name ||
-
-                            properties.name ||
-
-                            "Risk Zone";
-
-
-                        const riskScore =
-                            zone.riskScore ??
-
-                            properties.riskScore;
-
-
-                        const population =
-                            zone.population ??
-
-                            properties.population;
-
-
-                        const vulnerabilityScore =
-                            zone.vulnerabilityScore ??
-
-                            properties.vulnerabilityScore;
-
-
-                        const relocationPriority =
-                            zone.relocationPriority ??
-
-                            properties.relocationPriority;
+                            zone.level;
 
 
                         return (
@@ -954,43 +653,20 @@ export default function Map({
                             <Circle
 
                                 key={
-
                                     zone._id ||
-
                                     zone.id ||
-
-                                    zone.habitationId ||
-
-                                    properties.habitationId ||
-
                                     `risk-${index}`
-
                                 }
 
-                                center={
-                                    coordinates
-                                }
-
-                                /*
-                                   Radius is only the visual
-                                   representation of the
-                                   habitation risk point.
-                                */
+                                center={coordinates}
 
                                 radius={
-
                                     Number(
-
-                                        zone.radius ||
-
-                                        properties.radius
-
+                                        zone.radius
                                     ) || 500
-
                                 }
 
                                 pathOptions={{
-
                                     color:
                                         getRiskColor(
                                             risk
@@ -1001,12 +677,9 @@ export default function Map({
                                             risk
                                         ),
 
-                                    fillOpacity:
-                                        0.25,
+                                    fillOpacity: 0.2,
 
-                                    weight:
-                                        2,
-
+                                    weight: 2,
                                 }}
 
                             >
@@ -1017,7 +690,8 @@ export default function Map({
 
                                         <strong>
 
-                                            {name}
+                                            {zone.name ||
+                                                "Risk Zone"}
 
                                         </strong>
 
@@ -1026,64 +700,18 @@ export default function Map({
 
                                             Risk:
                                             {" "}
-                                            {risk}
+                                            {risk ||
+                                                "Unknown"}
 
                                         </span>
 
 
-                                        {riskScore !== undefined
-                                            && (
+                                        {zone.description && (
 
                                             <span>
 
-                                                Risk Score:
-                                                {" "}
-                                                {riskScore}
-
-                                            </span>
-
-                                        )}
-
-
-                                        {population !== undefined
-                                            && (
-
-                                            <span>
-
-                                                Population:
-                                                {" "}
-                                                {Number(
-                                                    population
-                                                ).toLocaleString()}
-
-                                            </span>
-
-                                        )}
-
-
-                                        {vulnerabilityScore !== undefined
-                                            && (
-
-                                            <span>
-
-                                                Vulnerability:
-                                                {" "}
-                                                {vulnerabilityScore}
-
-                                            </span>
-
-                                        )}
-
-
-                                        {relocationPriority
-                                            && (
-
-                                            <span>
-
-                                                Relocation:
-                                                {" "}
                                                 {
-                                                    relocationPriority
+                                                    zone.description
                                                 }
 
                                             </span>
@@ -1104,15 +732,13 @@ export default function Map({
 
                 {/* =================================================
                    BACKEND SOS REQUESTS
-                ================================================= */}
+                   ================================================= */}
 
                 {validSOSRequests.map(
                     (request, index) => {
 
                         const coordinates =
-                            getCoordinates(
-                                request
-                            );
+                            getCoordinates(request);
 
 
                         if (!coordinates) {
@@ -1125,13 +751,9 @@ export default function Map({
                             <Marker
 
                                 key={
-
                                     request._id ||
-
                                     request.id ||
-
                                     `sos-${index}`
-
                                 }
 
                                 position={
@@ -1161,8 +783,7 @@ export default function Map({
                                         </span>
 
 
-                                        {request.description
-                                            && (
+                                        {request.description && (
 
                                             <span>
 
@@ -1188,15 +809,13 @@ export default function Map({
 
                 {/* =================================================
                    BACKEND RESCUE TEAMS
-                ================================================= */}
+                   ================================================= */}
 
                 {validRescueTeams.map(
                     (team, index) => {
 
                         const coordinates =
-                            getCoordinates(
-                                team
-                            );
+                            getCoordinates(team);
 
 
                         if (!coordinates) {
@@ -1209,13 +828,9 @@ export default function Map({
                             <Marker
 
                                 key={
-
                                     team._id ||
-
                                     team.id ||
-
                                     `team-${index}`
-
                                 }
 
                                 position={
@@ -1261,7 +876,7 @@ export default function Map({
 
                 {/* =================================================
                    BACKEND HOSPITALS
-                ================================================= */}
+                   ================================================= */}
 
                 {validHospitals.map(
                     (hospital, index) => {
@@ -1282,13 +897,9 @@ export default function Map({
                             <Marker
 
                                 key={
-
                                     hospital._id ||
-
                                     hospital.id ||
-
                                     `hospital-${index}`
-
                                 }
 
                                 position={
@@ -1309,8 +920,7 @@ export default function Map({
                                         </strong>
 
 
-                                        {hospital.address
-                                            && (
+                                        {hospital.address && (
 
                                             <span>
 
@@ -1336,7 +946,7 @@ export default function Map({
 
                 {/* =================================================
                    BACKEND SHELTERS
-                ================================================= */}
+                   ================================================= */}
 
                 {validShelters.map(
                     (shelter, index) => {
@@ -1357,13 +967,9 @@ export default function Map({
                             <Marker
 
                                 key={
-
                                     shelter._id ||
-
                                     shelter.id ||
-
                                     `shelter-${index}`
-
                                 }
 
                                 position={
@@ -1384,8 +990,7 @@ export default function Map({
                                         </strong>
 
 
-                                        {shelter.capacity
-                                            && (
+                                        {shelter.capacity && (
 
                                             <span>
 
@@ -1413,7 +1018,7 @@ export default function Map({
 
                 {/* =================================================
                    BACKEND RESOURCES
-                ================================================= */}
+                   ================================================= */}
 
                 {validResources.map(
                     (resource, index) => {
@@ -1434,13 +1039,9 @@ export default function Map({
                             <Marker
 
                                 key={
-
                                     resource._id ||
-
                                     resource.id ||
-
                                     `resource-${index}`
-
                                 }
 
                                 position={
@@ -1461,8 +1062,7 @@ export default function Map({
                                         </strong>
 
 
-                                        {resource.type
-                                            && (
+                                        {resource.type && (
 
                                             <span>
 
@@ -1492,7 +1092,7 @@ export default function Map({
 
             {/* =================================================
                MAP LEGEND
-            ================================================= */}
+               ================================================= */}
 
             <div className="map-legend">
 
@@ -1504,7 +1104,6 @@ export default function Map({
 
 
                 <div className="map-legend-items">
-
 
                     <div className="map-legend-item">
 
@@ -1519,7 +1118,7 @@ export default function Map({
 
                         <span className="legend-dot legend-high"></span>
 
-                        RED — Critical risk
+                        High risk
 
                     </div>
 
@@ -1528,7 +1127,7 @@ export default function Map({
 
                         <span className="legend-dot legend-medium"></span>
 
-                        ORANGE — High risk
+                        Medium risk
 
                     </div>
 
@@ -1537,7 +1136,7 @@ export default function Map({
 
                         <span className="legend-dot legend-low"></span>
 
-                        YELLOW / GREEN — Lower risk
+                        Low risk
 
                     </div>
 
@@ -1546,7 +1145,5 @@ export default function Map({
             </div>
 
         </div>
-
     );
-
 }

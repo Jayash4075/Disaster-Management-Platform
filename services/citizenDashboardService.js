@@ -124,7 +124,7 @@ async function getRelocationCandidates(lat, lng) {
                 $maxDistance: RELOCATION_RADIUS_METERS
             }
         },
-        "capacity.available": { $gt: 0 }
+        "capacity.available": { $gte: Math.max(1, requiredCapacity) }
     }).limit(RELOCATION_CANDIDATES);
 
     const withDistance = sites.map((site) => {
@@ -190,7 +190,7 @@ async function getCitizenDashboard(lat, lng) {
             getNearestHabitation(lat, lng),
             getNearbyFacilities(lat, lng, "hospital"),
             getNearbyFacilities(lat, lng, "shelter"),
-            getRelocationCandidates(lat, lng)
+            getRelocationCandidates(lat, lng, habitation?.vulnerablePopulation || 0)
         ]);
 
     // --------------------------------------------------------

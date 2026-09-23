@@ -428,7 +428,14 @@ async function getHabitationPrediction(
         medical_capacity:
             Number(
                 habitation.medicalCapacity
-            )
+            ),
+
+        latitude:
+            habitation.location?.coordinates?.[1] ?? 0,
+
+        longitude:
+            habitation.location?.coordinates?.[0] ?? 0
+
 
     };
 
