@@ -1302,6 +1302,194 @@ def predict_habitation():
                 "error": "Request body must contain JSON data"
             }), 400
 
+        required_fields = [
+            "population", "rainfall", "river_level", "flood_history",
+            "building_damage", "vulnerable_population", "water_level",
+            "road_access", "hospital_distance", "shelter_capacity",
+            "available_water", "food_stock", "medical_capacity"
+        ]
+
+        for field in required_fields:
+            if field not in data:
+                return jsonify({
+                    "success": False,
+                    "error": f"Missing field: {field}"
+                }), 400
+
+        habitation_risk_model = get_model(
+            "habitation_risk_model.pkl", "Habitation Risk Model"
+        )
+
+        relocation_model = get_model(
+            "relocation_model.pkl", "Relocation Priority Model"
+        )
+
+        if habitation_risk_model is None:
+            return jsonify({
+                "success": False,
+                "error": "Habitation risk model is not loaded"
+            }), 500
+
+        if relocation_model is None:
+            return jsonify({
+                "success": False,
+                "error": "Relocation model is not loaded"
+            }), 500
+
+        population = float(data["population"])
+        habitation_id = data.get("habitationId", data.get("village_code", "UNKNOWN"))
+        habitation_name = data.get("name", data.get("village_name", "Unknown Habitation"))
+
+        # ---------------- HABITATION RISK ----------------
+
+        risk_features = [[
+            float(data["population"]), float(data["rainfall"]),
+            float(data["river_level"]), float(data["flood_history"]),
+            float(data["building_damage"]), float(data["vulnerable_population"]),
+            float(data["water_level"]), float(data["road_access"]),
+            float(data["hospital_distance"]),
+            float(data.get("latitude", 0)), float(data.get("longitude", 0))
+        ]]
+
+        risk_prediction = str(habitation_risk_model.predict(risk_features)[0]).upper()
+
+        risk_probabilities = habitation_risk_model.predict_proba(risk_features)[0]
+        risk_classes = habitation_risk_model.classes_
+
+        risk_probability_dict = {
+            str(cls).upper(): round(float(p), 4)
+            for cls, p in zip(risk_classes, risk_probabilities)
+        }
+
+        predicted_risk_probability = risk_probability_dict.get(risk_prediction, 0)
+
+        risk_score_map = {"LOW": 25, "MEDIUM": 50, "HIGH": 75, "CRITICAL": 95}
+        risk_score = clamp_score(risk_score_map.get(risk_prediction, 0))
+        risk_level = get_risk_level(risk_score)
+
+        # ---------------- VULNERABILITY (from dataset) ----------------
+
+        vulnerability_score = None
+        vulnerability_category = None
+
+        village_match = village_df[
+            village_df["village_code"].astype(str) == str(habitation_id)
+        ]
+
+        if not village_match.empty:
+            row = village_match.iloc[0]
+            vulnerability_score = float(row["vulnerability_score_100"])
+            vulnerability_category = str(row["vulnerability_category"])
+
+        hazards = {"flood": None, "landslide": None, "erosion": None, "cloudburst": None}
+
+        # ---------------- CARRYING CAPACITY (formula, not ML) ----------------
+
+        shelter_capacity = float(data["shelter_capacity"])
+        available_water = float(data["available_water"])
+        food_stock = float(data["food_stock"])
+        medical_capacity = float(data["medical_capacity"])
+
+        water_capacity = available_water / 5
+        food_capacity = food_stock / 2
+        medical_population_capacity = medical_capacity * 10
+
+        safe_capacity = (
+            0.40 * shelter_capacity
+            + 0.25 * water_capacity
+            + 0.20 * food_capacity
+            + 0.15 * medical_population_capacity
+        )
+
+        safe_capacity = max(safe_capacity, 100)
+        capacity_ratio = population / safe_capacity
+
+        if capacity_ratio <= 0.8:
+            capacity_status = "SAFE"
+        elif capacity_ratio <= 1.0:
+            capacity_status = "STRESSED"
+        else:
+            capacity_status = "OVER_CAPACITY"
+
+        # ---------------- RELOCATION ----------------
+
+        relocation_features = [[
+            float(data["population"]), float(data["rainfall"]),
+            float(data["river_level"]), float(data["flood_history"]),
+            float(data["building_damage"]), float(data["vulnerable_population"]),
+            float(data["water_level"]), float(data["road_access"]),
+            float(data["hospital_distance"]), float(data["shelter_capacity"]),
+            capacity_ratio,
+            float(data.get("latitude", 0)), float(data.get("longitude", 0))
+        ]]
+
+        relocation_prediction = str(relocation_model.predict(relocation_features)[0]).upper()
+
+        relocation_probabilities = relocation_model.predict_proba(relocation_features)[0]
+        relocation_classes = relocation_model.classes_
+
+        relocation_probability_dict = {
+            str(cls).upper(): round(float(p), 4)
+            for cls, p in zip(relocation_classes, relocation_probabilities)
+        }
+
+        predicted_relocation_probability = relocation_probability_dict.get(relocation_prediction, 0)
+
+        relocation_mapping = {"HIGH": "IMMEDIATE", "MEDIUM": "SHORT_TERM", "LOW": "MONITOR"}
+        relocation_priority = relocation_mapping.get(relocation_prediction, "MONITOR")
+
+        return jsonify({
+            "success": True,
+            "habitationId": str(habitation_id),
+            "name": habitation_name,
+            "population": int(population),
+            "riskScore": round(risk_score, 2),
+            "riskLevel": risk_level,
+            "vulnerabilityScore": vulnerability_score,
+            "vulnerabilityCategory": vulnerability_category,
+            "hazards": hazards,
+            "historicalRisk": None,
+            "relocationPriority": relocation_priority,
+            "lastAssessment": date.today().isoformat(),
+            "details": {
+                "riskPrediction": risk_prediction,
+                "riskProbability": predicted_risk_probability,
+                "riskProbabilities": risk_probability_dict,
+                "carryingCapacity": {
+                    "status": capacity_status,
+                    "capacityRatio": round(capacity_ratio, 2),
+                    "safeCapacity": round(safe_capacity, 2),
+                    "modelUsed": False
+                },
+                "relocation": {
+                    "prediction": relocation_prediction,
+                    "priority": relocation_priority,
+                    "probability": predicted_relocation_probability,
+                    "probabilities": relocation_probability_dict
+                },
+                "models": {
+                    "habitationRisk": habitation_risk_model is not None,
+                    "capacity": model_file_exists("capacity_model.pkl"),
+                    "relocation": relocation_model is not None
+                }
+            }
+        })
+
+    except ValueError:
+        return jsonify({"success": False, "error": "All input values must be numeric"}), 400
+
+    except Exception as e:
+        print("Habitation prediction error:", str(e))
+        return jsonify({"success": False, "error": str(e)}), 500
+
+        data = request.get_json()
+
+        if not data:
+            return jsonify({
+                "success": False,
+                "error": "Request body must contain JSON data"
+            }), 400
+
         # =====================================================
         # REQUIRED INPUTS
         # =====================================================
