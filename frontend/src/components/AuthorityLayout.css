@@ -17,3 +17,21 @@
     flex: 1;
     min-width: 0;
 }
+
+@media (max-width: 850px) {
+
+    .authority-layout {
+        display: block;
+        width: 100%;
+        min-height: 100vh;
+    }
+
+    .authority-main {
+        width: 100%;
+        margin-left: 0 !important;
+    }
+
+    .authority-content {
+        width: 100%;
+    }
+}

@@ -601,3 +601,241 @@
         font-size: 17px;
     }
 }
+
+/* ============================================================
+   MOBILE SIDEBAR / HAMBURGER MENU
+   ============================================================ */
+
+.mobile-sidebar-close {
+    display: none;
+}
+
+.authority-sidebar-overlay {
+    display: none;
+}
+
+
+/* ============================================================
+   TABLET + MOBILE
+   ============================================================ */
+
+@media (max-width: 850px) {
+
+    /* -----------------------------------------
+       SIDEBAR
+       ----------------------------------------- */
+
+    .authority-sidebar {
+        position: fixed;
+
+        top: 0;
+        left: 0;
+        bottom: 0;
+
+        width: 280px;
+        max-width: 86vw;
+
+        height: 100vh;
+
+        z-index: 2000;
+
+        transform: translateX(-100%);
+
+        transition:
+            transform 0.25s ease,
+            box-shadow 0.25s ease;
+
+        overflow-y: auto;
+
+        /* IMPORTANT:
+           mobile drawer should NOT depend
+           on desktop collapsed state */
+    }
+
+
+    /* -----------------------------------------
+       OPEN MOBILE SIDEBAR
+       ----------------------------------------- */
+
+    .authority-sidebar.mobile-open {
+        transform: translateX(0);
+
+        box-shadow:
+            8px 0 30px rgba(0, 0, 0, 0.15);
+    }
+
+
+    /* -----------------------------------------
+       VERY IMPORTANT:
+       DESKTOP .collapsed MUST NOT HIDE
+       THE MOBILE SIDEBAR WHEN OPEN
+       ----------------------------------------- */
+
+    .authority-sidebar.collapsed {
+        width: 280px;
+        max-width: 86vw;
+
+        transform: translateX(-100%);
+    }
+
+    .authority-sidebar.collapsed.mobile-open {
+        transform: translateX(0);
+    }
+
+
+    /* -----------------------------------------
+       MOBILE OVERLAY
+       ----------------------------------------- */
+
+    .authority-sidebar-overlay {
+        display: block;
+
+        position: fixed;
+
+        inset: 0;
+
+        width: 100%;
+        height: 100%;
+
+        background: rgba(0, 0, 0, 0.45);
+
+        z-index: 1999;
+
+        animation: authorityOverlayFadeIn 0.2s ease;
+    }
+
+
+    @keyframes authorityOverlayFadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+
+    /* -----------------------------------------
+       DESKTOP COLLAPSE BUTTON
+       HIDDEN ON MOBILE
+       ----------------------------------------- */
+
+    .desktop-sidebar-toggle {
+        display: none !important;
+    }
+
+
+    /* -----------------------------------------
+       MOBILE CLOSE BUTTON
+       ----------------------------------------- */
+
+    .mobile-sidebar-close {
+        display: flex;
+
+        align-items: center;
+        justify-content: center;
+
+        width: 36px;
+        height: 36px;
+
+        flex-shrink: 0;
+
+        border: none;
+        border-radius: 8px;
+
+        background: transparent;
+
+        cursor: pointer;
+
+        color: inherit;
+
+        transition:
+            background 0.2s ease,
+            transform 0.2s ease;
+    }
+
+
+    .mobile-sidebar-close:hover {
+        background: rgba(0, 0, 0, 0.06);
+    }
+
+
+    .mobile-sidebar-close:active {
+        transform: scale(0.94);
+    }
+
+
+    /* -----------------------------------------
+       IMPORTANT:
+       NEVER HIDE SIDEBAR TEXT ON MOBILE
+       BECAUSE OF DESKTOP COLLAPSED STATE
+       ----------------------------------------- */
+
+    .authority-sidebar.mobile-open .authority-brand-text,
+    .authority-sidebar.mobile-open .authority-nav-label,
+    .authority-sidebar.mobile-open .authority-nav-item span,
+    .authority-sidebar.collapsed.mobile-open .authority-brand-text,
+    .authority-sidebar.collapsed.mobile-open .authority-nav-label,
+    .authority-sidebar.collapsed.mobile-open .authority-nav-item span {
+        display: block;
+    }
+
+
+    /* -----------------------------------------
+       SIDEBAR BRAND
+       ----------------------------------------- */
+
+    .authority-sidebar.mobile-open
+        .authority-sidebar-brand {
+
+        min-height: 72px;
+    }
+
+
+    /* -----------------------------------------
+       NAV ITEMS
+       ----------------------------------------- */
+
+    .authority-sidebar.mobile-open
+        .authority-nav-item {
+
+        width: 100%;
+    }
+
+
+    /* -----------------------------------------
+       MAIN CONTENT
+       ----------------------------------------- */
+
+    .authority-layout.sidebar-collapsed
+        .authority-main {
+
+        margin-left: 0;
+    }
+
+
+    .authority-layout
+        .authority-main {
+
+        width: 100%;
+    }
+}
+
+
+/* ============================================================
+   SMALL MOBILE
+   ============================================================ */
+
+@media (max-width: 480px) {
+
+    .authority-sidebar {
+        width: 280px;
+        max-width: 86vw;
+    }
+
+    .authority-sidebar.collapsed {
+        width: 280px;
+        max-width: 86vw;
+    }
+}

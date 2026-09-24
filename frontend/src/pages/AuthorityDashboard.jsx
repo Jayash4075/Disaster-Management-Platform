@@ -14,10 +14,10 @@ import {
     XCircle,
 } from "lucide-react";
 
+import { useOutletContext } from "react-router-dom";
+
 import api from "../api/axios";
 import Map from "../components/Map";
-import AuthoritySidebar from "../components/AuthoritySidebar";
-import AuthorityTopbar from "../components/AuthorityTopbar";
 
 import "./AuthorityDashboard.css";
 
@@ -25,16 +25,12 @@ import "./AuthorityDashboard.css";
 function AuthorityDashboard() {
 
     // =========================================================
-    // SIDEBAR / SEARCH
+    // SEARCH
+    // Search state is now controlled by AuthorityLayout
     // =========================================================
 
-    const [sidebarCollapsed, setSidebarCollapsed] =
-        useState(false);
+    const { search = "" } = useOutletContext();
 
-    const [search, setSearch] =
-        useState("");
-
-    const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
     // =========================================================
     // DASHBOARD DATA
@@ -444,939 +440,883 @@ function AuthorityDashboard() {
 
     return (
 
-        <div
-            className={`authority-shell ${
-                sidebarCollapsed
-                    ? "sidebar-collapsed"
-                    : ""
-            }`}
-        >
-
-            {/* =================================================
-                SIDEBAR
-            ================================================= */}
-
-            <AuthoritySidebar
-                collapsed={collapsed}
-                onToggle={() => setCollapsed(!collapsed)}
-                mobileOpen={mobileSidebarOpen}
-                onMobileClose={() => setMobileSidebarOpen(false)}
-            />
+        <main className="authority-page">
 
 
             {/* =================================================
-                MAIN
+                PAGE HEADER
             ================================================= */}
 
-            <div className="authority-main">
+            <section className="authority-header">
+
+                <div className="authority-header-left">
+
+                    <div className="authority-status">
+
+                        <span></span>
+
+                        AUTHORITY COMMAND CENTER
+
+                    </div>
 
 
-                {/* =================================================
-                    TOPBAR
-                ================================================= */}
-
-                <AuthorityTopbar
-                    search={search}
-                    setSearch={setSearch}
-                    onMenuClick={() =>
-                        setSidebarCollapsed(
-                            (previous) =>
-                                !previous
-                        )
-                    }
-                />
+                    <h1>
+                        Disaster Response Overview
+                    </h1>
 
 
-                {/* =================================================
-                    PAGE
-                ================================================= */}
+                    <p>
+                        Monitor incidents, vulnerable
+                        habitations, relocation priorities
+                        and ML-powered risk intelligence.
+                    </p>
 
-                <main className="authority-page">
+                </div>
 
 
-                    {/* =================================================
-                        PAGE HEADER
-                    ================================================= */}
+                <div className="authority-header-actions">
 
-                    <section className="authority-header">
 
-                        <div className="authority-header-left">
+                    <div className="system-status">
 
-                            <div className="authority-status">
+                        <ShieldCheck
+                            size={17}
+                        />
 
-                                <span></span>
+                        <div>
 
-                                AUTHORITY COMMAND CENTER
+                            <span>
+                                System status
+                            </span>
+
+                            <strong>
+                                {loading
+                                    ? "Checking..."
+                                    : systemOperational
+                                        ? "Operational"
+                                        : "Degraded"}
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <button
+                        className="refresh-button"
+                        onClick={
+                            refreshDashboard
+                        }
+                        disabled={
+                            refreshing
+                        }
+                    >
+
+                        <RefreshCw
+                            size={16}
+                            className={
+                                refreshing
+                                    ? "spin"
+                                    : ""
+                            }
+                        />
+
+                        {refreshing
+                            ? "Refreshing"
+                            : "Refresh"}
+
+                    </button>
+
+                </div>
+
+            </section>
+
+
+            {/* =================================================
+                ERROR
+            ================================================= */}
+
+            {error && (
+
+                <div className="authority-error">
+
+                    <XCircle
+                        size={18}
+                    />
+
+                    <div>
+
+                        <strong>
+                            Dashboard data unavailable
+                        </strong>
+
+                        <span>
+                            {error}
+                        </span>
+
+                    </div>
+
+
+                    <button
+                        onClick={
+                            refreshDashboard
+                        }
+                    >
+                        Retry
+                    </button>
+
+                </div>
+
+            )}
+
+
+            {/* =================================================
+                MAIN STATISTICS
+            ================================================= */}
+
+            <section className="authority-stat-grid">
+
+
+                {/* RED ZONES */}
+
+                <article className="authority-stat-card emergency">
+
+                    <div className="stat-card-icon">
+
+                        <ShieldAlert
+                            size={21}
+                        />
+
+                    </div>
+
+                    <div>
+
+                        <span>
+                            Critical Red Zones
+                        </span>
+
+                        <strong>
+
+                            {loading
+                                ? "—"
+                                : summary.criticalRedZones ??
+                                  0}
+
+                        </strong>
+
+                        <small>
+                            Assessed high-risk areas
+                        </small>
+
+                    </div>
+
+                </article>
+
+
+                {/* PEOPLE AT RISK */}
+
+                <article className="authority-stat-card">
+
+                    <div className="stat-card-icon">
+
+                        <Users
+                            size={21}
+                        />
+
+                    </div>
+
+                    <div>
+
+                        <span>
+                            People At Risk
+                        </span>
+
+                        <strong>
+
+                            {loading
+                                ? "—"
+                                : Number(
+                                    summary.peopleAtRisk ||
+                                    0
+                                ).toLocaleString()}
+
+                        </strong>
+
+                        <small>
+                            RED + ORANGE habitation population
+                        </small>
+
+                    </div>
+
+                </article>
+
+
+                {/* RELOCATION */}
+
+                <article className="authority-stat-card">
+
+                    <div className="stat-card-icon">
+
+                        <MapPin
+                            size={21}
+                        />
+
+                    </div>
+
+                    <div>
+
+                        <span>
+                            Immediate Relocation
+                        </span>
+
+                        <strong>
+
+                            {loading
+                                ? "—"
+                                : summary.immediateRelocation ??
+                                  0}
+
+                        </strong>
+
+                        <small>
+                            Villages requiring priority action
+                        </small>
+
+                    </div>
+
+                </article>
+
+
+                {/* SAFE SITES */}
+
+                <article className="authority-stat-card risk-card">
+
+                    <div className="stat-card-icon">
+
+                        <ShieldCheck
+                            size={21}
+                        />
+
+                    </div>
+
+                    <div>
+
+                        <span>
+                            Safe Sites
+                        </span>
+
+                        <strong>
+
+                            {loading
+                                ? "—"
+                                : summary.safeSites ??
+                                  0}
+
+                        </strong>
+
+                        <small>
+                            Relocation sites with available capacity
+                        </small>
+
+                    </div>
+
+                </article>
+
+            </section>
+
+
+            {/* =================================================
+                RISK OVERVIEW
+            ================================================= */}
+
+            <section className="authority-secondary-grid">
+
+
+                <section className="authority-panel">
+
+                    <div className="panel-header">
+
+                        <div>
+
+                            <div className="panel-title">
+
+                                <AlertTriangle
+                                    size={18}
+                                />
+
+                                ML Risk Intelligence
 
                             </div>
 
-
-                            <h1>
-                                Disaster Response Overview
-                            </h1>
-
-
                             <p>
-                                Monitor incidents, vulnerable
-                                habitations, relocation priorities
-                                and ML-powered risk intelligence.
+                                Risk assessment stored by
+                                the backend after ML processing.
                             </p>
 
                         </div>
 
+                    </div>
 
-                        <div className="authority-header-actions">
+
+                    <div className="risk-intelligence">
+
+                        <div className="risk-main">
+
+                            <span>
+                                Overall assessed risk
+                            </span>
+
+                            <strong>
+                                {loading
+                                    ? "Loading..."
+                                    : riskLevel}
+                            </strong>
 
 
-                            <div className="system-status">
+                            <div className="risk-meter">
 
-                                <ShieldCheck
-                                    size={17}
+                                <div
+                                    style={{
+                                        width:
+                                            `${Math.min(
+                                                100,
+                                                overallRiskScore
+                                            )}%`,
+                                    }}
                                 />
-
-                                <div>
-
-                                    <span>
-                                        System status
-                                    </span>
-
-                                    <strong>
-                                        {loading
-                                            ? "Checking..."
-                                            : systemOperational
-                                                ? "Operational"
-                                                : "Degraded"}
-                                    </strong>
-
-                                </div>
 
                             </div>
 
 
-                            <button
-                                className="refresh-button"
-                                onClick={
-                                    refreshDashboard
-                                }
-                                disabled={
-                                    refreshing
-                                }
-                            >
-
-                                <RefreshCw
-                                    size={16}
-                                    className={
-                                        refreshing
-                                            ? "spin"
-                                            : ""
-                                    }
-                                />
-
-                                {refreshing
-                                    ? "Refreshing"
-                                    : "Refresh"}
-
-                            </button>
+                            <small>
+                                Average risk score:{" "}
+                                {overallRiskScore}
+                            </small>
 
                         </div>
 
-                    </section>
 
+                        <div className="risk-source">
 
-                    {/* =================================================
-                        ERROR
-                    ================================================= */}
-
-                    {error && (
-
-                        <div className="authority-error">
-
-                            <XCircle
-                                size={18}
+                            <ShieldCheck
+                                size={19}
                             />
 
                             <div>
 
                                 <strong>
-                                    Dashboard data unavailable
+                                    ML service
                                 </strong>
 
                                 <span>
-                                    {error}
+                                    {dataSource.mlService
+                                        ? "Connected"
+                                        : "Unavailable"}
                                 </span>
 
                             </div>
 
+                        </div>
 
-                            <button
-                                onClick={
-                                    refreshDashboard
-                                }
-                            >
-                                Retry
-                            </button>
+                    </div>
+
+
+                    {/* RISK DISTRIBUTION */}
+
+                    <div className="environment-grid">
+
+                        <div>
+
+                            <span>
+                                RED
+                            </span>
+
+                            <strong>
+                                {distribution.red ??
+                                    0}
+                            </strong>
 
                         </div>
+
+
+                        <div>
+
+                            <span>
+                                ORANGE
+                            </span>
+
+                            <strong>
+                                {distribution.orange ??
+                                    0}
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                YELLOW
+                            </span>
+
+                            <strong>
+                                {distribution.yellow ??
+                                    0}
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                GREEN
+                            </span>
+
+                            <strong>
+                                {distribution.green ??
+                                    0}
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                {/* =================================================
+                    DATA SOURCE
+                ================================================= */}
+
+                <section className="authority-panel">
+
+                    <div className="panel-header">
+
+                        <div>
+
+                            <div className="panel-title">
+
+                                <Hospital
+                                    size={18}
+                                />
+
+                                Data Coverage
+
+                            </div>
+
+                            <p>
+                                Current backend and ML
+                                assessment coverage.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div className="facility-summary">
+
+
+                        <div className="facility-summary-item">
+
+                            <Users
+                                size={20}
+                            />
+
+                            <div>
+
+                                <span>
+                                    Total Villages
+                                </span>
+
+                                <strong>
+                                    {dataSource.villages ??
+                                        0}
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+
+                        <div className="facility-summary-item">
+
+                            <ShieldCheck
+                                size={20}
+                            />
+
+                            <div>
+
+                                <span>
+                                    Assessed Villages
+                                </span>
+
+                                <strong>
+                                    {dataSource.assessedVillages ??
+                                        0}
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+
+                        <div className="facility-summary-item">
+
+                            <Package
+                                size={20}
+                            />
+
+                            <div>
+
+                                <span>
+                                    Map Features
+                                </span>
+
+                                <strong>
+                                    {mapFeatures.length}
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+            </section>
+
+
+            {/* =================================================
+                MAP
+            ================================================= */}
+
+            <section className="authority-panel map-panel">
+
+
+                <div className="panel-header">
+
+                    <div>
+
+                        <div className="panel-title">
+
+                            <MapPin
+                                size={18}
+                            />
+
+                            Village Risk Map
+
+                        </div>
+
+                        <p>
+                            Geographic view of assessed
+                            habitation risk.
+                        </p>
+
+                    </div>
+
+
+                    <span className="live-badge">
+                        BACKEND
+                    </span>
+
+                </div>
+
+
+                <div className="authority-map-container">
+
+                    {loading ? (
+
+                        <div className="map-loading">
+
+                            <RefreshCw
+                                size={22}
+                                className="spin"
+                            />
+
+                            <span>
+                                Loading risk map...
+                            </span>
+
+                        </div>
+
+                    ) : mapFeatures.length === 0 ? (
+
+                        <div className="map-loading">
+
+                            <MapPin
+                                size={22}
+                            />
+
+                            <span>
+                                No mapped assessed villages
+                                are currently available.
+                            </span>
+
+                        </div>
+
+                    ) : (
+
+                        <Map
+                            riskZones={mapFeatures}
+                            sosRequests={alerts}
+                            hospitals={hospitals}
+                            shelters={shelters}
+                            rescueTeams={[]}
+                            resources={[]}
+                        />
 
                     )}
 
+                </div>
 
-                    {/* =================================================
-                        MAIN STATISTICS
-                    ================================================= */}
+            </section>
 
-                    <section className="authority-stat-grid">
 
+            {/* =================================================
+                EMERGENCY QUEUE
+            ================================================= */}
 
-                        {/* RED ZONES */}
+            <section className="authority-panel incident-panel">
 
-                        <article className="authority-stat-card emergency">
 
-                            <div className="stat-card-icon">
+                <div className="panel-header">
 
-                                <ShieldAlert
-                                    size={21}
-                                />
+                    <div>
 
-                            </div>
+                        <div className="panel-title">
 
-                            <div>
+                            <Radio
+                                size={18}
+                            />
 
-                                <span>
-                                    Critical Red Zones
-                                </span>
+                            Emergency Queue
 
-                                <strong>
+                        </div>
 
-                                    {loading
-                                        ? "—"
-                                        : summary.criticalRedZones ??
-                                          0}
+                        <p>
+                            Emergency reports returned
+                            by the backend.
+                        </p>
 
-                                </strong>
+                    </div>
 
-                                <small>
-                                    Assessed high-risk areas
-                                </small>
 
-                            </div>
+                    <span className="queue-count">
+                        {filteredAlerts.length}
+                    </span>
 
-                        </article>
+                </div>
 
 
-                        {/* PEOPLE AT RISK */}
+                <div className="incident-list">
 
-                        <article className="authority-stat-card">
 
-                            <div className="stat-card-icon">
+                    {loading ? (
 
-                                <Users
-                                    size={21}
-                                />
+                        <div className="panel-empty">
 
-                            </div>
+                            <RefreshCw
+                                size={20}
+                                className="spin"
+                            />
 
-                            <div>
+                            Loading incidents...
 
-                                <span>
-                                    People At Risk
-                                </span>
+                        </div>
 
-                                <strong>
+                    ) : filteredAlerts.length === 0 ? (
 
-                                    {loading
-                                        ? "—"
-                                        : Number(
-                                            summary.peopleAtRisk ||
-                                            0
-                                        ).toLocaleString()}
+                        <div className="panel-empty">
 
-                                </strong>
+                            <ShieldCheck
+                                size={25}
+                            />
 
-                                <small>
-                                    RED + ORANGE habitation population
-                                </small>
+                            <strong>
+                                No active incidents
+                            </strong>
 
-                            </div>
+                            <span>
+                                No SOS incident records
+                                were returned.
+                            </span>
 
-                        </article>
+                        </div>
 
+                    ) : (
 
-                        {/* RELOCATION */}
+                        filteredAlerts.map(
+                            (alert, index) => (
 
-                        <article className="authority-stat-card">
+                                <button
+                                    className="incident-row"
+                                    key={
+                                        alert._id ||
+                                        alert.id ||
+                                        index
+                                    }
+                                    onClick={() =>
+                                        setSelectedAlert(
+                                            alert
+                                        )
+                                    }
+                                >
 
-                            <div className="stat-card-icon">
-
-                                <MapPin
-                                    size={21}
-                                />
-
-                            </div>
-
-                            <div>
-
-                                <span>
-                                    Immediate Relocation
-                                </span>
-
-                                <strong>
-
-                                    {loading
-                                        ? "—"
-                                        : summary.immediateRelocation ??
-                                          0}
-
-                                </strong>
-
-                                <small>
-                                    Villages requiring priority action
-                                </small>
-
-                            </div>
-
-                        </article>
-
-
-                        {/* SAFE SITES */}
-
-                        <article className="authority-stat-card risk-card">
-
-                            <div className="stat-card-icon">
-
-                                <ShieldCheck
-                                    size={21}
-                                />
-
-                            </div>
-
-                            <div>
-
-                                <span>
-                                    Safe Sites
-                                </span>
-
-                                <strong>
-
-                                    {loading
-                                        ? "—"
-                                        : summary.safeSites ??
-                                          0}
-
-                                </strong>
-
-                                <small>
-                                    Relocation sites with available capacity
-                                </small>
-
-                            </div>
-
-                        </article>
-
-                    </section>
-
-
-                    {/* =================================================
-                        RISK OVERVIEW
-                    ================================================= */}
-
-                    <section className="authority-secondary-grid">
-
-
-                        <section className="authority-panel">
-
-                            <div className="panel-header">
-
-                                <div>
-
-                                    <div className="panel-title">
+                                    <div className="incident-icon">
 
                                         <AlertTriangle
-                                            size={18}
-                                        />
-
-                                        ML Risk Intelligence
-
-                                    </div>
-
-                                    <p>
-                                        Risk assessment stored by
-                                        the backend after ML processing.
-                                    </p>
-
-                                </div>
-
-                            </div>
-
-
-                            <div className="risk-intelligence">
-
-                                <div className="risk-main">
-
-                                    <span>
-                                        Overall assessed risk
-                                    </span>
-
-                                    <strong>
-                                        {loading
-                                            ? "Loading..."
-                                            : riskLevel}
-                                    </strong>
-
-
-                                    <div className="risk-meter">
-
-                                        <div
-                                            style={{
-                                                width:
-                                                    `${Math.min(
-                                                        100,
-                                                        overallRiskScore
-                                                    )}%`,
-                                            }}
+                                            size={17}
                                         />
 
                                     </div>
 
 
-                                    <small>
-                                        Average risk score:{" "}
-                                        {overallRiskScore}
-                                    </small>
-
-                                </div>
-
-
-                                <div className="risk-source">
-
-                                    <ShieldCheck
-                                        size={19}
-                                    />
-
-                                    <div>
+                                    <div className="incident-content">
 
                                         <strong>
-                                            ML service
+
+                                            {alert.type ||
+                                                alert.title ||
+                                                alert.disasterType ||
+                                                "Emergency incident"}
+
                                         </strong>
 
-                                        <span>
-                                            {dataSource.mlService
-                                                ? "Connected"
-                                                : "Unavailable"}
-                                        </span>
-
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-
-                            {/* RISK DISTRIBUTION */}
-
-                            <div className="environment-grid">
-
-                                <div>
-
-                                    <span>
-                                        RED
-                                    </span>
-
-                                    <strong>
-                                        {distribution.red ??
-                                            0}
-                                    </strong>
-
-                                </div>
-
-
-                                <div>
-
-                                    <span>
-                                        ORANGE
-                                    </span>
-
-                                    <strong>
-                                        {distribution.orange ??
-                                            0}
-                                    </strong>
-
-                                </div>
-
-
-                                <div>
-
-                                    <span>
-                                        YELLOW
-                                    </span>
-
-                                    <strong>
-                                        {distribution.yellow ??
-                                            0}
-                                    </strong>
-
-                                </div>
-
-
-                                <div>
-
-                                    <span>
-                                        GREEN
-                                    </span>
-
-                                    <strong>
-                                        {distribution.green ??
-                                            0}
-                                    </strong>
-
-                                </div>
-
-                            </div>
-
-                        </section>
-
-
-                        {/* =================================================
-                            DATA SOURCE
-                        ================================================= */}
-
-                        <section className="authority-panel">
-
-                            <div className="panel-header">
-
-                                <div>
-
-                                    <div className="panel-title">
-
-                                        <Hospital
-                                            size={18}
-                                        />
-
-                                        Data Coverage
-
-                                    </div>
-
-                                    <p>
-                                        Current backend and ML
-                                        assessment coverage.
-                                    </p>
-
-                                </div>
-
-                            </div>
-
-
-                            <div className="facility-summary">
-
-
-                                <div className="facility-summary-item">
-
-                                    <Users
-                                        size={20}
-                                    />
-
-                                    <div>
 
                                         <span>
-                                            Total Villages
-                                        </span>
 
-                                        <strong>
-                                            {dataSource.villages ??
-                                                0}
-                                        </strong>
-
-                                    </div>
-
-                                </div>
-
-
-                                <div className="facility-summary-item">
-
-                                    <ShieldCheck
-                                        size={20}
-                                    />
-
-                                    <div>
-
-                                        <span>
-                                            Assessed Villages
-                                        </span>
-
-                                        <strong>
-                                            {dataSource.assessedVillages ??
-                                                0}
-                                        </strong>
-
-                                    </div>
-
-                                </div>
-
-
-                                <div className="facility-summary-item">
-
-                                    <Package
-                                        size={20}
-                                    />
-
-                                    <div>
-
-                                        <span>
-                                            Map Features
-                                        </span>
-
-                                        <strong>
-                                            {mapFeatures.length}
-                                        </strong>
-
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-                        </section>
-
-                    </section>
-
-
-                    {/* =================================================
-                        MAP
-                    ================================================= */}
-
-                    <section className="authority-panel map-panel">
-
-
-                        <div className="panel-header">
-
-                            <div>
-
-                                <div className="panel-title">
-
-                                    <MapPin
-                                        size={18}
-                                    />
-
-                                    Village Risk Map
-
-                                </div>
-
-                                <p>
-                                    Geographic view of assessed
-                                    habitation risk.
-                                </p>
-
-                            </div>
-
-
-                            <span className="live-badge">
-                                BACKEND
-                            </span>
-
-                        </div>
-
-
-                        <div className="authority-map-container">
-
-                            {loading ? (
-
-                                <div className="map-loading">
-
-                                    <RefreshCw
-                                        size={22}
-                                        className="spin"
-                                    />
-
-                                    <span>
-                                        Loading risk map...
-                                    </span>
-
-                                </div>
-
-                            ) : mapFeatures.length === 0 ? (
-
-                                <div className="map-loading">
-
-                                    <MapPin
-                                        size={22}
-                                    />
-
-                                    <span>
-                                        No mapped assessed villages
-                                        are currently available.
-                                    </span>
-
-                                </div>
-
-                            ) : (
-
-                                <Map
-                                    riskZones={mapFeatures}
-                                    sosRequests={alerts}
-                                    hospitals={hospitals}
-                                    shelters={shelters}
-                                    rescueTeams={[]}
-                                    resources={[]}
-                                />
-
-                            )}
-
-                        </div>
-
-                    </section>
-
-
-                    {/* =================================================
-                        EMERGENCY QUEUE
-                    ================================================= */}
-
-                    <section className="authority-panel incident-panel">
-
-
-                        <div className="panel-header">
-
-                            <div>
-
-                                <div className="panel-title">
-
-                                    <Radio
-                                        size={18}
-                                    />
-
-                                    Emergency Queue
-
-                                </div>
-
-                                <p>
-                                    Emergency reports returned
-                                    by the backend.
-                                </p>
-
-                            </div>
-
-
-                            <span className="queue-count">
-                                {filteredAlerts.length}
-                            </span>
-
-                        </div>
-
-
-                        <div className="incident-list">
-
-
-                            {loading ? (
-
-                                <div className="panel-empty">
-
-                                    <RefreshCw
-                                        size={20}
-                                        className="spin"
-                                    />
-
-                                    Loading incidents...
-
-                                </div>
-
-                            ) : filteredAlerts.length === 0 ? (
-
-                                <div className="panel-empty">
-
-                                    <ShieldCheck
-                                        size={25}
-                                    />
-
-                                    <strong>
-                                        No active incidents
-                                    </strong>
-
-                                    <span>
-                                        No SOS incident records
-                                        were returned.
-                                    </span>
-
-                                </div>
-
-                            ) : (
-
-                                filteredAlerts.map(
-                                    (alert, index) => (
-
-                                        <button
-                                            className="incident-row"
-                                            key={
-                                                alert._id ||
-                                                alert.id ||
-                                                index
-                                            }
-                                            onClick={() =>
-                                                setSelectedAlert(
-                                                    alert
-                                                )
-                                            }
-                                        >
-
-                                            <div className="incident-icon">
-
-                                                <AlertTriangle
-                                                    size={17}
-                                                />
-
-                                            </div>
-
-
-                                            <div className="incident-content">
-
-                                                <strong>
-
-                                                    {alert.type ||
-                                                        alert.title ||
-                                                        alert.disasterType ||
-                                                        "Emergency incident"}
-
-                                                </strong>
-
-
-                                                <span>
-
-                                                    <MapPin
-                                                        size={12}
-                                                    />
-
-                                                    {alert.location?.address ||
-                                                        alert.address ||
-                                                        alert.location?.name ||
-                                                        "Location supplied by backend"}
-
-                                                </span>
-
-
-                                                <small>
-
-                                                    {alert.status ||
-                                                        alert.severity ||
-                                                        "Active"}
-
-                                                </small>
-
-                                            </div>
-
-
-                                            <ChevronRight
-                                                size={17}
+                                            <MapPin
+                                                size={12}
                                             />
 
-                                        </button>
+                                            {alert.location?.address ||
+                                                alert.address ||
+                                                alert.location?.name ||
+                                                "Location supplied by backend"}
 
-                                    )
-                                )
-
-                            )}
-
-                        </div>
-
-                    </section>
+                                        </span>
 
 
-                    {/* =================================================
-                        RESPONSE OPERATIONS
-                    ================================================= */}
+                                        <small>
 
-                    <section className="authority-panel operations-panel">
+                                            {alert.status ||
+                                                alert.severity ||
+                                                "Active"}
 
-                        <div className="panel-header">
+                                        </small>
 
-                            <div>
+                                    </div>
 
-                                <div className="panel-title">
 
-                                    <Users
-                                        size={18}
+                                    <ChevronRight
+                                        size={17}
                                     />
 
-                                    Response Operations
+                                </button>
 
-                                </div>
+                            )
+                        )
 
-                                <p>
-                                    Authority operational modules
-                                    connected through backend APIs.
-                                </p>
+                    )}
 
-                            </div>
+                </div>
 
-                        </div>
+            </section>
 
 
-                        <div className="operations-placeholder">
+            {/* =================================================
+                RESPONSE OPERATIONS
+            ================================================= */}
 
+            <section className="authority-panel operations-panel">
 
-                            <div>
+                <div className="panel-header">
 
-                                <Users
-                                    size={21}
-                                />
+                    <div>
 
-                                <strong>
-                                    Response teams
-                                </strong>
+                        <div className="panel-title">
 
-                                <span>
-                                    Use the Response Teams module
-                                    to manage rescue personnel.
-                                </span>
+                            <Users
+                                size={18}
+                            />
 
-                            </div>
-
-
-                            <div>
-
-                                <Package
-                                    size={21}
-                                />
-
-                                <strong>
-                                    Resources
-                                </strong>
-
-                                <span>
-                                    Use the Resources module
-                                    for inventory and allocation.
-                                </span>
-
-                            </div>
-
-
-                            <div>
-
-                                <Radio
-                                    size={21}
-                                />
-
-                                <strong>
-                                    Dispatch
-                                </strong>
-
-                                <span>
-                                    Emergency reports are loaded
-                                    from the SOS backend.
-                                </span>
-
-                            </div>
+                            Response Operations
 
                         </div>
 
-                    </section>
+                        <p>
+                            Authority operational modules
+                            connected through backend APIs.
+                        </p>
 
-                </main>
+                    </div>
 
-            </div>
+                </div>
 
 
-            {/* =========================================================
-                INCIDENT DETAIL MODAL
-            ========================================================= */}
+                <div className="operations-placeholder">
 
+
+                    <div>
+
+                        <Users
+                            size={21}
+                        />
+
+                        <strong>
+                            Response teams
+                        </strong>
+
+                        <span>
+                            Use the Response Teams module
+                            to manage rescue personnel.
+                        </span>
+
+                    </div>
+
+
+                    <div>
+
+                        <Package
+                            size={21}
+                        />
+
+                        <strong>
+                            Resources
+                        </strong>
+
+                        <span>
+                            Use the Resources module
+                            for inventory and allocation.
+                        </span>
+
+                    </div>
+
+
+                    <div>
+
+                        <Radio
+                            size={21}
+                        />
+
+                        <strong>
+                            Dispatch
+                        </strong>
+
+                        <span>
+                            Emergency reports are loaded
+                            from the SOS backend.
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </section>
+            
             {selectedAlert && (
 
                 <div
@@ -1406,7 +1346,6 @@ function AuthorityDashboard() {
 
                         </button>
 
-
                         <div className="modal-icon">
 
                             <AlertTriangle
@@ -1415,11 +1354,9 @@ function AuthorityDashboard() {
 
                         </div>
 
-
                         <span className="modal-kicker">
                             INCIDENT DETAILS
                         </span>
-
 
                         <h2>
 
@@ -1429,7 +1366,6 @@ function AuthorityDashboard() {
                                 "Emergency incident"}
 
                         </h2>
-
 
                         <div className="modal-location">
 
@@ -1444,9 +1380,7 @@ function AuthorityDashboard() {
 
                         </div>
 
-
                         <div className="modal-data">
-
 
                             <div>
 
@@ -1461,7 +1395,6 @@ function AuthorityDashboard() {
 
                             </div>
 
-
                             <div>
 
                                 <span>
@@ -1474,7 +1407,6 @@ function AuthorityDashboard() {
                                 </strong>
 
                             </div>
-
 
                             <div>
 
@@ -1492,7 +1424,6 @@ function AuthorityDashboard() {
 
                         </div>
 
-
                         <p className="modal-description">
 
                             {selectedAlert.description ||
@@ -1500,7 +1431,6 @@ function AuthorityDashboard() {
                                 "No additional incident description was returned by the backend."}
 
                         </p>
-
 
                         <div className="modal-note">
 
@@ -1521,10 +1451,8 @@ function AuthorityDashboard() {
 
             )}
 
-        </div>
+        </main>
     );
-
 }
-
 
 export default AuthorityDashboard;

@@ -11,7 +11,11 @@ import { useAuth } from "../context/AuthContext";
 
 import "./AuthorityTopbar.css";
 
-function AuthorityTopbar({ search, setSearch, onMenuClick }) {
+function AuthorityTopbar({
+    search,
+    setSearch,
+    onMenuClick
+}) {
 
     const navigate = useNavigate();
     const { user, logout } = useAuth();
@@ -26,20 +30,38 @@ function AuthorityTopbar({ search, setSearch, onMenuClick }) {
 
             <div className="authority-topbar-left">
 
-                <button className="mobile-menu-button" onClick={onMenuClick}>
+                {/* MOBILE HAMBURGER */}
+
+                <button
+                    className="mobile-menu-button"
+                    onClick={onMenuClick}
+                    aria-label="Open navigation menu"
+                    type="button"
+                >
                     <Menu size={20} />
                 </button>
 
+
+                {/* SEARCH */}
+
                 <div className="authority-search">
+
                     <Search size={16} />
+
                     <input
                         value={search}
-                        onChange={(event) => setSearch(event.target.value)}
+                        onChange={(event) =>
+                            setSearch(event.target.value)
+                        }
                         placeholder="Search incidents, locations..."
                     />
+
                 </div>
 
             </div>
+
+
+            {/* RIGHT SIDE */}
 
             <div className="authority-topbar-right">
 
@@ -48,25 +70,43 @@ function AuthorityTopbar({ search, setSearch, onMenuClick }) {
                     Live monitoring
                 </div>
 
-                <button className="authority-notification" title="Notifications">
+
+                <button
+                    className="authority-notification"
+                    title="Notifications"
+                    type="button"
+                >
                     <Bell size={18} />
                     <span></span>
                 </button>
 
+
                 <div className="authority-profile">
+
                     <div className="authority-profile-icon">
                         <ShieldCheck size={18} />
                     </div>
+
                     <div className="authority-profile-text">
-                        <strong>{user?.name || "Authority"}</strong>
-                        <span>Command access</span>
+
+                        <strong>
+                            {user?.name || "Authority"}
+                        </strong>
+
+                        <span>
+                            Command access
+                        </span>
+
                     </div>
+
                 </div>
+
 
                 <button
                     className="authority-notification"
                     title="Logout"
                     onClick={handleLogout}
+                    type="button"
                 >
                     <LogOut size={18} />
                 </button>

@@ -16,7 +16,10 @@ import {
     X
 } from "lucide-react";
 
-import { useLocation, useNavigate } from "react-router-dom";
+import {
+    useLocation,
+    useNavigate
+} from "react-router-dom";
 
 import "./AuthoritySidebar.css";
 
@@ -124,6 +127,7 @@ function AuthoritySidebar({
 
     return (
         <>
+
             {/* =====================================================
                 MOBILE OVERLAY
             ===================================================== */}
@@ -136,12 +140,14 @@ function AuthoritySidebar({
                 />
             )}
 
+
             {/* =====================================================
                 SIDEBAR
             ===================================================== */}
 
             <aside
-                className={`authority-sidebar
+                className={`
+                    authority-sidebar
                     ${collapsed ? "collapsed" : ""}
                     ${mobileOpen ? "mobile-open" : ""}
                 `}
@@ -155,24 +161,34 @@ function AuthoritySidebar({
 
                     <button
                         className="authority-brand"
-                        onClick={() => handleNavigation("/authority")}
+                        onClick={() =>
+                            handleNavigation("/authority")
+                        }
                         title={
                             collapsed
                                 ? "TerraShield Authority Dashboard"
                                 : undefined
                         }
                     >
+
                         <div className="authority-brand-mark">
                             <Shield size={19} />
                         </div>
 
                         {!collapsed && (
                             <div className="authority-brand-text">
-                                <strong>TerraShield</strong>
-                                <small>AUTHORITY COMMAND</small>
+                                <strong>
+                                    TerraShield
+                                </strong>
+
+                                <small>
+                                    AUTHORITY COMMAND
+                                </small>
                             </div>
                         )}
+
                     </button>
+
 
                     {/* DESKTOP COLLAPSE BUTTON */}
 
@@ -190,12 +206,15 @@ function AuthoritySidebar({
                                 : "Collapse sidebar"
                         }
                     >
+
                         {collapsed ? (
                             <ChevronRight size={17} />
                         ) : (
                             <ChevronLeft size={17} />
                         )}
+
                     </button>
+
 
                     {/* MOBILE CLOSE BUTTON */}
 
@@ -208,6 +227,7 @@ function AuthoritySidebar({
                     </button>
 
                 </div>
+
 
                 {/* =================================================
                     NAVIGATION
@@ -228,6 +248,7 @@ function AuthoritySidebar({
                                 </span>
                             )}
 
+
                             {section.items.map((item) => {
 
                                 const Icon = item.icon;
@@ -235,11 +256,14 @@ function AuthoritySidebar({
                                 return (
                                     <button
                                         key={item.path}
-                                        className={`authority-nav-item ${
-                                            isActive(item.path)
-                                                ? "active"
-                                                : ""
-                                        }`}
+                                        className={`
+                                            authority-nav-item
+                                            ${
+                                                isActive(item.path)
+                                                    ? "active"
+                                                    : ""
+                                            }
+                                        `}
                                         onClick={() =>
                                             handleNavigation(item.path)
                                         }
@@ -249,6 +273,7 @@ function AuthoritySidebar({
                                                 : undefined
                                         }
                                     >
+
                                         <Icon size={18} />
 
                                         {!collapsed && (
@@ -256,8 +281,10 @@ function AuthoritySidebar({
                                                 {item.label}
                                             </span>
                                         )}
+
                                     </button>
                                 );
+
                             })}
 
                         </div>
@@ -266,6 +293,7 @@ function AuthoritySidebar({
 
                 </nav>
 
+
                 {/* =================================================
                     SETTINGS
                 ================================================= */}
@@ -273,13 +301,18 @@ function AuthoritySidebar({
                 <div className="authority-sidebar-bottom">
 
                     <button
-                        className={`authority-nav-item ${
-                            isActive("/authority/settings")
-                                ? "active"
-                                : ""
-                        }`}
+                        className={`
+                            authority-nav-item
+                            ${
+                                isActive("/authority/settings")
+                                    ? "active"
+                                    : ""
+                            }
+                        `}
                         onClick={() =>
-                            handleNavigation("/authority/settings")
+                            handleNavigation(
+                                "/authority/settings"
+                            )
                         }
                         title={
                             collapsed
@@ -287,6 +320,7 @@ function AuthoritySidebar({
                                 : undefined
                         }
                     >
+
                         <Settings size={18} />
 
                         {!collapsed && (
@@ -294,6 +328,7 @@ function AuthoritySidebar({
                                 Settings
                             </span>
                         )}
+
                     </button>
 
                 </div>
