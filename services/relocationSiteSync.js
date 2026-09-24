@@ -14,7 +14,7 @@ async function syncRelocationSiteForHabitation(habitation) {
 
     const isEligible =
         habitation.assessmentStatus === "ASSESSED" &&
-        habitation.riskLevel === "GREEN" &&
+        (habitation.riskLevel === "GREEN" || habitation.riskLevel === "YELLOW") &&
         habitation.location?.coordinates?.length === 2 &&
         Number(habitation.shelterCapacity) > 0;
 
