@@ -21,7 +21,6 @@ import {
     ArrowRight
 } from "lucide-react";
 
-import AuthoritySidebar from "../components/AuthoritySidebar";
 import api from "../api/axios";
 import toast from "react-hot-toast";
 
@@ -29,8 +28,6 @@ import "./AssessVillage.css";
 
 
 function AssessVillage() {
-
-    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
     const [search, setSearch] = useState("");
     const [villages, setVillages] = useState([]);
@@ -261,10 +258,10 @@ function AssessVillage() {
                 rainfall: Number(form.rainfall),
 
                 population:
-        selectedVillage.population ??
-        selectedVillage.total_population ??
-        selectedVillage.populationCount ??
-        0,
+                    selectedVillage.population ??
+                    selectedVillage.total_population ??
+                    selectedVillage.populationCount ??
+                    0,
 
                 riverLevel:
                     Number(form.river_level),
@@ -304,8 +301,6 @@ function AssessVillage() {
             /*
              * Existing backend assessment endpoint.
              */
-
-            
 
             const response = await api.post(
                 "/api/habitations/assess-village",
@@ -421,637 +416,614 @@ function AssessVillage() {
 
     return (
 
-        <div
-            className={`authority-layout ${
-                sidebarCollapsed
-                    ? "sidebar-collapsed"
-                    : ""
-            }`}
-        >
+        <main className="assess-village-page">
 
-            <AuthoritySidebar
-                collapsed={sidebarCollapsed}
-                onToggle={() =>
-                    setSidebarCollapsed(prev => !prev)
-                }
-            />
+            {/* ================================================= */}
+            {/* HEADER */}
+            {/* ================================================= */}
 
+            <section className="assess-header">
 
-            <div className="authority-main">
+                <div>
 
+                    <div className="assess-eyebrow">
+                        <Brain size={15} />
+                        ML-POWERED RISK ASSESSMENT
+                    </div>
 
-                <main className="assess-village-page">
+                    <h1>
+                        Village Risk Assessment
+                    </h1>
 
-                    {/* ================================================= */}
-                    {/* HEADER */}
-                    {/* ================================================= */}
+                    <p>
+                        Assess disaster risk for a village using
+                        current environmental, infrastructure and
+                        population conditions.
+                    </p>
 
-                    <section className="assess-header">
+                </div>
 
-                        <div>
 
-                            <div className="assess-eyebrow">
-                                <Brain size={15} />
-                                ML-POWERED RISK ASSESSMENT
-                            </div>
+                <button
+                    className="secondary-action"
+                    onClick={resetAssessment}
+                >
+                    <RotateCcw size={17} />
+                    Reset
+                </button>
 
-                            <h1>
-                                Village Risk Assessment
-                            </h1>
+            </section>
 
-                            <p>
-                                Assess disaster risk for a village using
-                                current environmental, infrastructure and
-                                population conditions.
-                            </p>
 
-                        </div>
+            {/* ================================================= */}
+            {/* VILLAGE SELECTION */}
+            {/* ================================================= */}
 
+            <section className="assessment-card">
 
-                        <button
-                            className="secondary-action"
-                            onClick={resetAssessment}
-                        >
-                            <RotateCcw size={17} />
-                            Reset
-                        </button>
+                <div className="card-heading">
 
-                    </section>
+                    <div className="card-heading-icon">
+                        <MapPin size={20} />
+                    </div>
 
+                    <div>
 
-                    {/* ================================================= */}
-                    {/* VILLAGE SELECTION */}
-                    {/* ================================================= */}
+                        <h2>
+                            Select Village
+                        </h2>
 
-                    <section className="assessment-card">
+                        <p>
+                            Search the ML village dataset and select
+                            the habitation you want to assess.
+                        </p>
 
-                        <div className="card-heading">
+                    </div>
 
-                            <div className="card-heading-icon">
-                                <MapPin size={20} />
-                            </div>
+                </div>
 
-                            <div>
 
-                                <h2>
-                                    Select Village
-                                </h2>
+                <div className="village-search-wrapper">
 
-                                <p>
-                                    Search the ML village dataset and select
-                                    the habitation you want to assess.
-                                </p>
+                    <Search
+                        size={19}
+                        className="search-icon"
+                    />
 
-                            </div>
 
-                        </div>
+                    <input
+                        type="text"
+                        placeholder="Search village name..."
+                        value={search}
+                        onChange={(e) =>
+                            setSearch(e.target.value)
+                        }
+                        onFocus={() => {
 
+                            if (villages.length > 0)
+                                setShowSuggestions(true);
 
-                        <div className="village-search-wrapper">
+                        }}
+                    />
 
-                            <Search
-                                size={19}
-                                className="search-icon"
-                            />
 
+                    {searchLoading && (
 
-                            <input
-                                type="text"
-                                placeholder="Search village name..."
-                                value={search}
-                                onChange={(e) =>
-                                    setSearch(e.target.value)
-                                }
-                                onFocus={() => {
+                        <Loader2
+                            size={18}
+                            className="search-loader"
+                        />
 
-                                    if (villages.length > 0)
-                                        setShowSuggestions(true);
+                    )}
 
-                                }}
-                            />
 
+                    {showSuggestions &&
+                        villages.length > 0 && (
 
-                            {searchLoading && (
+                            <div className="village-suggestions">
 
-                                <Loader2
-                                    size={18}
-                                    className="search-loader"
-                                />
+                                {villages
+                                    .slice(0, 8)
+                                    .map((village, index) => {
 
-                            )}
+                                        const name =
+                                            village.village_name ||
+                                            village.name ||
+                                            village.villageName ||
+                                            "Unknown Village";
 
+                                        const code =
+                                            village.village_code ||
+                                            village.villageCode ||
+                                            village.code ||
+                                            `V-${index}`;
 
-                            {showSuggestions &&
-                                villages.length > 0 && (
+                                        return (
 
-                                    <div className="village-suggestions">
+                                            <button
+                                                type="button"
+                                                key={code}
+                                                className="village-option"
+                                                onClick={() =>
+                                                    handleSelectVillage(
+                                                        village
+                                                    )
+                                                }
+                                            >
 
-                                        {villages
-                                            .slice(0, 8)
-                                            .map((village, index) => {
+                                                <div className="option-icon">
+                                                    <MapPin size={17} />
+                                                </div>
 
-                                                const name =
-                                                    village.village_name ||
-                                                    village.name ||
-                                                    village.villageName ||
-                                                    "Unknown Village";
+                                                <div>
 
-                                                const code =
-                                                    village.village_code ||
-                                                    village.villageCode ||
-                                                    village.code ||
-                                                    `V-${index}`;
+                                                    <strong>
+                                                        {name}
+                                                    </strong>
 
-                                                return (
+                                                    <span>
+                                                        Village Code: {code}
+                                                    </span>
 
-                                                    <button
-                                                        type="button"
-                                                        key={code}
-                                                        className="village-option"
-                                                        onClick={() =>
-                                                            handleSelectVillage(
-                                                                village
-                                                            )
-                                                        }
-                                                    >
+                                                </div>
 
-                                                        <div className="option-icon">
-                                                            <MapPin size={17} />
-                                                        </div>
+                                            </button>
 
-                                                        <div>
+                                        );
 
-                                                            <strong>
-                                                                {name}
-                                                            </strong>
-
-                                                            <span>
-                                                                Village Code: {code}
-                                                            </span>
-
-                                                        </div>
-
-                                                    </button>
-
-                                                );
-
-                                            })}
-
-                                    </div>
-
-                                )}
-
-                        </div>
-
-
-                        {selectedVillage && (
-
-                            <div className="selected-village">
-
-                                <div className="selected-village-icon">
-                                    <CheckCircle2 size={21} />
-                                </div>
-
-                                <div className="selected-village-info">
-
-                                    <span>
-                                        SELECTED VILLAGE
-                                    </span>
-
-                                    <strong>
-                                        {selectedVillage.village_name ||
-                                            selectedVillage.name ||
-                                            selectedVillage.villageName}
-                                    </strong>
-
-                                    <small>
-                                        Code:{" "}
-                                        {selectedVillage.village_code ||
-                                            selectedVillage.villageCode ||
-                                            selectedVillage.code ||
-                                            "—"}
-                                    </small>
-
-                                </div>
+                                    })}
 
                             </div>
 
                         )}
 
-                    </section>
+                </div>
+
+
+                {selectedVillage && (
+
+                    <div className="selected-village">
+
+                        <div className="selected-village-icon">
+                            <CheckCircle2 size={21} />
+                        </div>
+
+                        <div className="selected-village-info">
+
+                            <span>
+                                SELECTED VILLAGE
+                            </span>
+
+                            <strong>
+                                {selectedVillage.village_name ||
+                                    selectedVillage.name ||
+                                    selectedVillage.villageName}
+                            </strong>
+
+                            <small>
+                                Code:{" "}
+                                {selectedVillage.village_code ||
+                                    selectedVillage.villageCode ||
+                                    selectedVillage.code ||
+                                    "—"}
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                )}
+
+            </section>
+
+
+            {/* ================================================= */}
+            {/* CURRENT CONDITIONS */}
+            {/* ================================================= */}
+
+            <form onSubmit={handleAssess}>
+
+                <section className="assessment-card">
+
+                    <div className="card-heading">
+
+                        <div className="card-heading-icon">
+                            <CloudRain size={20} />
+                        </div>
+
+                        <div>
+
+                            <h2>
+                                Current Conditions
+                            </h2>
+
+                            <p>
+                                Enter the latest environmental and
+                                infrastructure conditions for this village.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div className="field-section">
+
+                        <div className="field-section-title">
+                            <CloudRain size={17} />
+                            Environmental Conditions
+                        </div>
+
+
+                        <div className="form-grid">
+
+                            <FormField
+                                icon={<CloudRain />}
+                                label="Rainfall"
+                                unit="mm"
+                                name="rainfall"
+                                value={form.rainfall}
+                                onChange={handleChange}
+                                placeholder="e.g. 120"
+                            />
+
+
+                            <FormField
+                                icon={<Waves />}
+                                label="River Level"
+                                unit="m"
+                                name="river_level"
+                                value={form.river_level}
+                                onChange={handleChange}
+                                placeholder="e.g. 4.2"
+                            />
+
+
+                            <FormField
+                                icon={<AlertTriangle />}
+                                label="Flood History"
+                                unit="events"
+                                name="flood_history"
+                                value={form.flood_history}
+                                onChange={handleChange}
+                                placeholder="e.g. 3"
+                            />
+
+
+                            <FormField
+                                icon={<Droplets />}
+                                label="Water Level"
+                                unit="m"
+                                name="water_level"
+                                value={form.water_level}
+                                onChange={handleChange}
+                                placeholder="e.g. 2.1"
+                            />
+
+                        </div>
+
+                    </div>
+
+
+                    <div className="field-section">
+
+                        <div className="field-section-title">
+                            <Building2 size={17} />
+                            Infrastructure & Access
+                        </div>
+
+
+                        <div className="form-grid">
+
+                            <FormField
+                                icon={<Building2 />}
+                                label="Building Damage"
+                                unit="0–10"
+                                name="building_damage"
+                                value={form.building_damage}
+                                onChange={handleChange}
+                                placeholder="e.g. 4"
+                            />
+
+
+                            <FormField
+                                icon={<Route />}
+                                label="Road Access"
+                                unit="0–10"
+                                name="road_access"
+                                value={form.road_access}
+                                onChange={handleChange}
+                                placeholder="e.g. 7"
+                            />
+
+
+                            <FormField
+                                icon={<Hospital />}
+                                label="Hospital Distance"
+                                unit="km"
+                                name="hospital_distance"
+                                value={form.hospital_distance}
+                                onChange={handleChange}
+                                placeholder="e.g. 8"
+                            />
+
+
+                            <FormField
+                                icon={<Home />}
+                                label="Shelter Capacity"
+                                unit="people"
+                                name="shelter_capacity"
+                                value={form.shelter_capacity}
+                                onChange={handleChange}
+                                placeholder="e.g. 500"
+                            />
+
+                        </div>
+
+                    </div>
+
+
+                    <div className="field-section">
+
+                        <div className="field-section-title">
+                            <Users size={17} />
+                            Population & Resources
+                        </div>
+
+
+                        <div className="form-grid">
+
+                            <FormField
+                                icon={<Users />}
+                                label="Vulnerable Population"
+                                unit="people"
+                                name="vulnerable_population"
+                                value={form.vulnerable_population}
+                                onChange={handleChange}
+                                placeholder="e.g. 250"
+                            />
+
+
+                            <FormField
+                                icon={<Droplets />}
+                                label="Available Water"
+                                unit="litres"
+                                name="available_water"
+                                value={form.available_water}
+                                onChange={handleChange}
+                                placeholder="e.g. 5000"
+                            />
+
+
+                            <FormField
+                                icon={<Utensils />}
+                                label="Food Stock"
+                                unit="units"
+                                name="food_stock"
+                                value={form.food_stock}
+                                onChange={handleChange}
+                                placeholder="e.g. 1000"
+                            />
+
+
+                            <FormField
+                                icon={<Stethoscope />}
+                                label="Medical Capacity"
+                                unit="people"
+                                name="medical_capacity"
+                                value={form.medical_capacity}
+                                onChange={handleChange}
+                                placeholder="e.g. 100"
+                            />
+
+                        </div>
+
+                    </div>
 
 
                     {/* ================================================= */}
-                    {/* CURRENT CONDITIONS */}
+                    {/* SUBMIT */}
                     {/* ================================================= */}
 
-                    <form onSubmit={handleAssess}>
+                    <div className="assessment-actions">
 
-                        <section className="assessment-card">
+                        <button
+                            type="button"
+                            className="secondary-action"
+                            onClick={resetAssessment}
+                        >
+                            Clear
+                        </button>
 
-                            <div className="card-heading">
 
-                                <div className="card-heading-icon">
-                                    <CloudRain size={20} />
-                                </div>
+                        <button
+                            type="submit"
+                            className="primary-action"
+                            disabled={
+                                assessing ||
+                                !selectedVillage
+                            }
+                        >
 
-                                <div>
+                            {assessing ? (
 
-                                    <h2>
-                                        Current Conditions
-                                    </h2>
+                                <>
+                                    <Loader2
+                                        size={18}
+                                        className="spin"
+                                    />
+                                    Running ML Assessment...
+                                </>
 
-                                    <p>
-                                        Enter the latest environmental and
-                                        infrastructure conditions for this village.
-                                    </p>
+                            ) : (
 
-                                </div>
+                                <>
+                                    <Brain size={18} />
+                                    Assess Risk
+                                    <ArrowRight size={17} />
+                                </>
 
+                            )}
+
+                        </button>
+
+                    </div>
+
+                </section>
+
+            </form>
+
+
+            {/* ================================================= */}
+            {/* RESULT */}
+            {/* ================================================= */}
+
+            {result && (
+
+                <section className="result-card">
+
+                    <div className="result-header">
+
+                        <div>
+
+                            <div className="result-eyebrow">
+                                <ShieldCheck size={16} />
+                                ASSESSMENT COMPLETE
                             </div>
 
+                            <h2>
+                                Risk Assessment Result
+                            </h2>
 
-                            <div className="field-section">
+                            <p>
+                                ML assessment generated for{" "}
+                                <strong>
+                                    {selectedVillage?.village_name ||
+                                        selectedVillage?.name ||
+                                        selectedVillage?.villageName}
+                                </strong>
+                            </p>
 
-                                <div className="field-section-title">
-                                    <CloudRain size={17} />
-                                    Environmental Conditions
-                                </div>
+                        </div>
 
+                        <div
+                            className={`result-risk-badge ${getRiskClass(
+                                riskLevel
+                            )}`}
+                        >
+                            {riskLevel}
+                        </div>
 
-                                <div className="form-grid">
-
-                                    <FormField
-                                        icon={<CloudRain />}
-                                        label="Rainfall"
-                                        unit="mm"
-                                        name="rainfall"
-                                        value={form.rainfall}
-                                        onChange={handleChange}
-                                        placeholder="e.g. 120"
-                                    />
-
-
-                                    <FormField
-                                        icon={<Waves />}
-                                        label="River Level"
-                                        unit="m"
-                                        name="river_level"
-                                        value={form.river_level}
-                                        onChange={handleChange}
-                                        placeholder="e.g. 4.2"
-                                    />
+                    </div>
 
 
-                                    <FormField
-                                        icon={<AlertTriangle />}
-                                        label="Flood History"
-                                        unit="events"
-                                        name="flood_history"
-                                        value={form.flood_history}
-                                        onChange={handleChange}
-                                        placeholder="e.g. 3"
-                                    />
+                    <div className="result-grid">
 
+                        {/* SCORE */}
 
-                                    <FormField
-                                        icon={<Droplets />}
-                                        label="Water Level"
-                                        unit="m"
-                                        name="water_level"
-                                        value={form.water_level}
-                                        onChange={handleChange}
-                                        placeholder="e.g. 2.1"
-                                    />
+                        <div className="score-panel">
 
-                                </div>
+                            <span className="result-label">
+                                OVERALL RISK SCORE
+                            </span>
 
+                            <div className="score-number">
+                                {score.toFixed(1)}
                             </div>
 
-
-                            <div className="field-section">
-
-                                <div className="field-section-title">
-                                    <Building2 size={17} />
-                                    Infrastructure & Access
-                                </div>
-
-
-                                <div className="form-grid">
-
-                                    <FormField
-                                        icon={<Building2 />}
-                                        label="Building Damage"
-                                        unit="0–10"
-                                        name="building_damage"
-                                        value={form.building_damage}
-                                        onChange={handleChange}
-                                        placeholder="e.g. 4"
-                                    />
-
-
-                                    <FormField
-                                        icon={<Route />}
-                                        label="Road Access"
-                                        unit="0–10"
-                                        name="road_access"
-                                        value={form.road_access}
-                                        onChange={handleChange}
-                                        placeholder="e.g. 7"
-                                    />
-
-
-                                    <FormField
-                                        icon={<Hospital />}
-                                        label="Hospital Distance"
-                                        unit="km"
-                                        name="hospital_distance"
-                                        value={form.hospital_distance}
-                                        onChange={handleChange}
-                                        placeholder="e.g. 8"
-                                    />
-
-
-                                    <FormField
-                                        icon={<Home />}
-                                        label="Shelter Capacity"
-                                        unit="people"
-                                        name="shelter_capacity"
-                                        value={form.shelter_capacity}
-                                        onChange={handleChange}
-                                        placeholder="e.g. 500"
-                                    />
-
-                                </div>
-
-                            </div>
-
-
-                            <div className="field-section">
-
-                                <div className="field-section-title">
-                                    <Users size={17} />
-                                    Population & Resources
-                                </div>
-
-
-                                <div className="form-grid">
-
-                                    <FormField
-                                        icon={<Users />}
-                                        label="Vulnerable Population"
-                                        unit="people"
-                                        name="vulnerable_population"
-                                        value={form.vulnerable_population}
-                                        onChange={handleChange}
-                                        placeholder="e.g. 250"
-                                    />
-
-
-                                    <FormField
-                                        icon={<Droplets />}
-                                        label="Available Water"
-                                        unit="litres"
-                                        name="available_water"
-                                        value={form.available_water}
-                                        onChange={handleChange}
-                                        placeholder="e.g. 5000"
-                                    />
-
-
-                                    <FormField
-                                        icon={<Utensils />}
-                                        label="Food Stock"
-                                        unit="units"
-                                        name="food_stock"
-                                        value={form.food_stock}
-                                        onChange={handleChange}
-                                        placeholder="e.g. 1000"
-                                    />
-
-
-                                    <FormField
-                                        icon={<Stethoscope />}
-                                        label="Medical Capacity"
-                                        unit="people"
-                                        name="medical_capacity"
-                                        value={form.medical_capacity}
-                                        onChange={handleChange}
-                                        placeholder="e.g. 100"
-                                    />
-
-                                </div>
-
-                            </div>
-
-
-                            {/* ================================================= */}
-                            {/* SUBMIT */}
-                            {/* ================================================= */}
-
-                            <div className="assessment-actions">
-
-                                <button
-                                    type="button"
-                                    className="secondary-action"
-                                    onClick={resetAssessment}
-                                >
-                                    Clear
-                                </button>
-
-
-                                <button
-                                    type="submit"
-                                    className="primary-action"
-                                    disabled={
-                                        assessing ||
-                                        !selectedVillage
-                                    }
-                                >
-
-                                    {assessing ? (
-
-                                        <>
-                                            <Loader2
-                                                size={18}
-                                                className="spin"
-                                            />
-                                            Running ML Assessment...
-                                        </>
-
-                                    ) : (
-
-                                        <>
-                                            <Brain size={18} />
-                                            Assess Risk
-                                            <ArrowRight size={17} />
-                                        </>
-
-                                    )}
-
-                                </button>
-
-                            </div>
-
-                        </section>
-
-                    </form>
-
-
-                    {/* ================================================= */}
-                    {/* RESULT */}
-                    {/* ================================================= */}
-
-                    {result && (
-
-                        <section className="result-card">
-
-                            <div className="result-header">
-
-                                <div>
-
-                                    <div className="result-eyebrow">
-                                        <ShieldCheck size={16} />
-                                        ASSESSMENT COMPLETE
-                                    </div>
-
-                                    <h2>
-                                        Risk Assessment Result
-                                    </h2>
-
-                                    <p>
-                                        ML assessment generated for{" "}
-                                        <strong>
-                                            {selectedVillage?.village_name ||
-                                                selectedVillage?.name ||
-                                                selectedVillage?.villageName}
-                                        </strong>
-                                    </p>
-
-                                </div>
+                            <div className="score-bar">
 
                                 <div
-                                    className={`result-risk-badge ${getRiskClass(
-                                        riskLevel
-                                    )}`}
-                                >
-                                    {riskLevel}
-                                </div>
+                                    className="score-fill"
+                                    style={{
+                                        width: `${Math.min(
+                                            Math.max(score, 0),
+                                            100
+                                        )}%`
+                                    }}
+                                />
 
                             </div>
 
+                            <div className="score-scale">
+                                <span>0</span>
+                                <span>25</span>
+                                <span>50</span>
+                                <span>75</span>
+                                <span>100</span>
+                            </div>
 
-                            <div className="result-grid">
-
-                                {/* SCORE */}
-
-                                <div className="score-panel">
-
-                                    <span className="result-label">
-                                        OVERALL RISK SCORE
-                                    </span>
-
-                                    <div className="score-number">
-                                        {score.toFixed(1)}
-                                    </div>
-
-                                    <div className="score-bar">
-
-                                        <div
-                                            className="score-fill"
-                                            style={{
-                                                width: `${Math.min(
-                                                    Math.max(score, 0),
-                                                    100
-                                                )}%`
-                                            }}
-                                        />
-
-                                    </div>
-
-                                    <div className="score-scale">
-                                        <span>0</span>
-                                        <span>25</span>
-                                        <span>50</span>
-                                        <span>75</span>
-                                        <span>100</span>
-                                    </div>
-
-                                </div>
+                        </div>
 
 
-                                {/* RELOCATION */}
+                        {/* RELOCATION */}
 
-                                <div className="result-info-card">
+                        <div className="result-info-card">
 
-                                    <div className="result-info-icon">
-                                        <MapPin size={20} />
-                                    </div>
+                            <div className="result-info-icon">
+                                <MapPin size={20} />
+                            </div>
 
-                                    <div>
+                            <div>
 
-                                        <span>
-                                            RELOCATION PRIORITY
-                                        </span>
+                                <span>
+                                    RELOCATION PRIORITY
+                                </span>
 
-                                        <strong>
-                                            {relocationPriority.replace(
-                                                /_/g,
-                                                " "
-                                            )}
-                                        </strong>
-
-                                    </div>
-
-                                </div>
-
-
-                                {/* CAPACITY */}
-
-                                <div className="result-info-card">
-
-                                    <div className="result-info-icon green">
-                                        <Home size={20} />
-                                    </div>
-
-                                    <div>
-
-                                        <span>
-                                            CAPACITY STATUS
-                                        </span>
-
-                                        <strong>
-                                            {capacityStatus.replace(
-                                                /_/g,
-                                                " "
-                                            )}
-                                        </strong>
-
-                                    </div>
-
-                                </div>
+                                <strong>
+                                    {relocationPriority.replace(
+                                        /_/g,
+                                        " "
+                                    )}
+                                </strong>
 
                             </div>
 
+                        </div>
 
-                            <div className="result-footer">
 
-                                <CheckCircle2 size={17} />
+                        {/* CAPACITY */}
 
-                                Assessment has been processed and stored
-                                by the backend.
+                        <div className="result-info-card">
+
+                            <div className="result-info-icon green">
+                                <Home size={20} />
+                            </div>
+
+                            <div>
+
+                                <span>
+                                    CAPACITY STATUS
+                                </span>
+
+                                <strong>
+                                    {capacityStatus.replace(
+                                        /_/g,
+                                        " "
+                                    )}
+                                </strong>
 
                             </div>
 
-                        </section>
+                        </div>
 
-                    )}
+                    </div>
 
-                </main>
 
-            </div>
+                    <div className="result-footer">
 
-        </div>
+                        <CheckCircle2 size={17} />
+
+                        Assessment has been processed and stored
+                        by the backend.
+
+                    </div>
+
+                </section>
+
+            )}
+
+        </main>
     );
 }
 

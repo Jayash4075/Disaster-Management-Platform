@@ -14,8 +14,6 @@ import {
     Route,
 } from "lucide-react";
 
-import AuthoritySidebar from "../components/AuthoritySidebar";
-
 import "./Habitations.css";
 
 function normalizeHabitation(item, index) {
@@ -30,12 +28,17 @@ function normalizeHabitation(item, index) {
         riskLevel: item.riskLevel || "Unknown",
         vulnerability: Number(item.vulnerabilityScore ?? 0),
         relocationPriority: item.relocationPriority || "Not assessed",
-        affectedPopulation: ["RED", "ORANGE"].includes(item.riskLevel) ? (Number(item.population) || 0) : 0,
+        affectedPopulation: ["RED", "ORANGE"].includes(item.riskLevel)
+            ? Number(item.population) || 0
+            : 0,
         latitude: item.location?.coordinates?.[1] ?? null,
         longitude: item.location?.coordinates?.[0] ?? null,
         riskFactors: [],
         disasterHistory: [],
-        modelConfidence: item.riskProbability != null ? Math.round(item.riskProbability * 100) : null,
+        modelConfidence:
+            item.riskProbability != null
+                ? Math.round(item.riskProbability * 100)
+                : null,
     };
 }
 
@@ -56,8 +59,6 @@ function getPriorityClass(priority) {
 }
 
 function Habitations() {
-    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
     const [habitations, setHabitations] = useState([]);
 
     const [loading, setLoading] = useState(true);
@@ -75,42 +76,50 @@ function Habitations() {
     // FETCH DATA FROM BACKEND
     // ---------------------------------------------------------
 
-    
-                   
-            useEffect(() => {
-    let cancelled = false;
+    useEffect(() => {
+        let cancelled = false;
 
-    async function fetchHabitations() {
-        try {
-            setLoading(true);
-            setError("");
+        async function fetchHabitations() {
+            try {
+                setLoading(true);
+                setError("");
 
-            const response = await api.get("/api/habitations");
-            const rawData = response.data?.data || [];
+                const response = await api.get("/api/habitations");
+                const rawData = response.data?.data || [];
 
-            if (!Array.isArray(rawData)) {
-                throw new Error("Invalid habitation data received from backend.");
+                if (!Array.isArray(rawData)) {
+                    throw new Error(
+                        "Invalid habitation data received from backend."
+                    );
+                }
+
+                const normalized = rawData.map(normalizeHabitation);
+
+                if (!cancelled) {
+                    setHabitations(normalized);
+                }
+            } catch (err) {
+                console.error("Habitations API error:", err);
+
+                if (!cancelled) {
+                    setHabitations([]);
+                    setError(
+                        err.response?.data?.message ||
+                            err.message ||
+                            "Unable to load habitation data."
+                    );
+                }
+            } finally {
+                if (!cancelled) setLoading(false);
             }
-
-            const normalized = rawData.map(normalizeHabitation);
-
-            if (!cancelled) {
-                setHabitations(normalized);
-            }
-        } catch (err) {
-            console.error("Habitations API error:", err);
-            if (!cancelled) {
-                setHabitations([]);
-                setError(err.response?.data?.message || err.message || "Unable to load habitation data.");
-            }
-        } finally {
-            if (!cancelled) setLoading(false);
         }
-    }
 
-    fetchHabitations();
-    return () => { cancelled = true; };
-}, []);
+        fetchHabitations();
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     // ---------------------------------------------------------
     // DYNAMIC FILTER OPTIONS
@@ -171,7 +180,7 @@ function Habitations() {
                     )
                         .toLowerCase() ===
                     priorityFilter.toLowerCase()
-                );
+            );
         }
 
         if (hazardFilter !== "All") {
@@ -280,446 +289,403 @@ function Habitations() {
     };
 
     return (
-        <div
-            className={`authority-layout ${
-                sidebarCollapsed
-                    ? "sidebar-collapsed"
-                    : ""
-            }`}
-        >
-            <AuthoritySidebar
-                collapsed={sidebarCollapsed}
-                onToggle={() =>
-                    setSidebarCollapsed(
-                        (previous) =>
-                            !previous
-                    )
-                }
-            />
+        <>
+            <main className="habitations-page">
+                {/* PAGE HEADER */}
+                <section className="habitations-header">
+                    <div>
+                        <div className="page-eyebrow">
+                            RISK ANALYSIS
+                        </div>
 
-            <div className="authority-main">
-            
+                        <h1>
+                            Vulnerable Habitations
+                        </h1>
 
-                <main className="habitations-page">
-                    {/* PAGE HEADER */}
-                    <section className="habitations-header">
+                        <p>
+                            Identify and prioritize
+                            habitations exposed to
+                            disaster risk for
+                            informed relocation
+                            planning.
+                        </p>
+                    </div>
+                </section>
+
+                {/* ERROR */}
+                {error && (
+                    <motion.div
+                        className="api-error"
+                        initial={{
+                            opacity: 0,
+                            y: -8,
+                        }}
+                        animate={{
+                            opacity: 1,
+                            y: 0,
+                        }}
+                    >
+                        <AlertTriangle size={20} />
+
                         <div>
-                            <div className="page-eyebrow">
-                                RISK ANALYSIS
-                            </div>
+                            <strong>
+                                Unable to load
+                                habitation data
+                            </strong>
 
-                            <h1>
-                                Vulnerable Habitations
-                            </h1>
+                            <span>
+                                {error}
+                            </span>
+                        </div>
+                    </motion.div>
+                )}
+
+                {/* STATISTICS */}
+                <section className="habitation-stats">
+                    <StatCard
+                        icon={
+                            <Building2 size={23} />
+                        }
+                        label="Habitations Assessed"
+                        value={
+                            loading
+                                ? "—"
+                                : formatNumber(
+                                      statistics.total
+                                  )
+                        }
+                    />
+
+                    <StatCard
+                        icon={
+                            <AlertTriangle size={23} />
+                        }
+                        label="Critical Risk"
+                        value={
+                            loading
+                                ? "—"
+                                : formatNumber(
+                                      statistics.critical
+                                  )
+                        }
+                        danger
+                    />
+
+                    <StatCard
+                        icon={<Users size={23} />}
+                        label="Population at Risk"
+                        value={
+                            loading
+                                ? "—"
+                                : formatNumber(
+                                      statistics.populationAtRisk
+                                  )
+                        }
+                    />
+
+                    <StatCard
+                        icon={<Route size={23} />}
+                        label="Immediate Relocation"
+                        value={
+                            loading
+                                ? "—"
+                                : formatNumber(
+                                      statistics.immediateRelocation
+                                  )
+                        }
+                    />
+                </section>
+
+                {/* FILTERS */}
+                <section className="habitation-filters">
+                    <div className="search-wrapper">
+                        <Search size={19} />
+
+                        <input
+                            type="text"
+                            placeholder="Search habitation, district or hazard..."
+                            value={searchTerm}
+                            onChange={(event) =>
+                                setSearchTerm(
+                                    event.target.value
+                                )
+                            }
+                        />
+                    </div>
+
+                    <FilterSelect
+                        label="Risk"
+                        value={riskFilter}
+                        options={[
+                            "All",
+                            "Critical",
+                            "High",
+                            "Medium",
+                            "Low",
+                        ]}
+                        onChange={setRiskFilter}
+                    />
+
+                    <FilterSelect
+                        label="Priority"
+                        value={priorityFilter}
+                        options={[
+                            "All",
+                            "Immediate",
+                            "Short-term",
+                            "Medium-term",
+                        ]}
+                        onChange={setPriorityFilter}
+                    />
+
+                    <FilterSelect
+                        label="Hazard"
+                        value={hazardFilter}
+                        options={hazardOptions}
+                        onChange={setHazardFilter}
+                    />
+
+                    <FilterSelect
+                        label="Sort"
+                        value={sortBy}
+                        options={[
+                            "risk",
+                            "population",
+                            "vulnerability",
+                        ]}
+                        labels={{
+                            risk: "Risk",
+                            population:
+                                "Population",
+                            vulnerability:
+                                "Vulnerability",
+                        }}
+                        onChange={setSortBy}
+                    />
+                </section>
+
+                {/* TABLE */}
+                <section className="habitation-card">
+                    <div className="table-header">
+                        <div>
+                            <h2>
+                                Habitation Risk
+                                Register
+                            </h2>
 
                             <p>
-                                Identify and prioritize
-                                habitations exposed to
-                                disaster risk for
-                                informed relocation
-                                planning.
+                                {loading
+                                    ? "Loading habitation data..."
+                                    : `Showing ${filteredHabitations.length} of ${habitations.length} habitations`}
                             </p>
                         </div>
-                    </section>
 
-                    {/* ERROR */}
-                    {error && (
-                        <motion.div
-                            className="api-error"
-                            initial={{
-                                opacity: 0,
-                                y: -8,
-                            }}
-                            animate={{
-                                opacity: 1,
-                                y: 0,
-                            }}
-                        >
-                            <AlertTriangle
-                                size={20}
-                            />
+                        {!loading &&
+                            habitations.length >
+                                0 && (
+                                <button
+                                    className="reset-button"
+                                    onClick={
+                                        resetFilters
+                                    }
+                                >
+                                    Reset filters
+                                </button>
+                            )}
+                    </div>
 
-                            <div>
-                                <strong>
-                                    Unable to load
-                                    habitation data
-                                </strong>
-
-                                <span>
-                                    {error}
-                                </span>
-                            </div>
-                        </motion.div>
-                    )}
-
-                    {/* STATISTICS */}
-                    <section className="habitation-stats">
-                        <StatCard
-                            icon={
-                                <Building2
-                                    size={23}
-                                />
-                            }
-                            label="Habitations Assessed"
-                            value={
-                                loading
-                                    ? "—"
-                                    : formatNumber(
-                                          statistics.total
-                                      )
-                            }
-                        />
-
-                        <StatCard
+                    {loading ? (
+                        <LoadingState />
+                    ) : error ? (
+                        <EmptyState
                             icon={
                                 <AlertTriangle
-                                    size={23}
+                                    size={30}
                                 />
                             }
-                            label="Critical Risk"
-                            value={
-                                loading
-                                    ? "—"
-                                    : formatNumber(
-                                          statistics.critical
-                                      )
-                            }
-                            danger
+                            title="Habitation data unavailable"
+                            message="Connect the backend habitation endpoint to populate this register."
                         />
-
-                        <StatCard
+                    ) : habitations.length ===
+                      0 ? (
+                        <EmptyState
                             icon={
-                                <Users size={23} />
+                                <Building2 size={30} />
                             }
-                            label="Population at Risk"
-                            value={
-                                loading
-                                    ? "—"
-                                    : formatNumber(
-                                          statistics.populationAtRisk
-                                      )
-                            }
+                            title="No habitation data"
+                            message="No habitation records have been returned by the backend yet."
                         />
-
-                        <StatCard
+                    ) : filteredHabitations.length ===
+                      0 ? (
+                        <EmptyState
                             icon={
-                                <Route size={23} />
+                                <Search size={30} />
                             }
-                            label="Immediate Relocation"
-                            value={
-                                loading
-                                    ? "—"
-                                    : formatNumber(
-                                          statistics.immediateRelocation
-                                      )
-                            }
+                            title="No matching habitations"
+                            message="Try changing your search or filters."
                         />
-                    </section>
+                    ) : (
+                        <div className="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>
+                                            Habitation
+                                        </th>
+                                        <th>
+                                            Population
+                                        </th>
+                                        <th>
+                                            Hazard
+                                        </th>
+                                        <th>
+                                            Risk
+                                        </th>
+                                        <th>
+                                            Vulnerability
+                                        </th>
+                                        <th>
+                                            Relocation
+                                        </th>
+                                        <th>
+                                            Action
+                                        </th>
+                                    </tr>
+                                </thead>
 
-                    {/* FILTERS */}
-                    <section className="habitation-filters">
-                        <div className="search-wrapper">
-                            <Search size={19} />
-
-                            <input
-                                type="text"
-                                placeholder="Search habitation, district or hazard..."
-                                value={searchTerm}
-                                onChange={(event) =>
-                                    setSearchTerm(
-                                        event.target
-                                            .value
-                                    )
-                                }
-                            />
-                        </div>
-
-                        <FilterSelect
-                            label="Risk"
-                            value={riskFilter}
-                            options={[
-                                "All",
-                                "Critical",
-                                "High",
-                                "Medium",
-                                "Low",
-                            ]}
-                            onChange={
-                                setRiskFilter
-                            }
-                        />
-
-                        <FilterSelect
-                            label="Priority"
-                            value={priorityFilter}
-                            options={[
-                                "All",
-                                "Immediate",
-                                "Short-term",
-                                "Medium-term",
-                            ]}
-                            onChange={
-                                setPriorityFilter
-                            }
-                        />
-
-                        <FilterSelect
-                            label="Hazard"
-                            value={hazardFilter}
-                            options={
-                                hazardOptions
-                            }
-                            onChange={
-                                setHazardFilter
-                            }
-                        />
-
-                        <FilterSelect
-                            label="Sort"
-                            value={sortBy}
-                            options={[
-                                "risk",
-                                "population",
-                                "vulnerability",
-                            ]}
-                            labels={{
-                                risk: "Risk",
-                                population:
-                                    "Population",
-                                vulnerability:
-                                    "Vulnerability",
-                            }}
-                            onChange={setSortBy}
-                        />
-                    </section>
-
-                    {/* TABLE */}
-                    <section className="habitation-card">
-                        <div className="table-header">
-                            <div>
-                                <h2>
-                                    Habitation Risk
-                                    Register
-                                </h2>
-
-                                <p>
-                                    {loading
-                                        ? "Loading habitation data..."
-                                        : `Showing ${filteredHabitations.length} of ${habitations.length} habitations`}
-                                </p>
-                            </div>
-
-                            {!loading &&
-                                habitations.length >
-                                    0 && (
-                                    <button
-                                        className="reset-button"
-                                        onClick={
-                                            resetFilters
-                                        }
-                                    >
-                                        Reset filters
-                                    </button>
-                                )}
-                        </div>
-
-                        {loading ? (
-                            <LoadingState />
-                        ) : error ? (
-                            <EmptyState
-                                icon={
-                                    <AlertTriangle
-                                        size={30}
-                                    />
-                                }
-                                title="Habitation data unavailable"
-                                message="Connect the backend habitation endpoint to populate this register."
-                            />
-                        ) : habitations.length ===
-                          0 ? (
-                            <EmptyState
-                                icon={
-                                    <Building2
-                                        size={30}
-                                    />
-                                }
-                                title="No habitation data"
-                                message="No habitation records have been returned by the backend yet."
-                            />
-                        ) : filteredHabitations.length ===
-                          0 ? (
-                            <EmptyState
-                                icon={
-                                    <Search
-                                        size={30}
-                                    />
-                                }
-                                title="No matching habitations"
-                                message="Try changing your search or filters."
-                            />
-                        ) : (
-                            <div className="table-wrapper">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>
-                                                Habitation
-                                            </th>
-                                            <th>
-                                                Population
-                                            </th>
-                                            <th>
-                                                Hazard
-                                            </th>
-                                            <th>
-                                                Risk
-                                            </th>
-                                            <th>
-                                                Vulnerability
-                                            </th>
-                                            <th>
-                                                Relocation
-                                            </th>
-                                            <th>
-                                                Action
-                                            </th>
-                                        </tr>
-                                    </thead>
-
-                                    <tbody>
-                                        {filteredHabitations.map(
-                                            (
-                                                habitation
-                                            ) => (
-                                                <tr
-                                                    key={
-                                                        habitation.id
-                                                    }
-                                                >
-                                                    <td>
-                                                        <div className="habitation-name">
-                                                            <div className="habitation-icon">
-                                                                <Building2
-                                                                    size={
-                                                                        19
-                                                                    }
-                                                                />
-                                                            </div>
-
-                                                            <div>
-                                                                <strong>
-                                                                    {
-                                                                        habitation.name
-                                                                    }
-                                                                </strong>
-
-                                                                <span>
-                                                                    <MapPin
-                                                                        size={
-                                                                            14
-                                                                        }
-                                                                    />
-
-                                                                    {
-                                                                        habitation.district
-                                                                    }
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-
-                                                    <td>
-                                                        <strong>
-                                                            {formatNumber(
-                                                                habitation.population
-                                                            )}
-                                                        </strong>
-                                                    </td>
-
-                                                    <td>
-                                                        <span className="hazard-badge">
-                                                            {
-                                                                habitation.hazard
-                                                            }
-                                                        </span>
-                                                    </td>
-
-                                                    <td>
-                                                        <span
-                                                            className={`risk-badge ${getRiskClass(
-                                                                habitation.riskLevel
-                                                            )}`}
-                                                        >
-                                                            {
-                                                                habitation.riskLevel
-                                                            }
-                                                        </span>
-                                                    </td>
-
-                                                    <td>
-                                                        <div className="vulnerability">
-                                                            <div className="progress">
-                                                                <span
-                                                                    style={{
-                                                                        width: `${Math.min(
-                                                                            Math.max(
-                                                                                habitation.vulnerability,
-                                                                                0
-                                                                            ),
-                                                                            100
-                                                                        )}%`,
-                                                                    }}
-                                                                />
-                                                            </div>
-
-                                                            <strong>
-                                                                {Math.round(
-                                                                    habitation.vulnerability
-                                                                )}
-                                                                %
-                                                            </strong>
-                                                        </div>
-                                                    </td>
-
-                                                    <td>
-                                                        <span
-                                                            className={`priority-badge ${getPriorityClass(
-                                                                habitation.relocationPriority
-                                                            )}`}
-                                                        >
-                                                            {
-                                                                habitation.relocationPriority
-                                                            }
-                                                        </span>
-                                                    </td>
-
-                                                    <td>
-                                                        <button
-                                                            className="view-button"
-                                                            onClick={() =>
-                                                                setSelectedHabitation(
-                                                                    habitation
-                                                                )
-                                                            }
-                                                        >
-                                                            View
-                                                            <ChevronRight
+                                <tbody>
+                                    {filteredHabitations.map(
+                                        (
+                                            habitation
+                                        ) => (
+                                            <tr
+                                                key={
+                                                    habitation.id
+                                                }
+                                            >
+                                                <td>
+                                                    <div className="habitation-name">
+                                                        <div className="habitation-icon">
+                                                            <Building2
                                                                 size={
-                                                                    17
+                                                                    19
                                                                 }
                                                             />
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            )
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </section>
-                </main>
-            </div>
+                                                        </div>
+
+                                                        <div>
+                                                            <strong>
+                                                                {
+                                                                    habitation.name
+                                                                }
+                                                            </strong>
+
+                                                            <span>
+                                                                <MapPin
+                                                                    size={
+                                                                        14
+                                                                    }
+                                                                />
+
+                                                                {
+                                                                    habitation.district
+                                                                }
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+
+                                                <td>
+                                                    <strong>
+                                                        {formatNumber(
+                                                            habitation.population
+                                                        )}
+                                                    </strong>
+                                                </td>
+
+                                                <td>
+                                                    <span className="hazard-badge">
+                                                        {
+                                                            habitation.hazard
+                                                        }
+                                                    </span>
+                                                </td>
+
+                                                <td>
+                                                    <span
+                                                        className={`risk-badge ${getRiskClass(
+                                                            habitation.riskLevel
+                                                        )}`}
+                                                    >
+                                                        {
+                                                            habitation.riskLevel
+                                                        }
+                                                    </span>
+                                                </td>
+
+                                                <td>
+                                                    <div className="vulnerability">
+                                                        <div className="progress">
+                                                            <span
+                                                                style={{
+                                                                    width: `${Math.min(
+                                                                        Math.max(
+                                                                            habitation.vulnerability,
+                                                                            0
+                                                                        ),
+                                                                        100
+                                                                    )}%`,
+                                                                }}
+                                                            />
+                                                        </div>
+
+                                                        <strong>
+                                                            {Math.round(
+                                                                habitation.vulnerability
+                                                            )}
+                                                            %
+                                                        </strong>
+                                                    </div>
+                                                </td>
+
+                                                <td>
+                                                    <span
+                                                        className={`priority-badge ${getPriorityClass(
+                                                            habitation.relocationPriority
+                                                        )}`}
+                                                    >
+                                                        {
+                                                            habitation.relocationPriority
+                                                        }
+                                                    </span>
+                                                </td>
+
+                                                <td>
+                                                    <button
+                                                        className="view-button"
+                                                        onClick={() =>
+                                                            setSelectedHabitation(
+                                                                habitation
+                                                            )
+                                                        }
+                                                    >
+                                                        View
+                                                        <ChevronRight
+                                                            size={
+                                                                17
+                                                            }
+                                                        />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        )
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </section>
+            </main>
 
             {/* DETAIL PANEL */}
             {selectedHabitation && (
@@ -747,9 +713,7 @@ function Habitations() {
                                 </h2>
 
                                 <p>
-                                    <MapPin
-                                        size={15}
-                                    />
+                                    <MapPin size={15} />
 
                                     {
                                         selectedHabitation.district
@@ -876,9 +840,7 @@ function Habitations() {
                                 selectedHabitation.longitude !==
                                     null) && (
                                 <div className="coordinates-box">
-                                    <MapPin
-                                        size={18}
-                                    />
+                                    <MapPin size={18} />
 
                                     <div>
                                         <span>
@@ -901,7 +863,7 @@ function Habitations() {
                     </aside>
                 </>
             )}
-        </div>
+        </>
     );
 }
 
@@ -981,9 +943,11 @@ function LoadingState() {
     return (
         <div className="loading-state">
             <div className="loading-spinner" />
+
             <h3>
                 Loading habitation intelligence
             </h3>
+
             <p>
                 Fetching risk and vulnerability
                 data from the backend.
@@ -1004,6 +968,7 @@ function EmptyState({
             </div>
 
             <h3>{title}</h3>
+
             <p>{message}</p>
         </div>
     );
