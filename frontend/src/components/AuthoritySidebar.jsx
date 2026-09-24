@@ -12,40 +12,22 @@ import {
     Settings,
     Shield,
     Users,
-    ClipboardCheck
+    ClipboardCheck,
+    X
 } from "lucide-react";
-
 
 import { useLocation, useNavigate } from "react-router-dom";
 
 import "./AuthoritySidebar.css";
 
-function AuthoritySidebar({ collapsed, onToggle }) {
+function AuthoritySidebar({
+    collapsed,
+    onToggle,
+    mobileOpen = false,
+    onMobileClose
+}) {
     const navigate = useNavigate();
     const location = useLocation();
-
-    /*
-     * Authority navigation
-     *
-     * Structure is aligned around the main PS-191 workflow:
-     *
-     * COMMAND
-     * → Dashboard
-     * → Emergencies
-     *
-     * ANALYSIS
-     * → Vulnerable Habitations
-     * → GIS Monitoring
-     * → Risk Intelligence
-     *
-     * PLANNING
-     * → Relocation Planning
-     * → Safe Sites
-     *
-     * OPERATIONS
-     * → Response Teams
-     * → Resources
-     */
 
     const navigationSections = [
         {
@@ -61,7 +43,6 @@ function AuthoritySidebar({ collapsed, onToggle }) {
                     icon: AlertTriangle,
                     path: "/authority/emergencies",
                 },
-
             ],
         },
 
@@ -76,7 +57,7 @@ function AuthoritySidebar({ collapsed, onToggle }) {
                 {
                     label: "Assess Village",
                     icon: ClipboardCheck,
-                    path: "/authority/assess-village"
+                    path: "/authority/assess-village",
                 },
                 {
                     label: "GIS Monitoring",
@@ -88,7 +69,6 @@ function AuthoritySidebar({ collapsed, onToggle }) {
                     icon: BarChart3,
                     path: "/authority/risk-intelligence",
                 },
-                
             ],
         },
 
@@ -125,12 +105,6 @@ function AuthoritySidebar({ collapsed, onToggle }) {
         },
     ];
 
-    /*
-     * Active route handling
-     *
-     * Dashboard needs an exact match because every other
-     * authority page begins with /authority.
-     */
     const isActive = (path) => {
         if (path === "/authority") {
             return location.pathname === "/authority";
@@ -139,164 +113,193 @@ function AuthoritySidebar({ collapsed, onToggle }) {
         return location.pathname.startsWith(path);
     };
 
+    // Navigate and close mobile drawer
+    const handleNavigation = (path) => {
+        navigate(path);
+
+        if (onMobileClose) {
+            onMobileClose();
+        }
+    };
+
     return (
-        <aside
-            className={`authority-sidebar ${
-                collapsed ? "collapsed" : ""
-            }`}
-        >
-
+        <>
             {/* =====================================================
-                BRAND
+                MOBILE OVERLAY
             ===================================================== */}
 
-            <div className="authority-sidebar-brand">
-
-                <button
-                    className="authority-brand"
-                    onClick={() => navigate("/authority")}
-                    title={
-                        collapsed
-                            ? "TerraShield Authority Dashboard"
-                            : undefined
-                    }
-                >
-                    <div className="authority-brand-mark">
-                        <Shield size={19} />
-                    </div>
-
-                    {!collapsed && (
-                        <div className="authority-brand-text">
-                            <strong>TerraShield</strong>
-                            <small>AUTHORITY COMMAND</small>
-                        </div>
-                    )}
-                </button>
-
-                {/* COLLAPSE / EXPAND BUTTON */}
-
-                <button
-                    className="sidebar-toggle"
-                    onClick={onToggle}
-                    aria-label={
-                        collapsed
-                            ? "Expand sidebar"
-                            : "Collapse sidebar"
-                    }
-                    title={
-                        collapsed
-                            ? "Expand sidebar"
-                            : "Collapse sidebar"
-                    }
-                >
-                    {collapsed ? (
-                        <ChevronRight size={17} />
-                    ) : (
-                        <ChevronLeft size={17} />
-                    )}
-                </button>
-
-            </div>
-
+            {mobileOpen && (
+                <div
+                    className="authority-sidebar-overlay"
+                    onClick={onMobileClose}
+                    aria-hidden="true"
+                />
+            )}
 
             {/* =====================================================
-                NAVIGATION
+                SIDEBAR
             ===================================================== */}
 
-            <nav className="authority-nav">
+            <aside
+                className={`authority-sidebar
+                    ${collapsed ? "collapsed" : ""}
+                    ${mobileOpen ? "mobile-open" : ""}
+                `}
+            >
 
-                {navigationSections.map((section) => (
+                {/* =================================================
+                    BRAND
+                ================================================= */}
 
-                    <div
-                        className="authority-nav-section"
-                        key={section.title}
+                <div className="authority-sidebar-brand">
+
+                    <button
+                        className="authority-brand"
+                        onClick={() => handleNavigation("/authority")}
+                        title={
+                            collapsed
+                                ? "TerraShield Authority Dashboard"
+                                : undefined
+                        }
                     >
-
-                        {/* Section heading disappears when collapsed */}
+                        <div className="authority-brand-mark">
+                            <Shield size={19} />
+                        </div>
 
                         {!collapsed && (
-                            <span className="authority-nav-label">
-                                {section.title}
+                            <div className="authority-brand-text">
+                                <strong>TerraShield</strong>
+                                <small>AUTHORITY COMMAND</small>
+                            </div>
+                        )}
+                    </button>
+
+                    {/* DESKTOP COLLAPSE BUTTON */}
+
+                    <button
+                        className="sidebar-toggle desktop-sidebar-toggle"
+                        onClick={onToggle}
+                        aria-label={
+                            collapsed
+                                ? "Expand sidebar"
+                                : "Collapse sidebar"
+                        }
+                        title={
+                            collapsed
+                                ? "Expand sidebar"
+                                : "Collapse sidebar"
+                        }
+                    >
+                        {collapsed ? (
+                            <ChevronRight size={17} />
+                        ) : (
+                            <ChevronLeft size={17} />
+                        )}
+                    </button>
+
+                    {/* MOBILE CLOSE BUTTON */}
+
+                    <button
+                        className="mobile-sidebar-close"
+                        onClick={onMobileClose}
+                        aria-label="Close sidebar"
+                    >
+                        <X size={20} />
+                    </button>
+
+                </div>
+
+                {/* =================================================
+                    NAVIGATION
+                ================================================= */}
+
+                <nav className="authority-nav">
+
+                    {navigationSections.map((section) => (
+
+                        <div
+                            className="authority-nav-section"
+                            key={section.title}
+                        >
+
+                            {!collapsed && (
+                                <span className="authority-nav-label">
+                                    {section.title}
+                                </span>
+                            )}
+
+                            {section.items.map((item) => {
+
+                                const Icon = item.icon;
+
+                                return (
+                                    <button
+                                        key={item.path}
+                                        className={`authority-nav-item ${
+                                            isActive(item.path)
+                                                ? "active"
+                                                : ""
+                                        }`}
+                                        onClick={() =>
+                                            handleNavigation(item.path)
+                                        }
+                                        title={
+                                            collapsed
+                                                ? item.label
+                                                : undefined
+                                        }
+                                    >
+                                        <Icon size={18} />
+
+                                        {!collapsed && (
+                                            <span>
+                                                {item.label}
+                                            </span>
+                                        )}
+                                    </button>
+                                );
+                            })}
+
+                        </div>
+
+                    ))}
+
+                </nav>
+
+                {/* =================================================
+                    SETTINGS
+                ================================================= */}
+
+                <div className="authority-sidebar-bottom">
+
+                    <button
+                        className={`authority-nav-item ${
+                            isActive("/authority/settings")
+                                ? "active"
+                                : ""
+                        }`}
+                        onClick={() =>
+                            handleNavigation("/authority/settings")
+                        }
+                        title={
+                            collapsed
+                                ? "Settings"
+                                : undefined
+                        }
+                    >
+                        <Settings size={18} />
+
+                        {!collapsed && (
+                            <span>
+                                Settings
                             </span>
                         )}
+                    </button>
 
+                </div>
 
-                        {/* Navigation items */}
-
-                        {section.items.map((item) => {
-
-                            const Icon = item.icon;
-
-                            return (
-                                <button
-                                    key={item.path}
-                                    className={`authority-nav-item ${
-                                        isActive(item.path)
-                                            ? "active"
-                                            : ""
-                                    }`}
-                                    onClick={() =>
-                                        navigate(item.path)
-                                    }
-                                    title={
-                                        collapsed
-                                            ? item.label
-                                            : undefined
-                                    }
-                                >
-
-                                    <Icon size={18} />
-
-                                    {!collapsed && (
-                                        <span>
-                                            {item.label}
-                                        </span>
-                                    )}
-
-                                </button>
-                            );
-                        })}
-
-                    </div>
-
-                ))}
-
-            </nav>
-
-
-            {/* =====================================================
-                SETTINGS
-            ===================================================== */}
-
-            <div className="authority-sidebar-bottom">
-
-                <button
-                    className={`authority-nav-item ${
-                        isActive("/authority/settings")
-                            ? "active"
-                            : ""
-                    }`}
-                    onClick={() =>
-                        navigate("/authority/settings")
-                    }
-                    title={
-                        collapsed
-                            ? "Settings"
-                            : undefined
-                    }
-                >
-                    <Settings size={18} />
-
-                    {!collapsed && (
-                        <span>
-                            Settings
-                        </span>
-                    )}
-                </button>
-
-            </div>
-
-        </aside>
+            </aside>
+        </>
     );
 }
 

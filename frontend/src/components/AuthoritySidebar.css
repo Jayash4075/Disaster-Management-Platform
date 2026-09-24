@@ -4,7 +4,6 @@
 
 .authority-sidebar {
     position: fixed;
-
     left: 0;
     top: 0;
     bottom: 0;
@@ -22,14 +21,15 @@
     border-right: 1px solid #273449;
 
     transition:
-        width 0.25s ease;
+        width 0.25s ease,
+        transform 0.25s ease;
 
     overflow: hidden;
 }
 
 
 /* =========================================================
-   COLLAPSED SIDEBAR
+   COLLAPSED SIDEBAR - DESKTOP
 ========================================================= */
 
 .authority-sidebar.collapsed {
@@ -58,7 +58,7 @@
 
 
 /* =========================================================
-   TERRASHIELD BRAND BUTTON
+   BRAND BUTTON
 ========================================================= */
 
 .authority-brand {
@@ -72,7 +72,6 @@
     gap: 10px;
 
     border: 0;
-
     background: transparent;
 
     color: #ffffff;
@@ -101,7 +100,6 @@
     border-radius: 10px;
 
     background: #e05c28;
-
     color: #ffffff;
 }
 
@@ -119,7 +117,6 @@
 
 .authority-brand-text strong {
     font-size: 18px;
-
     line-height: 1;
 
     letter-spacing: -0.4px;
@@ -131,7 +128,6 @@
     color: #8d99ab;
 
     font-size: 7px;
-
     font-weight: 800;
 
     letter-spacing: 1.1px;
@@ -141,7 +137,7 @@
 
 
 /* =========================================================
-   SIDEBAR TOGGLE
+   DESKTOP SIDEBAR TOGGLE
 ========================================================= */
 
 .sidebar-toggle {
@@ -154,11 +150,9 @@
     flex-shrink: 0;
 
     border: 1px solid #334158;
-
     border-radius: 7px;
 
     background: #202d42;
-
     color: #b8c2d1;
 
     cursor: pointer;
@@ -171,15 +165,38 @@
 
 .sidebar-toggle:hover {
     background: #2a3950;
-
     color: #ffffff;
-
     border-color: #46556d;
 }
 
 
 /* =========================================================
-   NAVIGATION CONTAINER
+   MOBILE CLOSE BUTTON
+========================================================= */
+
+.mobile-sidebar-close {
+    display: none;
+
+    width: 36px;
+    height: 36px;
+
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    border: 1px solid #334158;
+    border-radius: 8px;
+
+    background: #202d42;
+    color: #ffffff;
+
+    cursor: pointer;
+}
+
+
+/* =========================================================
+   NAVIGATION
 ========================================================= */
 
 .authority-nav {
@@ -204,7 +221,6 @@
 
 .authority-nav::-webkit-scrollbar-thumb {
     background: #263b54;
-
     border-radius: 10px;
 }
 
@@ -234,7 +250,6 @@
     color: #68758a;
 
     font-size: 8px;
-
     font-weight: 800;
 
     letter-spacing: 1.1px;
@@ -247,7 +262,6 @@
 
 .authority-nav-item {
     width: 100%;
-
     height: 44px;
 
     display: flex;
@@ -260,7 +274,6 @@
     margin-bottom: 4px;
 
     border: 0;
-
     border-radius: 8px;
 
     background: transparent;
@@ -268,7 +281,6 @@
     color: #aab5c6;
 
     font-size: 11px;
-
     font-weight: 600;
 
     cursor: pointer;
@@ -299,7 +311,6 @@
 
 .authority-nav-item:hover {
     background: #222f44;
-
     color: #ffffff;
 }
 
@@ -314,7 +325,6 @@
 
 .authority-nav-item.active {
     background: #2a394f;
-
     color: #ffffff;
 }
 
@@ -337,84 +347,69 @@
 
 
 /* =========================================================
-   COLLAPSED BRAND
+   COLLAPSED DESKTOP
 ========================================================= */
 
-.authority-sidebar.collapsed
-.authority-sidebar-brand {
+.authority-sidebar.collapsed .authority-sidebar-brand {
     justify-content: center;
-
     padding: 0 10px;
 }
 
-
-.authority-sidebar.collapsed
-.authority-brand {
+.authority-sidebar.collapsed .authority-brand {
     flex: 0;
-
     justify-content: center;
 }
 
-
-/* Hide brand text automatically */
-
-.authority-sidebar.collapsed
-.authority-brand-text {
+.authority-sidebar.collapsed .authority-brand-text {
     display: none;
 }
 
-
-/* =========================================================
-   COLLAPSED TOGGLE
-========================================================= */
-
-.authority-sidebar.collapsed
-.sidebar-toggle {
+.authority-sidebar.collapsed .sidebar-toggle {
     position: absolute;
 
     right: 7px;
-
     bottom: -14px;
 
     z-index: 10;
 }
 
-
-/* =========================================================
-   COLLAPSED NAVIGATION
-========================================================= */
-
-.authority-sidebar.collapsed
-.authority-nav {
+.authority-sidebar.collapsed .authority-nav {
     padding-left: 11px;
     padding-right: 11px;
 }
 
-
-.authority-sidebar.collapsed
-.authority-nav-section {
+.authority-sidebar.collapsed .authority-nav-section {
     margin-bottom: 8px;
 }
 
-
-.authority-sidebar.collapsed
-.authority-nav-item {
+.authority-sidebar.collapsed .authority-nav-item {
     justify-content: center;
-
     gap: 0;
-
     padding: 0;
+}
+
+.authority-sidebar.collapsed .authority-sidebar-bottom {
+    padding-left: 11px;
+    padding-right: 11px;
 }
 
 
 /* =========================================================
-   COLLAPSED SETTINGS
+   MOBILE OVERLAY
 ========================================================= */
 
-.authority-sidebar.collapsed
-.authority-sidebar-bottom {
-    padding-left: 11px;
-    padding-right: 11px;
+.authority-sidebar-overlay {
+    display: none;
+
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 1400;
+
+    background: rgba(0, 0, 0, 0.55);
+
+    backdrop-filter: blur(2px);
 }
 
 
@@ -424,25 +419,185 @@
 
 @media (max-width: 850px) {
 
+    /* Sidebar becomes an off-canvas drawer */
+
     .authority-sidebar {
+        width: 280px;
+
         transform: translateX(-100%);
 
-        width: 252px;
-
         transition:
-            transform 0.25s ease,
-            width 0.25s ease;
+            transform 0.25s ease;
+
+        box-shadow: none;
+
+        border-right: 1px solid #273449;
     }
 
-    .authority-sidebar:not(.collapsed) {
+
+    /* IMPORTANT:
+       Desktop collapsed state should NOT affect
+       mobile drawer width */
+
+    .authority-sidebar.collapsed {
+        width: 280px;
+
+        transform: translateX(-100%);
+    }
+
+
+    /* Open mobile drawer */
+
+    .authority-sidebar.mobile-open,
+    .authority-sidebar.collapsed.mobile-open {
+        width: 280px;
+
         transform: translateX(0);
+
+        box-shadow:
+            8px 0 30px rgba(0, 0, 0, 0.25);
+    }
+
+
+    /* Overlay */
+
+    .authority-sidebar-overlay {
+        display: block;
+    }
+
+
+    /* Hide desktop collapse button */
+
+    .desktop-sidebar-toggle {
+        display: none;
+    }
+
+
+    /* Show mobile close */
+
+    .mobile-sidebar-close {
+        display: flex;
+    }
+
+
+    /* Mobile brand */
+
+    .authority-sidebar-brand {
+        height: 68px;
+
+        padding: 0 14px;
+    }
+
+
+    /* Always show brand text on mobile */
+
+    .authority-sidebar .authority-brand-text {
+        display: flex;
+    }
+
+
+    .authority-sidebar .authority-brand {
+        flex: 1;
+        justify-content: flex-start;
+    }
+
+
+    /* Mobile navigation */
+
+    .authority-nav {
+        padding: 18px 12px;
+
+        overflow-y: auto;
+
+        -webkit-overflow-scrolling: touch;
+    }
+
+
+    /* Mobile labels */
+
+    .authority-nav-label {
+        font-size: 9px;
+        padding-left: 10px;
+    }
+
+
+    /* Mobile menu items */
+
+    .authority-nav-item {
+        height: 46px;
+
+        font-size: 13px;
+
+        gap: 13px;
+
+        padding: 0 13px;
+
+        border-radius: 9px;
+    }
+
+
+    .authority-nav-item svg {
+        width: 19px;
+        height: 19px;
+    }
+
+
+    /* Undo desktop collapsed layout on mobile */
+
+    .authority-sidebar.collapsed .authority-nav-item {
+        justify-content: flex-start;
+
+        gap: 13px;
+
+        padding: 0 13px;
+    }
+
+
+    .authority-sidebar.collapsed .authority-sidebar-bottom {
+        padding: 11px 12px;
+    }
+
+
+    .authority-sidebar.collapsed .authority-nav {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+
+    /* Settings */
+
+    .authority-sidebar-bottom {
+        padding: 11px 12px;
+    }
+}
+
+
+/* =========================================================
+   SMALL PHONES
+========================================================= */
+
+@media (max-width: 480px) {
+
+    .authority-sidebar {
+        width: min(280px, 86vw);
     }
 
     .authority-sidebar.collapsed {
-        width: 0;
+        width: min(280px, 86vw);
+    }
 
-        transform: translateX(-100%);
+    .authority-sidebar.mobile-open,
+    .authority-sidebar.collapsed.mobile-open {
+        width: min(280px, 86vw);
+    }
 
-        border: 0;
+    .authority-nav-item {
+        height: 45px;
+
+        font-size: 12.5px;
+    }
+
+    .authority-brand-text strong {
+        font-size: 17px;
     }
 }

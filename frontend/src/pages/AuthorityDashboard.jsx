@@ -34,6 +34,7 @@ function AuthorityDashboard() {
     const [search, setSearch] =
         useState("");
 
+    const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
     // =========================================================
     // DASHBOARD DATA
@@ -456,13 +457,10 @@ function AuthorityDashboard() {
             ================================================= */}
 
             <AuthoritySidebar
-                collapsed={sidebarCollapsed}
-                onToggle={() =>
-                    setSidebarCollapsed(
-                        (previous) =>
-                            !previous
-                    )
-                }
+                collapsed={collapsed}
+                onToggle={() => setCollapsed(!collapsed)}
+                mobileOpen={mobileSidebarOpen}
+                onMobileClose={() => setMobileSidebarOpen(false)}
             />
 
 

@@ -1,9 +1,6 @@
 flask
 flask-cors
-gunicorn
-numpy
 pandas
+numpy
 scikit-learn
 joblib
-pyproj
-shapely

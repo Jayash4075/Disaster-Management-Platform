@@ -531,6 +531,90 @@ async function searchVillages(
 
 }
 
+// ============================================================
+// SOS SEVERITY PREDICTION
+// ============================================================
+
+const predictSOSSeverity = async ({
+    peopleCount,
+    injured_people,
+    critical_injuries,
+    children_elderly,
+    water_level,
+    building_damage,
+    hours_trapped,
+    communication_available
+}) => {
+
+    try {
+
+        const response = await mlPost("/predict/sos", {
+
+            people_trapped: Number(peopleCount) || 0,
+
+            injured_people:
+                Number(injured_people) || 0,
+
+            critical_injuries:
+                Number(critical_injuries) || 0,
+
+            children_elderly:
+                Number(children_elderly) || 0,
+
+            water_level:
+                Number(water_level) || 0,
+
+            building_damage:
+                Number(building_damage) || 0,
+
+            hours_trapped:
+                Number(hours_trapped) || 0,
+
+            communication_available:
+                Number(communication_available ?? 1)
+
+        });
+
+        const prediction =
+            response?.prediction || {};
+
+        return {
+
+            severityScore:
+                Number(
+                    prediction.severity_score
+                ) || 0,
+
+            severityLabel:
+                prediction.severity || "MEDIUM",
+
+            mlProbability:
+                Number(
+                    prediction.probability
+                ) || 0,
+
+            mlStatus:
+                response?.success
+                    ? "SUCCESS"
+                    : "FAILED",
+
+            isMlPredicted:
+                Boolean(response?.success)
+
+        };
+
+    } catch (error) {
+
+        console.error(
+            "SOS ML prediction error:",
+            error.response?.data ||
+            error.message
+        );
+
+        throw error;
+    }
+};
+
 
 // ============================================================
 // EXPORTS
@@ -548,6 +632,8 @@ module.exports = {
 
     getVillages,
 
-    searchVillages
+    searchVillages,
+
+    predictSOSSeverity
 
 };
