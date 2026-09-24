@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 
 import AuthoritySidebar from "../components/AuthoritySidebar";
-import AuthorityTopbar from "../components/AuthorityTopbar";
 import api from "../api/axios";
 import toast from "react-hot-toast";
 
@@ -409,8 +408,6 @@ function SafeSites() {
 
 
             <div className="authority-main">
-
-                <AuthorityTopbar />
 
 
                 <main className="safe-sites-page">

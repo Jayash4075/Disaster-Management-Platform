@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 
 import AuthoritySidebar from "../components/AuthoritySidebar";
-import AuthorityTopbar from "../components/AuthorityTopbar";
 
 import "./Habitations.css";
 
@@ -299,7 +298,7 @@ function Habitations() {
             />
 
             <div className="authority-main">
-                <AuthorityTopbar />
+            
 
                 <main className="habitations-page">
                     {/* PAGE HEADER */}

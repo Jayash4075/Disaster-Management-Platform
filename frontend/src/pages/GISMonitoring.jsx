@@ -26,7 +26,7 @@ import {
 import L from "leaflet";
 
 import AuthoritySidebar from "../components/AuthoritySidebar";
-import AuthorityTopbar from "../components/AuthorityTopbar";
+
 
 import "leaflet/dist/leaflet.css";
 import "./GISMonitoring.css";
@@ -475,7 +475,7 @@ function GISMonitoring() {
 
             <div className="authority-main">
 
-                <AuthorityTopbar />
+                
 
 
                 <main className="gis-page">

@@ -24,7 +24,6 @@ import {
 } from "recharts";
 
 import AuthoritySidebar from "../components/AuthoritySidebar";
-import AuthorityTopbar from "../components/AuthorityTopbar";
 import api from "../api/axios";
 
 import "./RiskIntelligence.css";
@@ -264,7 +263,7 @@ function RiskIntelligence() {
 
             <main className="authority-main">
 
-                <AuthorityTopbar />
+                
 
 
                 <div className="risk-page">

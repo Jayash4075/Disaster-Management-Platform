@@ -5,7 +5,7 @@ import {
     ShieldCheck, Clock, CheckCircle2, ChevronRight,
 } from "lucide-react";
 import AuthoritySidebar from "../components/AuthoritySidebar";
-import AuthorityTopbar from "../components/AuthorityTopbar";
+
 import api from "../api/axios";
 import "./Relocation.css";
 
@@ -82,8 +82,6 @@ const Relocation = () => {
                 }`}
             >
 
-                {/* TOPBAR */}
-                <AuthorityTopbar />
 
                 <main className="relocation-page">
 
