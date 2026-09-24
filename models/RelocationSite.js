@@ -1,41 +1,34 @@
 const mongoose = require("mongoose");
 
-const RelocationSiteSchema =
-    new mongoose.Schema(
-        {
+const RelocationSiteSchema = new mongoose.Schema(
+    {
+        siteId: {
+            type: String,
+            required: true,
+            unique: true,
+            index: true
+        },
 
-            siteId: {
-                type: String,
-                required: true,
-                unique: true,
-                index: true
-            },
+        name: {
+            type: String,
+            required: true,
+            trim: true
+        },
 
-            name: {
-                type: String,
-                required: true,
-                trim: true
-            },
-
-            location: {
-
-                type: {
+        location: {
+            type: {
                     type: String,
-
                     enum: ["Point"],
-
                     required: true
-                },
-
-                coordinates: {
-                    type: [Number],
-
-                    required: true
-                }
             },
+
+            coordinates: {
+                    type: [Number],
+                    required: true
+            }
+        },
 
             capacity: {
-
                 total: {
                     type: Number,
                     required: true,

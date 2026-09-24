@@ -48,12 +48,7 @@ function App() {
 
             <BrowserRouter>
 
-                <Toaster
-                    position="top-center"
-                    toastOptions={{
-                        duration: 4000
-                    }}
-                />
+                <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
 
                 <Routes>
 
@@ -61,116 +56,32 @@ function App() {
                         PUBLIC
                     ===================================================== */}
 
-                    <Route
-                        path="/"
-                        element={<Home />}
-                    />
+                    <Route path="/" element={<Home />} />
 
-                    <Route
-                        path="/login"
-                        element={<Login />}
-                    />
+                    <Route path="/login" element={<Login />} />
 
-                    <Route
-                        path="/signup"
-                        element={<Signup />}
-                    />
+                    <Route path="/signup" element={<Signup />} />
 
-                    <Route
-                        path="/sos-form"
-                        element={<SOSForm />}
-                    />
+                    <Route path="/sos-form" element={<SOSForm />} />
 
 
                     {/* =====================================================
                         CITIZEN SIDE
                     ===================================================== */}
 
-                    <Route
-                        path="/dashboard"
-                        element={
-                            <ProtectedRoute
-                                allowedRoles={CITIZEN_SIDE_ROLES}
-                            >
-                                <CitizenDashboard />
-                            </ProtectedRoute>
-                        }
-                    />
+                    <Route path="/dashboard" element={ <ProtectedRoute allowedRoles={CITIZEN_SIDE_ROLES} > <CitizenDashboard /> </ProtectedRoute> } />
 
-                    <Route
-                        path="/emergency"
-                        element={
-                            <ProtectedRoute>
-                                <Emergency />
-                            </ProtectedRoute>
-                        }
-                    />
+                    <Rout path="/emergency" element={ <ProtectedRoute> <Emergency /> </ProtectedRoute> } />
 
-                    <Route
-                        path="/resources"
-                        element={
-                            <ProtectedRoute>
-                                <Resources />
-                            </ProtectedRoute>
-                        }
-                    />
+                    <Route path="/resources" element={ <ProtectedRoute> <Resources /> </ProtectedRoute> } />
 
-                    <Route
-                        path="/request-resource"
-                        element={
-                            <ProtectedRoute>
-                                <RequestResourceForm />
-                            </ProtectedRoute>
-                        }
-                    />
+                    <Route path="/request-resource" element={ <ProtectedRoute> <RequestResourceForm /> </ProtectedRoute> } />
 
-                    <Route
-                        path="/create-resource"
-                        element={
-                            <ProtectedRoute>
-                                <CreateResource />
-                            </ProtectedRoute>
-                        }
-                    />
+                    <Route path="/create-resource" element={ <ProtectedRoute> <CreateResource /> </ProtectedRoute> } />
 
-                    <Route
-                        path="/volunteers"
-                        element={
-                            <ProtectedRoute>
-                                <VolunteerNGO />
-                            </ProtectedRoute>
-                        }
-                    />
+                    <Route path="/volunteers" element={ <ProtectedRoute> <VolunteerNGO /> </ProtectedRoute> } />
 
-
-                    {/* =====================================================
-                        AUTHORITY SIDE
-                        =====================================================
-
-                        IMPORTANT:
-                        AuthorityLayout is mounted ONLY ONCE here.
-
-                        All authority pages are children of this layout.
-                        Therefore:
-                          - ONE sidebar
-                          - ONE topbar
-                          - ONE mobile hamburger state
-                    */}
-
-                    <Route
-                        path="/authority"
-                        element={
-                            <ProtectedRoute
-                                allowedRoles={["authority"]}
-                            >
-                                <AuthorityLayout />
-                            </ProtectedRoute>
-                        }
-                    >
-
-                        {/* ---------------------------------------------
-                            /authority
-                        --------------------------------------------- */}
+                    <Route path="/authority" element={ <ProtectedRoute allowedRoles={["authority"]} > <AuthorityLayout /> </ProtectedRoute> } >
 
                         <Route
                             index
@@ -284,41 +195,13 @@ function App() {
                         AUTHORITY / OTHER PROTECTED ROUTES
                     ===================================================== */}
 
-                    <Route
-                        path="/resource-requests"
-                        element={
-                            <ProtectedRoute
-                                allowedRoles={[
-                                    "authority",
-                                    "ngo"
-                                ]}
-                            >
-                                <ResourceRequestsDashboard />
-                            </ProtectedRoute>
-                        }
-                    />
+                    <Route path="/resource-requests" element={ <ProtectedRoute allowedRoles={[ "authority", "ngo"]}> <ResourceRequestsDashboard /> </ProtectedRoute>} />
 
 
-                    <Route
-                        path="/create-risk-zone"
-                        element={
-                            <ProtectedRoute
-                                allowedRoles={["authority"]}
-                            >
-                                <CreateRiskZone />
-                            </ProtectedRoute>
-                        }
-                    />
+                    <Route path="/create-risk-zone" element={ <ProtectedRoute allowedRoles={["authority"]} > <CreateRiskZone /> </ProtectedRoute> } />
 
 
-                    {/* =====================================================
-                        404
-                    ===================================================== */}
-
-                    <Route
-                        path="*"
-                        element={<NotFoundPage />}
-                    />
+                    <Route path="*" element={<NotFoundPage />} />
 
                 </Routes>
 

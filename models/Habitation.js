@@ -2,10 +2,6 @@ const mongoose = require("mongoose");
 
 const HabitationSchema = new mongoose.Schema(
     {
-        // ====================================================
-        // BASIC INFORMATION
-        // ====================================================
-
         habitationId: {
             type: String,
             required: true,
@@ -29,10 +25,6 @@ const HabitationSchema = new mongoose.Schema(
             type: Number,
             default: 0
         },
-
-        // ====================================================
-        // LOCATION
-        // ====================================================
 
         location: {
             type: {
@@ -244,8 +236,4 @@ HabitationSchema.index(
     }
 );
 
-module.exports =
-    mongoose.model(
-        "Habitation",
-        HabitationSchema
-    );
+module.exports = mongoose.model( "Habitation", HabitationSchema);
