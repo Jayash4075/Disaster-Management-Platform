@@ -2311,6 +2311,11 @@ module.exports.getRiskMap = async (req, res) => {
                     "hazards",
                     "capacityRatio",
                     "capacityStatus",
+                    "shelterCapacity",
+                    "availableWater",
+                    "foodStock",
+                    "medicalCapacity",
+                    "assessmentStatus",
                     "lastAssessment"
                 ].join(" ")
             )
@@ -2344,6 +2349,44 @@ module.exports.getRiskMap = async (req, res) => {
                 const coordinates =
                     habitation.location.coordinates;
 
+
+                // ------------------------------------------------
+                // Carrying Capacity Calculation
+                // ------------------------------------------------
+
+                const waterCapacity =
+                    Number(habitation.availableWater || 0) / 5;
+
+                const foodCapacity =
+                    Number(habitation.foodStock || 0) / 2;
+
+                const medicalPopulationCapacity =
+                    Number(habitation.medicalCapacity || 0) * 10;
+
+                const safeCapacity = Math.max(
+                    (
+                        0.40 *
+                        Number(habitation.shelterCapacity || 0)
+
+                        +
+
+                        0.25 *
+                        waterCapacity
+
+                        +
+
+                        0.20 *
+                        foodCapacity
+
+                        +
+
+                        0.15 *
+                        medicalPopulationCapacity
+                    ),
+                    100
+                );
+
+
                 return {
 
                     type: "Feature",
@@ -2361,7 +2404,8 @@ module.exports.getRiskMap = async (req, res) => {
 
                     properties: {
 
-                        id: habitation._id,
+                        id:
+                            habitation._id,
 
                         habitationId:
                             habitation.habitationId,
@@ -2411,21 +2455,50 @@ module.exports.getRiskMap = async (req, res) => {
                                 cloudburst: null
                             },
 
-                        capacityRatio:
-                            habitation.capacityRatio !== null &&
-                            habitation.capacityRatio !== undefined
-                                ? Number(
-                                    habitation.capacityRatio
-                                )
-                                : null,
+                        // ----------------------------------------
+                        // Carrying Capacity
+                        // ----------------------------------------
+
+                        safeCapacity:
+                            Number(
+                                safeCapacity.toFixed(2)
+                            ),
 
                         capacityStatus:
-                            habitation.capacityStatus ||
+                            habitation.capacityStatus ??
+                            "UNKNOWN",
+
+                        capacityRatio:
+                            habitation.capacityRatio ??
                             null,
 
-                        lastAssessment:
-                            habitation.lastAssessment
+                        shelterCapacity:
+                            habitation.shelterCapacity ??
+                            null,
 
+                        availableWater:
+                            habitation.availableWater ??
+                            null,
+
+                        foodStock:
+                            habitation.foodStock ??
+                            null,
+
+                        medicalCapacity:
+                            habitation.medicalCapacity ??
+                            null,
+
+                        // ----------------------------------------
+                        // Assessment
+                        // ----------------------------------------
+
+                        assessmentStatus:
+                            habitation.assessmentStatus ??
+                            "NOT_ASSESSED",
+
+                        lastAssessment:
+                            habitation.lastAssessment ??
+                            null
                     }
 
                 };
@@ -2531,6 +2604,7 @@ module.exports.getRiskMap = async (req, res) => {
         } else if (overallRiskScore >= 25) {
             overallRiskLevel = "YELLOW";
         }
+
 
 
         // --------------------------------------------------------

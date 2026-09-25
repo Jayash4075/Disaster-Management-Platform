@@ -28,6 +28,8 @@ import {
 
 import L from "leaflet";
 
+import { toast } from "react-hot-toast";
+
 import api from "../api/axios";
 
 import "leaflet/dist/leaflet.css";
@@ -49,15 +51,20 @@ const defaultMarkerIcon = new L.Icon({
         "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
 
     iconSize: [25, 41],
+
     iconAnchor: [12, 41],
+
     popupAnchor: [1, -34],
 });
 
 
 // =========================================================
 // GET COORDINATES
+//
 // Supports:
-// latitude/longitude
+// latitude / longitude
+// lat / lng
+// location.latitude / location.longitude
 // location.coordinates
 // coordinates
 // GeoJSON Point
@@ -74,9 +81,9 @@ function getCoordinates(item) {
         item?.properties || item;
 
 
-    // ---------------------------------------------
+    // =====================================================
     // latitude / longitude
-    // ---------------------------------------------
+    // =====================================================
 
     const latitude =
         properties.latitude ??
@@ -105,10 +112,12 @@ function getCoordinates(item) {
     }
 
 
-    // ---------------------------------------------
+    // =====================================================
     // location.coordinates
+    //
+    // GeoJSON:
     // [longitude, latitude]
-    // ---------------------------------------------
+    // =====================================================
 
     if (
         properties.location &&
@@ -128,6 +137,7 @@ function getCoordinates(item) {
                 properties.location.coordinates[1]
             );
 
+
         if (
             Number.isFinite(lat) &&
             Number.isFinite(lng)
@@ -143,10 +153,11 @@ function getCoordinates(item) {
     }
 
 
-    // ---------------------------------------------
+    // =====================================================
     // direct coordinates
+    //
     // [longitude, latitude]
-    // ---------------------------------------------
+    // =====================================================
 
     if (
         Array.isArray(
@@ -165,6 +176,7 @@ function getCoordinates(item) {
                 properties.coordinates[1]
             );
 
+
         if (
             Number.isFinite(lat) &&
             Number.isFinite(lng)
@@ -180,9 +192,9 @@ function getCoordinates(item) {
     }
 
 
-    // ---------------------------------------------
+    // =====================================================
     // GeoJSON Point
-    // ---------------------------------------------
+    // =====================================================
 
     if (
         item.geometry?.type === "Point" &&
@@ -201,6 +213,7 @@ function getCoordinates(item) {
             Number(
                 item.geometry.coordinates[1]
             );
+
 
         if (
             Number.isFinite(lat) &&
@@ -237,13 +250,16 @@ function getRiskColor(riskLevel) {
         return "#dc2626";
     }
 
+
     if (level === "ORANGE") {
         return "#f97316";
     }
 
+
     if (level === "YELLOW") {
         return "#eab308";
     }
+
 
     return "#16a34a";
 }
@@ -259,69 +275,206 @@ function normalizeRiskFeature(feature) {
         feature?.properties || feature || {};
 
 
+    const villageCode =
+        properties.village_code ||
+        properties.villageCode ||
+        properties.habitationId ||
+        properties.id ||
+        properties._id;
+
+
+    const villageName =
+        properties.name ||
+        properties.habitationName ||
+        properties.villageName ||
+        properties.village_name ||
+        "Unnamed Village";
+
+
     return {
+
         ...properties,
 
+
+        // =================================================
+        // ID
+        // =================================================
+
         id:
-            properties.habitationId ||
-            properties.id ||
-            properties._id ||
-            `risk-${Math.random()}`,
+            villageCode ||
+            `risk-${String(villageName)
+                .replace(/\s+/g, "-")
+                .toLowerCase()}`,
+
+
+        // =================================================
+        // NAME
+        // =================================================
 
         name:
-            properties.name ||
-            properties.habitationName ||
-            properties.villageName ||
-            properties.village_name ||
-            "Unnamed Village",
+            villageName,
+
+
+        // =================================================
+        // POPULATION
+        // =================================================
 
         population:
             Number(
                 properties.population
             ) || 0,
 
+
+        // =================================================
+        // RISK
+        // =================================================
+
         riskLevel:
             String(
                 properties.riskLevel ||
                 properties.risk ||
+                properties.level ||
                 "GREEN"
             ).toUpperCase(),
+
 
         riskScore:
             Number(
                 properties.riskScore ??
-                properties.score
-            ) || 0,
+                properties.score ??
+                0
+            ),
+
+
+        riskProbability:
+            Number(
+                properties.riskProbability ??
+                properties.risk_probability ??
+                properties.probability ??
+                0
+            ),
+
+
+        // =================================================
+        // VULNERABILITY
+        // =================================================
 
         vulnerabilityScore:
             Number(
                 properties.vulnerabilityScore ??
                 properties.vulnerability_score ??
-                properties.vulnerability
-            ) || 0,
+                properties.vulnerability ??
+                0
+            ),
+
+
+        // =================================================
+        // RELOCATION
+        // =================================================
 
         relocationPriority:
             properties.relocationPriority ||
+            properties.relocation_priority ||
             properties.priority ||
             "MONITOR",
+
+
+        // =================================================
+        // HAZARDS
+        // =================================================
 
         hazards:
             properties.hazards ||
             {},
 
-        riskProbability:
+
+        // =================================================
+        // CARRYING CAPACITY
+        // =================================================
+
+        safeCapacity:
             Number(
-                properties.riskProbability
-            ) || 0,
+                properties.safeCapacity ??
+                properties.safe_capacity ??
+                0
+            ),
+
 
         capacityRatio:
             Number(
-                properties.capacityRatio
-            ) || 0,
+                properties.capacityRatio ??
+                properties.capacity_ratio ??
+                0
+            ),
+
 
         capacityStatus:
             properties.capacityStatus ||
+            properties.capacity_status ||
             "UNKNOWN",
+
+
+        shelterCapacity:
+            Number(
+                properties.shelterCapacity ??
+                properties.shelter_capacity ??
+                0
+            ),
+
+
+        availableWater:
+            Number(
+                properties.availableWater ??
+                properties.available_water ??
+                0
+            ),
+
+
+        foodStock:
+            Number(
+                properties.foodStock ??
+                properties.food_stock ??
+                0
+            ),
+
+
+        medicalCapacity:
+            Number(
+                properties.medicalCapacity ??
+                properties.medical_capacity ??
+                0
+            ),
+
+
+        capacityScore:
+            Number(
+                properties.capacityScore ??
+                properties.capacity_score ??
+                0
+            ),
+
+
+        // =================================================
+        // ASSESSMENT
+        // =================================================
+
+        assessmentStatus:
+            properties.assessmentStatus ||
+            properties.assessment_status ||
+            "ASSESSED",
+
+
+        lastAssessment:
+            properties.lastAssessment ||
+            properties.last_assessment ||
+            properties.assessedAt ||
+            properties.assessed_at ||
+            null,
+
+
+        // =================================================
+        // GEOMETRY
+        // =================================================
 
         geometry:
             feature?.geometry || null,
@@ -352,9 +505,9 @@ function RiskMapBounds({
         let hasBounds = false;
 
 
-        // ---------------------------------------------
+        // =================================================
         // RISK FEATURES
-        // ---------------------------------------------
+        // =================================================
 
         features.forEach(
             (feature) => {
@@ -370,8 +523,10 @@ function RiskMapBounds({
                                 feature
                             );
 
+
                         const featureBounds =
                             geoLayer.getBounds();
+
 
                         if (
                             featureBounds.isValid()
@@ -391,6 +546,7 @@ function RiskMapBounds({
                             getCoordinates(
                                 feature
                             );
+
 
                         if (coords) {
 
@@ -417,9 +573,9 @@ function RiskMapBounds({
         );
 
 
-        // ---------------------------------------------
+        // =================================================
         // ALERTS
-        // ---------------------------------------------
+        // =================================================
 
         alerts.forEach(
             (alert) => {
@@ -429,6 +585,7 @@ function RiskMapBounds({
                         alert
                     );
 
+
                 if (coords) {
 
                     bounds.extend(
@@ -443,9 +600,9 @@ function RiskMapBounds({
         );
 
 
-        // ---------------------------------------------
+        // =================================================
         // SHELTERS
-        // ---------------------------------------------
+        // =================================================
 
         shelters.forEach(
             (shelter) => {
@@ -455,6 +612,7 @@ function RiskMapBounds({
                         shelter
                     );
 
+
                 if (coords) {
 
                     bounds.extend(
@@ -469,9 +627,9 @@ function RiskMapBounds({
         );
 
 
-        // ---------------------------------------------
+        // =================================================
         // HOSPITALS
-        // ---------------------------------------------
+        // =================================================
 
         hospitals.forEach(
             (hospital) => {
@@ -481,6 +639,7 @@ function RiskMapBounds({
                         hospital
                     );
 
+
                 if (coords) {
 
                     bounds.extend(
@@ -495,9 +654,9 @@ function RiskMapBounds({
         );
 
 
-        // ---------------------------------------------
+        // =================================================
         // FIT MAP
-        // ---------------------------------------------
+        // =================================================
 
         if (hasBounds) {
 
@@ -544,12 +703,12 @@ function RiskMapBounds({
 
 function RiskPopup({
     data,
+    onFindRelocationSites,
 }) {
 
     const riskLevel =
         String(
-            data.riskLevel ||
-            "GREEN"
+            data.riskLevel || "GREEN"
         ).toUpperCase();
 
 
@@ -557,20 +716,43 @@ function RiskPopup({
         data.hazards || {};
 
 
+    const capacityStatus =
+        String(
+            data.capacityStatus ||
+            "UNKNOWN"
+        ).toUpperCase();
+
+
+    const capacityStatusColor =
+        capacityStatus === "OVER_CAPACITY"
+            ? "#dc2626"
+            : capacityStatus === "NEAR_CAPACITY"
+                ? "#f97316"
+                : capacityStatus === "ADEQUATE"
+                    ? "#16a34a"
+                    : "#64748b";
+
+
     return (
+
         <div
             style={{
-                minWidth: "220px",
+                minWidth: "300px",
+                maxWidth: "350px",
                 fontSize: "13px",
                 lineHeight: "1.5",
             }}
         >
 
+            {/* =================================================
+                TITLE
+            ================================================= */}
+
             <div
                 style={{
                     fontWeight: 800,
-                    fontSize: "15px",
-                    marginBottom: "6px",
+                    fontSize: "16px",
+                    marginBottom: "4px",
                 }}
             >
                 {data.name}
@@ -579,7 +761,7 @@ function RiskPopup({
 
             <div
                 style={{
-                    marginBottom: "8px",
+                    marginBottom: "10px",
                     color: "#64748b",
                 }}
             >
@@ -587,22 +769,21 @@ function RiskPopup({
             </div>
 
 
+            {/* =================================================
+                BASIC RISK INFORMATION
+            ================================================= */}
+
             <div
                 style={{
                     display: "grid",
-                    gridTemplateColumns:
-                        "1fr 1fr",
-                    gap: "6px",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "8px",
                 }}
             >
 
                 <div>
-                    <strong>
-                        Population
-                    </strong>
-
+                    <strong>Population</strong>
                     <br />
-
                     {Number(
                         data.population || 0
                     ).toLocaleString()}
@@ -610,12 +791,8 @@ function RiskPopup({
 
 
                 <div>
-                    <strong>
-                        Risk Score
-                    </strong>
-
+                    <strong>Risk Score</strong>
                     <br />
-
                     {Number(
                         data.riskScore || 0
                     ).toFixed(1)}
@@ -623,10 +800,7 @@ function RiskPopup({
 
 
                 <div>
-                    <strong>
-                        Risk Level
-                    </strong>
-
+                    <strong>Risk Level</strong>
                     <br />
 
                     <span
@@ -635,7 +809,6 @@ function RiskPopup({
                                 getRiskColor(
                                     riskLevel
                                 ),
-
                             fontWeight: 800,
                         }}
                     >
@@ -645,21 +818,46 @@ function RiskPopup({
 
 
                 <div>
-                    <strong>
-                        Vulnerability
-                    </strong>
-
+                    <strong>Vulnerability</strong>
                     <br />
 
                     {Number(
-                        data.vulnerabilityScore ||
-                        0
+                        data.vulnerabilityScore || 0
                     ).toFixed(1)}
                     %
                 </div>
 
             </div>
 
+
+            {/* =================================================
+                RISK PROBABILITY
+            ================================================= */}
+
+            {Number(
+                data.riskProbability || 0
+            ) > 0 && (
+
+                <div
+                    style={{
+                        marginTop: "8px",
+                    }}
+                >
+                    <strong>
+                        Risk Probability:
+                    </strong>{" "}
+
+                    {Number(
+                        data.riskProbability
+                    ).toFixed(2)}
+                </div>
+
+            )}
+
+
+            {/* =================================================
+                RELOCATION PRIORITY
+            ================================================= */}
 
             <div
                 style={{
@@ -682,23 +880,196 @@ function RiskPopup({
             </div>
 
 
-            {Object.keys(
-                hazards
-            ).length > 0 && (
+            {/* =================================================
+                CARRYING CAPACITY
+            ================================================= */}
+
+            <div
+                style={{
+                    marginTop: "10px",
+                    paddingTop: "8px",
+                    borderTop:
+                        "1px solid #e5e7eb",
+                }}
+            >
+
+                <strong>
+                    Carrying Capacity Assessment
+                </strong>
+
 
                 <div
                     style={{
-                        marginTop: "10px",
-                        paddingTop: "8px",
-                        borderTop:
-                            "1px solid #e5e7eb",
+                        display: "grid",
+                        gridTemplateColumns:
+                            "1fr 1fr",
+                        gap: "7px",
+                        marginTop: "6px",
+                    }}
+                >
+
+                    {/* SAFE CAPACITY */}
+
+                    <div>
+                        <strong>
+                            Safe Capacity
+                        </strong>
+
+                        <br />
+
+                        {Number(
+                            data.safeCapacity || 0
+                        ).toLocaleString()}
+                    </div>
+
+
+                    {/* RATIO */}
+
+                    <div>
+                        <strong>
+                            Population Ratio
+                        </strong>
+
+                        <br />
+
+                        {Number(
+                            data.capacityRatio || 0
+                        ).toFixed(2)}
+                    </div>
+
+
+                    {/* SHELTER */}
+
+                    <div>
+                        <strong>
+                            Shelter Capacity
+                        </strong>
+
+                        <br />
+
+                        {Number(
+                            data.shelterCapacity || 0
+                        ).toLocaleString()}
+                    </div>
+
+
+                    {/* WATER */}
+
+                    <div>
+                        <strong>
+                            Water Available
+                        </strong>
+
+                        <br />
+
+                        {Number(
+                            data.availableWater || 0
+                        ).toLocaleString()}
+                    </div>
+
+
+                    {/* FOOD */}
+
+                    <div>
+                        <strong>
+                            Food Stock
+                        </strong>
+
+                        <br />
+
+                        {Number(
+                            data.foodStock || 0
+                        ).toLocaleString()}
+                    </div>
+
+
+                    {/* MEDICAL */}
+
+                    <div>
+                        <strong>
+                            Medical Capacity
+                        </strong>
+
+                        <br />
+
+                        {Number(
+                            data.medicalCapacity || 0
+                        ).toLocaleString()}
+                    </div>
+
+
+                    {/* CAPACITY SCORE */}
+
+                    <div>
+                        <strong>
+                            Capacity Score
+                        </strong>
+
+                        <br />
+
+                        {Number(
+                            data.capacityScore || 0
+                        ).toFixed(1)}
+                    </div>
+
+                </div>
+
+
+                {/* STATUS */}
+
+                <div
+                    style={{
+                        marginTop: "8px",
                     }}
                 >
 
                     <strong>
-                        Hazard Scores
-                    </strong>
+                        Capacity Status:
+                    </strong>{" "}
 
+                    <span
+                        style={{
+                            fontWeight: 800,
+                            color:
+                                capacityStatusColor,
+                        }}
+                    >
+                        {data.capacityStatus ||
+                            "UNKNOWN"}
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            {/* =================================================
+                HAZARDS
+            ================================================= */}
+
+            <div
+                style={{
+                    marginTop: "10px",
+                    paddingTop: "8px",
+                    borderTop:
+                        "1px solid #e5e7eb",
+                }}
+            >
+
+                <strong>
+                    Hazard Scores
+                </strong>
+
+
+                {Object.keys(
+                    hazards
+                ).length === 0 ? (
+
+                    <div>
+                        No hazard scores available
+                    </div>
+
+                ) : (
 
                     <div
                         style={{
@@ -717,25 +1088,19 @@ function RiskPopup({
                             ) => (
 
                                 <div
-                                    key={
-                                        hazard
-                                    }
+                                    key={hazard}
                                 >
 
                                     {hazard
-                                        .charAt(
-                                            0
-                                        )
+                                        .charAt(0)
                                         .toUpperCase() +
-                                        hazard.slice(
-                                            1
-                                        )}
+                                        hazard.slice(1)}
+
                                     :{" "}
+
                                     {Number(
                                         value
-                                    ).toFixed(
-                                        1
-                                    )}
+                                    ).toFixed(1)}
 
                                 </div>
 
@@ -744,33 +1109,133 @@ function RiskPopup({
 
                     </div>
 
-                </div>
+                )}
 
-            )}
+            </div>
 
 
-            {data.capacityStatus && (
+            {/* =================================================
+                ASSESSMENT
+            ================================================= */}
+
+            <div
+                style={{
+                    marginTop: "9px",
+                    color: "#64748b",
+                }}
+            >
+
+                Assessment:{" "}
+
+                <strong>
+                    {data.assessmentStatus ||
+                        "ASSESSED"}
+                </strong>
+
+            </div>
+
+
+            {data.lastAssessment && (
 
                 <div
                     style={{
-                        marginTop: "8px",
+                        marginTop: "3px",
                         color: "#64748b",
                     }}
                 >
 
-                    Capacity status:{" "}
-                    <strong>
-                        {
-                            data.capacityStatus
-                        }
-                    </strong>
+                    Last assessment:{" "}
+
+                    {formatAssessmentDate(
+                        data.lastAssessment
+                    )}
 
                 </div>
 
             )}
 
+
+            {/* =================================================
+                FIND RELOCATION SITES
+            ================================================= */}
+
+            <button
+                type="button"
+
+                onClick={() => {
+
+                    if (
+                        typeof onFindRelocationSites ===
+                        "function"
+                    ) {
+
+                        onFindRelocationSites(
+                            data
+                        );
+
+                    }
+
+                }}
+
+                style={{
+                    width: "100%",
+                    marginTop: "12px",
+                    padding: "9px 12px",
+                    border: "none",
+                    borderRadius: "7px",
+                    background: "#2563eb",
+                    color: "#fff",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                }}
+            >
+
+                Find Relocation Sites
+
+            </button>
+
         </div>
     );
+}
+
+
+// =========================================================
+// FORMAT ASSESSMENT DATE
+// =========================================================
+
+function formatAssessmentDate(
+    value
+) {
+
+    if (!value) {
+        return "Not available";
+    }
+
+
+    try {
+
+        const date =
+            new Date(value);
+
+
+        if (
+            Number.isNaN(
+                date.getTime()
+            )
+        ) {
+
+            return String(value);
+
+        }
+
+
+        return date.toLocaleString();
+
+    } catch {
+
+        return String(value);
+
+    }
 }
 
 
@@ -780,6 +1245,7 @@ function RiskPopup({
 
 function RiskFeature({
     feature,
+    onFindRelocationSites,
 }) {
 
     const data =
@@ -794,9 +1260,9 @@ function RiskFeature({
         );
 
 
-    // ---------------------------------------------
+    // =====================================================
     // POLYGON / MULTIPOLYGON
-    // ---------------------------------------------
+    // =====================================================
 
     if (
         feature?.geometry &&
@@ -809,7 +1275,9 @@ function RiskFeature({
     ) {
 
         const style = {
+
             color,
+
             weight:
                 data.riskLevel ===
                 "RED"
@@ -828,21 +1296,18 @@ function RiskFeature({
 
 
         return (
+
             <GeoJSON
                 data={feature}
                 style={style}
+
                 onEachFeature={(
                     _feature,
                     layer
                 ) => {
 
-                    layer.bindPopup(
-                        createRiskPopupHTML(
-                            data
-                        )
-                    );
-
                     layer.on({
+
                         mouseover: () => {
 
                             layer.setStyle({
@@ -852,6 +1317,7 @@ function RiskFeature({
 
                         },
 
+
                         mouseout: () => {
 
                             layer.setStyle(
@@ -859,18 +1325,33 @@ function RiskFeature({
                             );
 
                         },
+
                     });
 
                 }}
-            />
+            >
+
+                <Popup>
+
+                    <RiskPopup
+                        data={data}
+                        onFindRelocationSites={
+                            onFindRelocationSites
+                        }
+                    />
+
+                </Popup>
+
+            </GeoJSON>
+
         );
 
     }
 
 
-    // ---------------------------------------------
+    // =====================================================
     // POINT / MARKER
-    // ---------------------------------------------
+    // =====================================================
 
     const coords =
         getCoordinates(
@@ -884,8 +1365,12 @@ function RiskFeature({
 
 
     return (
+
         <CircleMarker
-            center={coords}
+
+            center={
+                coords
+            }
 
             radius={
                 data.riskLevel ===
@@ -894,15 +1379,21 @@ function RiskFeature({
                     : data.riskLevel ===
                         "ORANGE"
                         ? 9
-                        : 7
+                        : data.riskLevel ===
+                            "YELLOW"
+                            ? 7
+                            : 6
             }
 
             pathOptions={{
                 color,
+
                 fillColor:
                     color,
+
                 fillOpacity:
                     0.78,
+
                 weight:
                     data.riskLevel ===
                     "RED"
@@ -912,142 +1403,19 @@ function RiskFeature({
         >
 
             <Popup>
+
                 <RiskPopup
                     data={data}
+                    onFindRelocationSites={
+                        onFindRelocationSites
+                    }
                 />
+
             </Popup>
 
         </CircleMarker>
+
     );
-}
-
-
-// =========================================================
-// CREATE POPUP HTML FOR POLYGONS
-// =========================================================
-
-function createRiskPopupHTML(
-    data
-) {
-
-    const hazards =
-        data.hazards || {};
-
-
-    const hazardHTML =
-        Object.keys(
-            hazards
-        ).length > 0
-            ? Object.entries(
-                hazards
-            )
-                .map(
-                    (
-                        [
-                            key,
-                            value,
-                        ]
-                    ) =>
-                        `<div>${key}: ${Number(
-                            value
-                        ).toFixed(
-                            1
-                        )}</div>`
-                )
-                .join("")
-            : "<div>No hazard scores available</div>";
-
-
-    return `
-        <div style="min-width:220px;font-size:13px;line-height:1.5">
-
-            <div style="font-weight:800;font-size:15px;margin-bottom:6px">
-                ${escapePopupHTML(
-                    data.name
-                )}
-            </div>
-
-            <div style="color:#64748b;margin-bottom:8px">
-                Habitation / Village
-            </div>
-
-            <div>
-                <strong>Population:</strong>
-                ${Number(
-                    data.population || 0
-                ).toLocaleString()}
-            </div>
-
-            <div>
-                <strong>Risk Score:</strong>
-                ${Number(
-                    data.riskScore || 0
-                ).toFixed(1)}
-            </div>
-
-            <div>
-                <strong>Risk Level:</strong>
-                ${escapePopupHTML(
-                    data.riskLevel
-                )}
-            </div>
-
-            <div>
-                <strong>Vulnerability:</strong>
-                ${Number(
-                    data.vulnerabilityScore || 0
-                ).toFixed(1)}%
-            </div>
-
-            <div>
-                <strong>Relocation:</strong>
-                ${escapePopupHTML(
-                    data.relocationPriority ||
-                    "MONITOR"
-                )}
-            </div>
-
-            <div style="margin-top:8px;padding-top:8px;border-top:1px solid #e5e7eb">
-                <strong>Hazard Scores</strong>
-                ${hazardHTML}
-            </div>
-
-        </div>
-    `;
-}
-
-
-// =========================================================
-// ESCAPE POPUP HTML
-// =========================================================
-
-function escapePopupHTML(
-    value
-) {
-
-    return String(
-        value ?? ""
-    )
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-        .replace(
-            /</g,
-            "&lt;"
-        )
-        .replace(
-            />/g,
-            "&gt;"
-        )
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-        .replace(
-            /'/g,
-            "&#039;"
-        );
 }
 
 
@@ -1060,6 +1428,7 @@ function AuthorityRiskMap({
     alerts = [],
     hospitals = [],
     shelters = [],
+    onFindRelocationSites,
 }) {
 
     const defaultCenter =
@@ -1070,7 +1439,9 @@ function AuthorityRiskMap({
 
 
     return (
+
         <MapContainer
+
             center={
                 defaultCenter
             }
@@ -1089,16 +1460,19 @@ function AuthorityRiskMap({
         >
 
             <TileLayer
+
                 attribution="&copy; OpenStreetMap contributors"
+
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
 
 
-            {/* =========================================
+            {/* =================================================
                 AUTOMATIC MAP FIT
-            ========================================= */}
+            ================================================= */}
 
             <RiskMapBounds
+
                 features={
                     riskFeatures
                 }
@@ -1114,12 +1488,13 @@ function AuthorityRiskMap({
                 hospitals={
                     hospitals
                 }
+
             />
 
 
-            {/* =========================================
+            {/* =================================================
                 RISK ZONES / HABITATIONS
-            ========================================= */}
+            ================================================= */}
 
             {riskFeatures.map(
                 (
@@ -1128,6 +1503,7 @@ function AuthorityRiskMap({
                 ) => (
 
                     <RiskFeature
+
                         key={
                             feature?.properties?.habitationId ||
                             feature?.properties?.village_code ||
@@ -1139,15 +1515,20 @@ function AuthorityRiskMap({
                         feature={
                             feature
                         }
+
+                        onFindRelocationSites={
+                            onFindRelocationSites
+                        }
+
                     />
 
                 )
             )}
 
 
-            {/* =========================================
+            {/* =================================================
                 HOSPITALS
-            ========================================= */}
+            ================================================= */}
 
             {hospitals.map(
                 (
@@ -1167,7 +1548,9 @@ function AuthorityRiskMap({
 
 
                     return (
+
                         <Marker
+
                             key={
                                 hospital._id ||
                                 hospital.id ||
@@ -1207,15 +1590,16 @@ function AuthorityRiskMap({
                             </Popup>
 
                         </Marker>
+
                     );
 
                 }
             )}
 
 
-            {/* =========================================
+            {/* =================================================
                 SAFE SITES / SHELTERS
-            ========================================= */}
+            ================================================= */}
 
             {shelters.map(
                 (
@@ -1235,7 +1619,9 @@ function AuthorityRiskMap({
 
 
                     return (
+
                         <Marker
+
                             key={
                                 shelter._id ||
                                 shelter.id ||
@@ -1286,15 +1672,16 @@ function AuthorityRiskMap({
                             </Popup>
 
                         </Marker>
+
                     );
 
                 }
             )}
 
 
-            {/* =========================================
+            {/* =================================================
                 SOS / EMERGENCY INCIDENTS
-            ========================================= */}
+            ================================================= */}
 
             {alerts.map(
                 (
@@ -1314,7 +1701,9 @@ function AuthorityRiskMap({
 
 
                     return (
+
                         <Marker
+
                             key={
                                 alert._id ||
                                 alert.id ||
@@ -1377,6 +1766,7 @@ function AuthorityRiskMap({
                             </Popup>
 
                         </Marker>
+
                     );
 
                 }
@@ -1393,19 +1783,18 @@ function AuthorityRiskMap({
 
 function AuthorityDashboard() {
 
-    // =========================================================
+    // =====================================================
     // SEARCH
-    // Search state is controlled by AuthorityLayout
-    // =========================================================
+    // =====================================================
 
     const {
         search = "",
     } = useOutletContext();
 
 
-    // =========================================================
+    // =====================================================
     // DASHBOARD DATA
-    // =========================================================
+    // =====================================================
 
     const [
         dashboardData,
@@ -1431,9 +1820,9 @@ function AuthorityDashboard() {
     ] = useState("");
 
 
-    // =========================================================
+    // =====================================================
     // RISK MAP DATA
-    // =========================================================
+    // =====================================================
 
     const [
         riskMapFeatures,
@@ -1441,9 +1830,9 @@ function AuthorityDashboard() {
     ] = useState([]);
 
 
-    // =========================================================
+    // =====================================================
     // OPTIONAL INCIDENT / FACILITY DATA
-    // =========================================================
+    // =====================================================
 
     const [
         alerts,
@@ -1463,9 +1852,9 @@ function AuthorityDashboard() {
     ] = useState([]);
 
 
-    // =========================================================
+    // =====================================================
     // SELECTED INCIDENT
-    // =========================================================
+    // =====================================================
 
     const [
         selectedAlert,
@@ -1473,9 +1862,37 @@ function AuthorityDashboard() {
     ] = useState(null);
 
 
-    // =========================================================
+    // =====================================================
+    // RELOCATION SITES
+    // =====================================================
+
+    const [
+        relocationSites,
+        setRelocationSites,
+    ] = useState([]);
+
+
+    const [
+        showRelocationSites,
+        setShowRelocationSites,
+    ] = useState(false);
+
+
+    const [
+        loadingRelocationSites,
+        setLoadingRelocationSites,
+    ] = useState(false);
+
+
+    const [
+        selectedRelocationHabitation,
+        setSelectedRelocationHabitation,
+    ] = useState(null);
+
+
+    // =====================================================
     // EXTRACT ARRAY FROM BACKEND RESPONSE
-    // =========================================================
+    // =====================================================
 
     const extractArray = (
         response
@@ -1490,7 +1907,9 @@ function AuthorityDashboard() {
                 data
             )
         ) {
+
             return data;
+
         }
 
 
@@ -1499,7 +1918,9 @@ function AuthorityDashboard() {
                 data?.data
             )
         ) {
+
             return data.data;
+
         }
 
 
@@ -1508,7 +1929,9 @@ function AuthorityDashboard() {
                 data?.items
             )
         ) {
+
             return data.items;
+
         }
 
 
@@ -1517,7 +1940,9 @@ function AuthorityDashboard() {
                 data?.alerts
             )
         ) {
+
             return data.alerts;
+
         }
 
 
@@ -1526,7 +1951,9 @@ function AuthorityDashboard() {
                 data?.hospitals
             )
         ) {
+
             return data.hospitals;
+
         }
 
 
@@ -1535,7 +1962,9 @@ function AuthorityDashboard() {
                 data?.shelters
             )
         ) {
+
             return data.shelters;
+
         }
 
 
@@ -1544,9 +1973,173 @@ function AuthorityDashboard() {
     };
 
 
-    // =========================================================
+    // =====================================================
+    // FIND RELOCATION SITES
+    // =====================================================
+
+    const findRelocationSites =
+        async (
+            habitation
+        ) => {
+
+            try {
+
+                setLoadingRelocationSites(
+                    true
+                );
+
+                setShowRelocationSites(
+                    true
+                );
+
+                setSelectedRelocationHabitation(
+                    habitation
+                );
+
+                setRelocationSites(
+                    []
+                );
+
+
+                // -----------------------------------------
+                // GET COORDINATES
+                // -----------------------------------------
+
+                const coords =
+                    getCoordinates(
+                        habitation
+                    );
+
+
+                if (!coords) {
+
+                    toast.error(
+                        "Location coordinates are not available for this habitation."
+                    );
+
+                    setShowRelocationSites(
+                        false
+                    );
+
+                    return;
+                }
+
+
+                const latitude =
+                    coords[0];
+
+
+                const longitude =
+                    coords[1];
+
+
+                const population =
+                    Number(
+                        habitation.population
+                    ) || 0;
+
+
+                // -----------------------------------------
+                // API REQUEST
+                // -----------------------------------------
+
+                const response =
+                    await api.get(
+                        "/api/relocation/find-nearby",
+                        {
+                            params: {
+
+                                latitude,
+
+                                longitude,
+
+                                population,
+
+                                limit: 5,
+
+                            },
+                        }
+                    );
+
+
+                console.log(
+                    "Relocation sites response:",
+                    response.data
+                );
+
+
+                // -----------------------------------------
+                // RESPONSE
+                // -----------------------------------------
+
+                if (
+                    response.data?.success
+                ) {
+
+                    const sites =
+                        response.data?.sites ||
+                        response.data?.data ||
+                        [];
+
+
+                    setRelocationSites(
+                        Array.isArray(
+                            sites
+                        )
+                            ? sites
+                            : []
+                    );
+
+
+                    if (
+                        sites.length === 0
+                    ) {
+
+                        toast.error(
+                            "No suitable relocation sites found."
+                        );
+
+                    }
+
+                } else {
+
+                    toast.error(
+                        response.data?.message ||
+                        "No suitable relocation sites found."
+                    );
+
+                }
+
+            } catch (
+                error
+            ) {
+
+                console.error(
+                    "Relocation search error:",
+                    error.response?.data ||
+                    error
+                );
+
+
+                toast.error(
+                    error.response?.data?.message ||
+                    "Failed to find relocation sites."
+                );
+
+            } finally {
+
+                setLoadingRelocationSites(
+                    false
+                );
+
+            }
+
+        };
+
+
+    // =====================================================
     // FETCH AUTHORITY DASHBOARD
-    // =========================================================
+    // =====================================================
 
     const fetchAuthorityDashboard =
         async () => {
@@ -1611,9 +2204,9 @@ function AuthorityDashboard() {
         };
 
 
-    // =========================================================
+    // =====================================================
     // FETCH RISK MAP
-    // =========================================================
+    // =====================================================
 
     const fetchRiskMap =
         async () => {
@@ -1632,24 +2225,17 @@ function AuthorityDashboard() {
                 );
 
 
-                // ---------------------------------------------
+                // =================================================
                 // PRIMARY FORMAT
-                // {
-                //   success: true,
-                //   map: {
-                //      type: "FeatureCollection",
-                //      features: [...]
-                //   }
-                // }
-                // ---------------------------------------------
+                // =================================================
 
                 let features =
                     response.data?.map?.features;
 
 
-                // ---------------------------------------------
-                // FALLBACK FORMATS
-                // ---------------------------------------------
+                // =================================================
+                // FALLBACK
+                // =================================================
 
                 if (
                     !Array.isArray(
@@ -1686,12 +2272,13 @@ function AuthorityDashboard() {
                 }
 
 
-                // ---------------------------------------------
-                // NORMALIZE ONLY VALID MAP FEATURES
-                // ---------------------------------------------
+                // =================================================
+                // NORMALIZE
+                // =================================================
 
                 const normalized =
                     features
+
                         .filter(
                             (
                                 feature
@@ -1704,23 +2291,26 @@ function AuthorityDashboard() {
                                     )
                                 )
                         )
+
                         .map(
                             (
                                 feature
                             ) => {
 
-                                // Keep GeoJSON intact.
-                                // Add normalized properties
-                                // without destroying geometry.
+                                // ---------------------------------
+                                // GEOJSON
+                                // ---------------------------------
 
                                 if (
                                     feature.geometry
                                 ) {
 
                                     return {
+
                                         ...feature,
 
                                         properties: {
+
                                             ...(
                                                 feature.properties ||
                                                 {}
@@ -1729,43 +2319,70 @@ function AuthorityDashboard() {
                                             ...normalizeRiskFeature(
                                                 feature
                                             ),
+
                                         },
+
                                     };
 
                                 }
 
 
+                                // ---------------------------------
+                                // NON-GEOJSON POINT
+                                // ---------------------------------
+
+                                const coords =
+                                    getCoordinates(
+                                        feature
+                                    );
+
+
+                                if (!coords) {
+                                    return null;
+                                }
+
+
                                 return {
+
                                     type: "Feature",
 
                                     geometry: {
+
                                         type: "Point",
 
                                         coordinates: [
-                                            getCoordinates(
-                                                feature
-                                            )[1],
 
-                                            getCoordinates(
-                                                feature
-                                            )[0],
+                                            coords[1],
+
+                                            coords[0],
+
                                         ],
+
                                     },
 
                                     properties:
                                         normalizeRiskFeature(
                                             feature
                                         ),
+
                                 };
 
                             }
-                        );
+                        )
+
+                        .filter(Boolean);
+
+
+                console.log(
+                    "Normalized risk map features:",
+                    normalized.length,
+                    normalized[0]
+                );
 
 
                 setRiskMapFeatures(
                     normalized
                 );
-
 
             } catch (
                 err
@@ -1787,11 +2404,9 @@ function AuthorityDashboard() {
         };
 
 
-    // =========================================================
+    // =====================================================
     // FETCH INCIDENTS / FACILITIES
-    //
-    // These are supplementary APIs.
-    // =========================================================
+    // =====================================================
 
     const fetchSupplementaryData =
         async () => {
@@ -1810,9 +2425,9 @@ function AuthorityDashboard() {
                 ]);
 
 
-            // ---------------------------------------------
+            // =================================================
             // SOS
-            // ---------------------------------------------
+            // =================================================
 
             if (
                 results[0].status ===
@@ -1844,9 +2459,9 @@ function AuthorityDashboard() {
             }
 
 
-            // ---------------------------------------------
+            // =================================================
             // SHELTERS
-            // ---------------------------------------------
+            // =================================================
 
             if (
                 results[1].status ===
@@ -1878,9 +2493,9 @@ function AuthorityDashboard() {
             }
 
 
-            // ---------------------------------------------
+            // =================================================
             // HOSPITALS
-            // ---------------------------------------------
+            // =================================================
 
             setHospitals(
                 []
@@ -1889,9 +2504,9 @@ function AuthorityDashboard() {
         };
 
 
-    // =========================================================
+    // =====================================================
     // INITIAL LOAD
-    // =========================================================
+    // =====================================================
 
     useEffect(
         () => {
@@ -1929,9 +2544,9 @@ function AuthorityDashboard() {
     );
 
 
-    // =========================================================
+    // =====================================================
     // REFRESH
-    // =========================================================
+    // =====================================================
 
     const refreshDashboard =
         async () => {
@@ -1959,9 +2574,9 @@ function AuthorityDashboard() {
         };
 
 
-    // =========================================================
+    // =====================================================
     // BACKEND DATA
-    // =========================================================
+    // =====================================================
 
     const summary =
         dashboardData?.summary ||
@@ -1983,9 +2598,9 @@ function AuthorityDashboard() {
         {};
 
 
-    // =========================================================
+    // =====================================================
     // MAP DATA
-    // =========================================================
+    // =====================================================
 
     const mapFeatures =
         riskMapFeatures.length > 0
@@ -1999,9 +2614,9 @@ function AuthorityDashboard() {
             );
 
 
-    // =========================================================
+    // =====================================================
     // FILTER INCIDENTS
-    // =========================================================
+    // =====================================================
 
     const filteredAlerts =
         useMemo(
@@ -2041,9 +2656,9 @@ function AuthorityDashboard() {
         );
 
 
-    // =========================================================
+    // =====================================================
     // RISK LEVEL
-    // =========================================================
+    // =====================================================
 
     const riskLevel =
         riskOverview?.riskLevel ||
@@ -2056,18 +2671,18 @@ function AuthorityDashboard() {
         ) || 0;
 
 
-    // =========================================================
+    // =====================================================
     // SYSTEM STATUS
-    // =========================================================
+    // =====================================================
 
     const systemOperational =
         dashboardData?.systemStatus ===
         "operational";
 
 
-    // =========================================================
+    // =====================================================
     // RENDER
-    // =========================================================
+    // =====================================================
 
     return (
 
@@ -2713,6 +3328,10 @@ function AuthorityDashboard() {
                                 shelters
                             }
 
+                            onFindRelocationSites={
+                                findRelocationSites
+                            }
+
                         />
 
                     )}
@@ -2802,12 +3421,15 @@ function AuthorityDashboard() {
                             ) => (
 
                                 <button
+
                                     className="incident-row"
+
                                     key={
                                         alert._id ||
                                         alert.id ||
                                         index
                                     }
+
                                     onClick={() =>
                                         setSelectedAlert(
                                             alert
@@ -2968,24 +3590,34 @@ function AuthorityDashboard() {
             </section>
 
 
+            {/* =================================================
+                INCIDENT MODAL
+            ================================================= */}
+
             {selectedAlert && (
 
                 <div
+
                     className="authority-modal-backdrop"
+
                     onClick={() =>
                         setSelectedAlert(null)
                     }
                 >
 
                     <div
+
                         className="authority-modal"
+
                         onClick={(event) =>
                             event.stopPropagation()
                         }
                     >
 
                         <button
+
                             className="modal-close"
+
                             onClick={() =>
                                 setSelectedAlert(null)
                             }
@@ -2997,6 +3629,7 @@ function AuthorityDashboard() {
 
                         </button>
 
+
                         <div className="modal-icon">
 
                             <AlertTriangle
@@ -3005,9 +3638,11 @@ function AuthorityDashboard() {
 
                         </div>
 
+
                         <span className="modal-kicker">
                             INCIDENT DETAILS
                         </span>
+
 
                         <h2>
 
@@ -3017,6 +3652,7 @@ function AuthorityDashboard() {
                                 "Emergency incident"}
 
                         </h2>
+
 
                         <div className="modal-location">
 
@@ -3030,6 +3666,7 @@ function AuthorityDashboard() {
                                 "Location supplied by backend"}
 
                         </div>
+
 
                         <div className="modal-data">
 
@@ -3046,6 +3683,7 @@ function AuthorityDashboard() {
 
                             </div>
 
+
                             <div>
 
                                 <span>
@@ -3058,6 +3696,7 @@ function AuthorityDashboard() {
                                 </strong>
 
                             </div>
+
 
                             <div>
 
@@ -3075,6 +3714,7 @@ function AuthorityDashboard() {
 
                         </div>
 
+
                         <p className="modal-description">
 
                             {selectedAlert.description ||
@@ -3082,6 +3722,7 @@ function AuthorityDashboard() {
                                 "No additional incident description was returned by the backend."}
 
                         </p>
+
 
                         <div className="modal-note">
 
@@ -3102,8 +3743,382 @@ function AuthorityDashboard() {
 
             )}
 
+
+            {/* =================================================
+                RELOCATION SITES MODAL
+            ================================================= */}
+
+            {showRelocationSites && (
+
+                <div
+
+                    className="authority-modal-backdrop"
+
+                    onClick={() => {
+
+                        if (
+                            !loadingRelocationSites
+                        ) {
+
+                            setShowRelocationSites(
+                                false
+                            );
+
+                        }
+
+                    }}
+                >
+
+                    <div
+
+                        className="authority-modal"
+
+                        style={{
+                            maxWidth: "700px",
+                            width: "92%",
+                        }}
+
+                        onClick={(event) =>
+                            event.stopPropagation()
+                        }
+                    >
+
+                        <button
+
+                            className="modal-close"
+
+                            onClick={() =>
+                                setShowRelocationSites(
+                                    false
+                                )
+                            }
+
+                            disabled={
+                                loadingRelocationSites
+                            }
+                        >
+
+                            <XCircle
+                                size={20}
+                            />
+
+                        </button>
+
+
+                        <div className="modal-icon">
+
+                            <MapPin
+                                size={23}
+                            />
+
+                        </div>
+
+
+                        <span className="modal-kicker">
+                            RELOCATION INTELLIGENCE
+                        </span>
+
+
+                        <h2>
+                            Nearby Relocation Sites
+                        </h2>
+
+
+                        {selectedRelocationHabitation && (
+
+                            <p
+                                style={{
+                                    marginBottom: "15px",
+                                    color: "#64748b",
+                                }}
+                            >
+
+                                Suitable relocation sites
+                                for{" "}
+
+                                <strong>
+                                    {
+                                        selectedRelocationHabitation.name ||
+                                        "Selected habitation"
+                                    }
+                                </strong>
+
+                            </p>
+
+                        )}
+
+
+                        {loadingRelocationSites ? (
+
+                            <div
+                                style={{
+                                    padding: "30px",
+                                    textAlign: "center",
+                                }}
+                            >
+
+                                <RefreshCw
+                                    size={24}
+                                    className="spin"
+                                />
+
+                                <p>
+                                    Finding nearby suitable
+                                    relocation sites...
+                                </p>
+
+                            </div>
+
+                        ) : relocationSites.length === 0 ? (
+
+                            <div
+                                className="panel-empty"
+                                style={{
+                                    minHeight: "160px",
+                                }}
+                            >
+
+                                <MapPin
+                                    size={28}
+                                />
+
+                                <strong>
+                                    No suitable sites found
+                                </strong>
+
+                                <span>
+                                    The backend did not return
+                                    any suitable relocation
+                                    sites for this habitation.
+                                </span>
+
+                            </div>
+
+                        ) : (
+
+                            <div
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: "10px",
+                                    maxHeight: "420px",
+                                    overflowY: "auto",
+                                }}
+                            >
+
+                                {relocationSites.map(
+                                    (
+                                        site,
+                                        index
+                                    ) => (
+
+                                        <div
+                                            key={
+                                                site._id ||
+                                                site.id ||
+                                                site.siteId ||
+                                                index
+                                            }
+
+                                            style={{
+                                                border:
+                                                    "1px solid #e5e7eb",
+                                                borderRadius:
+                                                    "10px",
+                                                padding:
+                                                    "12px",
+                                                background:
+                                                    "#f8fafc",
+                                            }}
+                                        >
+
+                                            <div
+                                                style={{
+                                                    display:
+                                                        "flex",
+                                                    justifyContent:
+                                                        "space-between",
+                                                    alignItems:
+                                                        "center",
+                                                    gap:
+                                                        "10px",
+                                                }}
+                                            >
+
+                                                <strong>
+                                                    {site.name ||
+                                                        site.siteName ||
+                                                        site.title ||
+                                                        `Relocation Site ${index + 1}`}
+                                                </strong>
+
+
+                                                {(
+                                                    site.distance ??
+                                                    site.distanceKm
+                                                ) !== undefined && (
+
+                                                    <span
+                                                        style={{
+                                                            fontSize:
+                                                                "12px",
+                                                            color:
+                                                                "#64748b",
+                                                        }}
+                                                    >
+                                                        {Number(
+                                                            site.distance ??
+                                                            site.distanceKm
+                                                        ).toFixed(2)}{" "}
+                                                        km
+                                                    </span>
+
+                                                )}
+
+                                            </div>
+
+
+                                            {(
+                                                site.address ||
+                                                site.location?.address
+                                            ) && (
+
+                                                <div
+                                                    style={{
+                                                        marginTop:
+                                                            "5px",
+                                                        color:
+                                                            "#64748b",
+                                                        fontSize:
+                                                            "12px",
+                                                    }}
+                                                >
+
+                                                    {site.address ||
+                                                        site.location?.address}
+
+                                                </div>
+
+                                            )}
+
+
+                                            <div
+                                                style={{
+                                                    display:
+                                                        "grid",
+                                                    gridTemplateColumns:
+                                                        "1fr 1fr",
+                                                    gap:
+                                                        "7px",
+                                                    marginTop:
+                                                        "9px",
+                                                    fontSize:
+                                                        "12px",
+                                                }}
+                                            >
+
+                                                {(
+                                                    site.capacity?.total ??
+                                                    site.totalCapacity ??
+                                                    site.availableCapacity
+                                                ) !== undefined && (
+
+                                                    <div>
+                                                        <strong>
+                                                            Capacity
+                                                        </strong>
+
+                                                        <br />
+
+                                                        {site.capacity?.total ??
+                                                            site.totalCapacity ??
+                                                            site.availableCapacity}
+                                                    </div>
+                                                )}
+
+
+                                                {(
+                                                    site.availableCapacity
+                                                ) !== undefined && (
+
+                                                    <div>
+
+                                                        <strong>
+                                                            Available
+                                                        </strong>
+
+                                                        <br />
+
+                                                        {
+                                                            site.availableCapacity
+                                                        }
+
+                                                    </div>
+
+                                                )}
+
+
+                                                {(
+                                                    site.capacityRatio
+                                                ) !== undefined && (
+
+                                                    <div>
+
+                                                        <strong>
+                                                            Capacity Ratio
+                                                        </strong>
+
+                                                        <br />
+
+                                                        {Number(
+                                                            site.capacityRatio
+                                                        ).toFixed(2)}
+
+                                                    </div>
+
+                                                )}
+
+
+                                                {(
+                                                    site.status
+                                                ) && (
+
+                                                    <div>
+
+                                                        <strong>
+                                                            Status
+                                                        </strong>
+
+                                                        <br />
+
+                                                        {
+                                                            site.status
+                                                        }
+
+                                                    </div>
+
+                                                )}
+
+                                            </div>
+
+                                        </div>
+
+                                    )
+                                )}
+
+                            </div>
+
+                        )}
+
+                    </div>
+
+                </div>
+
+            )}
+
         </main>
     );
 }
+
 
 export default AuthorityDashboard;

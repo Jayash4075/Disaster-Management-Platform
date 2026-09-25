@@ -1,12 +1,6 @@
 const RelocationSite = require("../models/RelocationSite");
 
-const MIN_AVAILABLE_CAPACITY = 1; // skip sites with no real spare capacity
-
-// ============================================================
-// Turns an ASSESSED, GREEN habitation into a RelocationSite,
-// or removes its site record if it no longer qualifies
-// (e.g. reassessed to a higher risk level).
-// ============================================================
+const MIN_AVAILABLE_CAPACITY = 1;
 
 async function syncRelocationSiteForHabitation(habitation) {
 
