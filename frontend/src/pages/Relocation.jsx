@@ -4,13 +4,10 @@ import {
     MapPin, Users, Home, AlertTriangle, ArrowRightLeft,
     ShieldCheck, Clock, CheckCircle2, ChevronRight,
 } from "lucide-react";
-import AuthoritySidebar from "../components/AuthoritySidebar";
-
 import api from "../api/axios";
 import "./Relocation.css";
 
 const Relocation = () => {
-    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [selectedHabitation, setSelectedHabitation] = useState(null);
     const [selectedSite, setSelectedSite] = useState(null);
     const [siteLoading, setSiteLoading] = useState(false);
@@ -67,23 +64,7 @@ const Relocation = () => {
     const readyCount = relocationData.filter(item => item.relocationPriority === "SHORT_TERM" || item.relocationPriority === "MEDIUM_TERM").length;
 
     return (
-        <div className="authority-layout">
-
-            {/* SIDEBAR */}
-            <AuthoritySidebar
-                collapsed={sidebarCollapsed}
-                setCollapsed={setSidebarCollapsed}
-            />
-
-            {/* MAIN CONTENT */}
-            <div
-                className={`authority-main ${
-                    sidebarCollapsed ? "sidebar-collapsed" : ""
-                }`}
-            >
-
-
-                <main className="relocation-page">
+        <main className="relocation-page">
 
                     {/* PAGE HEADER */}
                     <motion.section
@@ -563,9 +544,7 @@ const Relocation = () => {
 
                     </motion.section>
 
-                </main>
-            </div>
-        </div>
+        </main>
     );
 };
 

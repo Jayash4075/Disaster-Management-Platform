@@ -71,7 +71,7 @@ function App() {
 
                     <Route path="/dashboard" element={ <ProtectedRoute allowedRoles={CITIZEN_SIDE_ROLES} > <CitizenDashboard /> </ProtectedRoute> } />
 
-                    <Rout path="/emergency" element={ <ProtectedRoute> <Emergency /> </ProtectedRoute> } />
+                    <Route path="/emergency" element={ <ProtectedRoute> <Emergency /> </ProtectedRoute> } />
 
                     <Route path="/resources" element={ <ProtectedRoute> <Resources /> </ProtectedRoute> } />
 

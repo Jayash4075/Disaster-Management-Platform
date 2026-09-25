@@ -25,13 +25,8 @@ import {
 
 import L from "leaflet";
 
-import AuthoritySidebar from "../components/AuthoritySidebar";
-
-
 import "leaflet/dist/leaflet.css";
 import "./GISMonitoring.css";
-
-
 
 
 /* =========================================================
@@ -178,8 +173,6 @@ function MapBounds({ locations }) {
 ========================================================= */
 
 function GISMonitoring() {
-    const [sidebarCollapsed, setSidebarCollapsed] =
-        useState(false);
 
     const [locations, setLocations] = useState([]);
 
@@ -210,6 +203,9 @@ function GISMonitoring() {
             emergencies: true,
         });
 
+    const [riskZones, setRiskZones] =
+        useState([]);
+
 
     /* =====================================================
        FETCH GIS DATA
@@ -220,41 +216,93 @@ function GISMonitoring() {
             setLoading(true);
             setError("");
 
-            // your backend has no combined /gis endpoint — call habitations + relocation sites separately
+            // your backend has no combined /gis endpoint —
+            // call habitations + relocation sites separately
             const [habitationsRes, sitesRes] = await Promise.all([
                 api.get("/api/habitations"),
-                api.get("/api/relocation/sites").catch(() => ({ data: { data: [] } })) // fallback if this route doesn't exist yet
+                api
+                    .get("/api/relocation/sites")
+                    .catch(() => ({
+                        data: {
+                            data: [],
+                        },
+                    })),
             ]);
 
-            const habitationData = (habitationsRes.data?.data || []).map((item, index) =>
-                normalizeLocation({
-                    ...item,
-                    type: "habitation",
-                    latitude: item.location?.coordinates?.[1],
-                    longitude: item.location?.coordinates?.[0],
-                    riskLevel: item.riskLevel,
-                    hazard: item.hazards ? Object.entries(item.hazards).sort((a, b) => b[1] - a[1])[0]?.[0] : "Unknown",
-                    affectedPopulation: ["RED", "ORANGE"].includes(item.riskLevel) ? item.population : 0,
-                    vulnerability: item.vulnerabilityScore,
-                    relocationPriority: item.relocationPriority,
-                }, index)
-            );
+            const habitationData =
+                (habitationsRes.data?.data || []).map(
+                    (item, index) =>
+                        normalizeLocation(
+                            {
+                                ...item,
+
+                                type: "habitation",
+
+                                latitude:
+                                    item.location?.coordinates?.[1],
+
+                                longitude:
+                                    item.location?.coordinates?.[0],
+
+                                riskLevel:
+                                    item.riskLevel,
+
+                                hazard:
+                                    item.hazards
+                                        ? Object.entries(
+                                              item.hazards
+                                          ).sort(
+                                              (a, b) =>
+                                                  b[1] - a[1]
+                                          )[0]?.[0]
+                                        : "Unknown",
+
+                                affectedPopulation:
+                                    [
+                                        "RED",
+                                        "ORANGE",
+                                    ].includes(
+                                        item.riskLevel
+                                    )
+                                        ? item.population
+                                        : 0,
+
+                                vulnerability:
+                                    item.vulnerabilityScore,
+
+                                relocationPriority:
+                                    item.relocationPriority,
+                            },
+                            index
+                        )
+                );
 
             setLocations(habitationData);
-            setRiskZones([]); // no polygon endpoint yet — plain markers only for now
+
+            // No polygon endpoint yet —
+            // plain markers only for now
+            setRiskZones([]);
+
         } catch (err) {
-            console.error("GIS Monitoring API error:", err);
+
+            console.error(
+                "GIS Monitoring API error:",
+                err
+            );
+
             setLocations([]);
             setRiskZones([]);
-            setError(err.response?.data?.message || err.message || "Unable to load GIS monitoring data.");
+
+            setError(
+                err.response?.data?.message ||
+                err.message ||
+                "Unable to load GIS monitoring data."
+            );
+
         } finally {
             setLoading(false);
         }
     };
-
-
-    const [riskZones, setRiskZones] =
-        useState([]);
 
 
     useEffect(() => {
@@ -267,6 +315,7 @@ function GISMonitoring() {
     ===================================================== */
 
     const riskOptions = useMemo(() => {
+
         const values = locations
             .filter(
                 (item) =>
@@ -280,18 +329,19 @@ function GISMonitoring() {
             .filter(
                 (value) =>
                     value &&
-                    value !==
-                        "Unknown"
+                    value !== "Unknown"
             );
 
         return [
             "All",
             ...new Set(values),
         ];
+
     }, [locations]);
 
 
     const hazardOptions = useMemo(() => {
+
         const values = locations
             .filter(
                 (item) =>
@@ -305,14 +355,14 @@ function GISMonitoring() {
             .filter(
                 (value) =>
                     value &&
-                    value !==
-                        "Unknown"
+                    value !== "Unknown"
             );
 
         return [
             "All",
             ...new Set(values),
         ];
+
     }, [locations]);
 
 
@@ -322,6 +372,7 @@ function GISMonitoring() {
 
     const filteredLocations =
         useMemo(() => {
+
             const search =
                 searchTerm
                     .trim()
@@ -334,9 +385,10 @@ function GISMonitoring() {
                         location.type ===
                         "habitation"
                     ) {
+
                         if (
                             riskFilter !==
-                            "All" &&
+                                "All" &&
                             location.riskLevel.toLowerCase() !==
                                 riskFilter.toLowerCase()
                         ) {
@@ -345,7 +397,7 @@ function GISMonitoring() {
 
                         if (
                             hazardFilter !==
-                            "All" &&
+                                "All" &&
                             location.hazard !==
                                 hazardFilter
                         ) {
@@ -366,11 +418,10 @@ function GISMonitoring() {
                     ]
                         .join(" ")
                         .toLowerCase()
-                        .includes(
-                            search
-                        );
+                        .includes(search);
                 }
             );
+
         }, [
             locations,
             searchTerm,
@@ -384,7 +435,9 @@ function GISMonitoring() {
     ===================================================== */
 
     const counts = useMemo(() => {
+
         return {
+
             habitations:
                 locations.filter(
                     (item) =>
@@ -416,6 +469,7 @@ function GISMonitoring() {
             riskZones:
                 riskZones.length,
         };
+
     }, [locations, riskZones]);
 
 
@@ -424,9 +478,11 @@ function GISMonitoring() {
     ===================================================== */
 
     const toggleLayer = (layer) => {
+
         setVisibleLayers(
             (previous) => ({
                 ...previous,
+
                 [layer]:
                     !previous[layer],
             })
@@ -441,6 +497,7 @@ function GISMonitoring() {
     const handleLocationClick = (
         location
     ) => {
+
         setSelectedLocation(
             location
         );
@@ -452,679 +509,695 @@ function GISMonitoring() {
     ===================================================== */
 
     return (
-        <div
-            className={`authority-layout ${
-                sidebarCollapsed
-                    ? "sidebar-collapsed"
-                    : ""
-            }`}
-        >
 
-            <AuthoritySidebar
-                collapsed={
-                    sidebarCollapsed
-                }
-                onToggle={() =>
-                    setSidebarCollapsed(
-                        (previous) =>
-                            !previous
-                    )
-                }
-            />
+        /*
+         * IMPORTANT:
+         * Do NOT create another authority-layout,
+         * authority-main, or AuthoritySidebar here.
+         *
+         * This page is already rendered inside the
+         * central AuthorityLayout.
+         */
+
+        <main className="gis-page">
+
+            {/* =================================
+                HEADER
+            ================================= */}
+
+            <section className="gis-header">
+
+                <div>
+
+                    <span className="gis-eyebrow">
+                        SPATIAL INTELLIGENCE
+                    </span>
+
+                    <h1>
+                        GIS Monitoring
+                    </h1>
+
+                    <p>
+                        Monitor disaster
+                        risk, vulnerable
+                        habitations and
+                        emergency resources
+                        through a unified
+                        geographic view.
+                    </p>
+
+                </div>
 
 
-            <div className="authority-main">
+                <button
+                    className="refresh-button"
+                    onClick={
+                        fetchGISData
+                    }
+                    disabled={
+                        loading
+                    }
+                >
 
-                
+                    <RefreshCw
+                        size={17}
+                        className={
+                            loading
+                                ? "refresh-spin"
+                                : ""
+                        }
+                    />
+
+                    {loading
+                        ? "Updating..."
+                        : "Refresh Data"}
+
+                </button>
+
+            </section>
 
 
-                <main className="gis-page">
+            {/* =================================
+                ERROR
+            ================================= */}
 
-                    {/* =================================
-                        HEADER
-                    ================================= */}
+            {error && (
 
-                    <section className="gis-header">
+                <div className="gis-error">
+
+                    <AlertTriangle
+                        size={20}
+                    />
+
+                    <div>
+
+                        <strong>
+                            GIS data unavailable
+                        </strong>
+
+                        <span>
+                            {error}
+                        </span>
+
+                    </div>
+
+                </div>
+
+            )}
+
+
+            {/* =================================
+                SUMMARY
+            ================================= */}
+
+            <section className="gis-summary">
+
+                <SummaryCard
+                    icon={
+                        <Building2
+                            size={21}
+                        />
+                    }
+                    label="Habitations"
+                    value={
+                        loading
+                            ? "—"
+                            : counts.habitations
+                    }
+                />
+
+                <SummaryCard
+                    icon={
+                        <AlertTriangle
+                            size={21}
+                        />
+                    }
+                    label="Risk Zones"
+                    value={
+                        loading
+                            ? "—"
+                            : counts.riskZones
+                    }
+                />
+
+                <SummaryCard
+                    icon={
+                        <Hospital
+                            size={21}
+                        />
+                    }
+                    label="Hospitals"
+                    value={
+                        loading
+                            ? "—"
+                            : counts.hospitals
+                    }
+                />
+
+                <SummaryCard
+                    icon={
+                        <ShieldCheck
+                            size={21}
+                        />
+                    }
+                    label="Safe Sites"
+                    value={
+                        loading
+                            ? "—"
+                            : counts.shelters
+                    }
+                />
+
+                <SummaryCard
+                    icon={
+                        <AlertTriangle
+                            size={21}
+                        />
+                    }
+                    label="Emergencies"
+                    value={
+                        loading
+                            ? "—"
+                            : counts.emergencies
+                    }
+                />
+
+            </section>
+
+
+            {/* =================================
+                MAP AREA
+            ================================= */}
+
+            <section className="gis-workspace">
+
+
+                {/* =============================
+                    LEFT PANEL
+                ============================= */}
+
+                <aside className="gis-control-panel">
+
+                    <div className="panel-title">
 
                         <div>
-                            <span className="gis-eyebrow">
-                                SPATIAL INTELLIGENCE
+
+                            <span>
+                                MAP CONTROLS
                             </span>
 
-                            <h1>
-                                GIS Monitoring
-                            </h1>
+                            <h2>
+                                Monitoring Layers
+                            </h2>
 
-                            <p>
-                                Monitor disaster
-                                risk, vulnerable
-                                habitations and
-                                emergency resources
-                                through a unified
-                                geographic view.
-                            </p>
                         </div>
 
+                        <Layers
+                            size={20}
+                        />
 
-                        <button
-                            className="refresh-button"
-                            onClick={
-                                fetchGISData
+                    </div>
+
+
+                    {/* SEARCH */}
+
+                    <div className="gis-search">
+
+                        <Search
+                            size={17}
+                        />
+
+                        <input
+                            value={
+                                searchTerm
                             }
-                            disabled={
-                                loading
+                            onChange={(
+                                event
+                            ) =>
+                                setSearchTerm(
+                                    event
+                                        .target
+                                        .value
+                                )
+                            }
+                            placeholder="Search locations..."
+                        />
+
+                    </div>
+
+
+                    {/* FILTERS */}
+
+                    <div className="gis-filter-group">
+
+                        <label>
+                            Risk Level
+                        </label>
+
+                        <select
+                            value={
+                                riskFilter
+                            }
+                            onChange={(
+                                event
+                            ) =>
+                                setRiskFilter(
+                                    event
+                                        .target
+                                        .value
+                                )
                             }
                         >
-                            <RefreshCw
-                                size={17}
-                                className={
-                                    loading
-                                        ? "refresh-spin"
-                                        : ""
-                                }
-                            />
 
-                            {loading
-                                ? "Updating..."
-                                : "Refresh Data"}
-                        </button>
+                            {riskOptions.map(
+                                (
+                                    option
+                                ) => (
 
-                    </section>
+                                    <option
+                                        key={
+                                            option
+                                        }
+                                    >
+                                        {
+                                            option
+                                        }
+                                    </option>
+
+                                )
+                            )}
+
+                        </select>
+
+                    </div>
 
 
-                    {/* =================================
-                        ERROR
-                    ================================= */}
+                    <div className="gis-filter-group">
 
-                    {error && (
-                        <div className="gis-error">
+                        <label>
+                            Hazard
+                        </label>
 
-                            <AlertTriangle
-                                size={20}
-                            />
+                        <select
+                            value={
+                                hazardFilter
+                            }
+                            onChange={(
+                                event
+                            ) =>
+                                setHazardFilter(
+                                    event
+                                        .target
+                                        .value
+                                )
+                            }
+                        >
 
-                            <div>
-                                <strong>
-                                    GIS data unavailable
-                                </strong>
+                            {hazardOptions.map(
+                                (
+                                    option
+                                ) => (
 
-                                <span>
-                                    {error}
-                                </span>
-                            </div>
+                                    <option
+                                        key={
+                                            option
+                                        }
+                                    >
+                                        {
+                                            option
+                                        }
+                                    </option>
+
+                                )
+                            )}
+
+                        </select>
+
+                    </div>
+
+
+                    {/* LAYERS */}
+
+                    <div className="layers-section">
+
+                        <h3>
+                            Data Layers
+                        </h3>
+
+
+                        <LayerToggle
+                            label="Vulnerable Habitations"
+                            icon={
+                                <Building2
+                                    size={18}
+                                />
+                            }
+                            count={
+                                counts.habitations
+                            }
+                            active={
+                                visibleLayers.habitations
+                            }
+                            onClick={() =>
+                                toggleLayer(
+                                    "habitations"
+                                )
+                            }
+                        />
+
+
+                        <LayerToggle
+                            label="Risk Zones"
+                            icon={
+                                <AlertTriangle
+                                    size={18}
+                                />
+                            }
+                            count={
+                                counts.riskZones
+                            }
+                            active={
+                                visibleLayers.riskZones
+                            }
+                            onClick={() =>
+                                toggleLayer(
+                                    "riskZones"
+                                )
+                            }
+                        />
+
+
+                        <LayerToggle
+                            label="Hospitals"
+                            icon={
+                                <Hospital
+                                    size={18}
+                                />
+                            }
+                            count={
+                                counts.hospitals
+                            }
+                            active={
+                                visibleLayers.hospitals
+                            }
+                            onClick={() =>
+                                toggleLayer(
+                                    "hospitals"
+                                )
+                            }
+                        />
+
+
+                        <LayerToggle
+                            label="Safe Sites"
+                            icon={
+                                <ShieldCheck
+                                    size={18}
+                                />
+                            }
+                            count={
+                                counts.shelters
+                            }
+                            active={
+                                visibleLayers.shelters
+                            }
+                            onClick={() =>
+                                toggleLayer(
+                                    "shelters"
+                                )
+                            }
+                        />
+
+
+                        <LayerToggle
+                            label="Emergencies"
+                            icon={
+                                <AlertTriangle
+                                    size={18}
+                                />
+                            }
+                            count={
+                                counts.emergencies
+                            }
+                            active={
+                                visibleLayers.emergencies
+                            }
+                            onClick={() =>
+                                toggleLayer(
+                                    "emergencies"
+                                )
+                            }
+                        />
+
+                    </div>
+
+
+                    {/* LEGEND */}
+
+                    <div className="map-legend">
+
+                        <h3>
+                            Risk Legend
+                        </h3>
+
+                        <LegendItem
+                            className="critical"
+                            label="Critical"
+                        />
+
+                        <LegendItem
+                            className="high"
+                            label="High"
+                        />
+
+                        <LegendItem
+                            className="medium"
+                            label="Medium"
+                        />
+
+                        <LegendItem
+                            className="low"
+                            label="Low"
+                        />
+
+                    </div>
+
+                </aside>
+
+
+                {/* =============================
+                    MAP
+                ============================= */}
+
+                <div className="gis-map-container">
+
+                    {loading && (
+
+                        <div className="map-loading">
+
+                            <div className="loading-spinner" />
+
+                            <strong>
+                                Loading GIS intelligence
+                            </strong>
+
+                            <span>
+                                Fetching geographic
+                                data from the
+                                backend...
+                            </span>
 
                         </div>
+
                     )}
 
 
-                    {/* =================================
-                        SUMMARY
-                    ================================= */}
+                    <MapContainer
+                        center={[
+                            20,
+                            78,
+                        ]}
+                        zoom={5}
+                        className="gis-map"
+                        zoomControl={true}
+                    >
 
-                    <section className="gis-summary">
+                        <TileLayer
+                            attribution="&copy; OpenStreetMap contributors"
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        />
 
-                        <SummaryCard
-                            icon={
-                                <Building2
-                                    size={21}
-                                />
-                            }
-                            label="Habitations"
-                            value={
-                                loading
-                                    ? "—"
-                                    : counts.habitations
+
+                        <MapBounds
+                            locations={
+                                filteredLocations
                             }
                         />
 
-                        <SummaryCard
-                            icon={
-                                <AlertTriangle
-                                    size={21}
-                                />
-                            }
-                            label="Risk Zones"
-                            value={
-                                loading
-                                    ? "—"
-                                    : counts.riskZones
-                            }
-                        />
 
-                        <SummaryCard
-                            icon={
-                                <Hospital
-                                    size={21}
-                                />
-                            }
-                            label="Hospitals"
-                            value={
-                                loading
-                                    ? "—"
-                                    : counts.hospitals
-                            }
-                        />
+                        {/* =====================
+                            RISK ZONES
+                        ===================== */}
 
-                        <SummaryCard
-                            icon={
-                                <ShieldCheck
-                                    size={21}
-                                />
-                            }
-                            label="Safe Sites"
-                            value={
-                                loading
-                                    ? "—"
-                                    : counts.shelters
-                            }
-                        />
+                        {visibleLayers.riskZones &&
+                            riskZones.map(
+                                (
+                                    zone,
+                                    index
+                                ) => (
 
-                        <SummaryCard
-                            icon={
-                                <AlertTriangle
-                                    size={21}
-                                />
-                            }
-                            label="Emergencies"
-                            value={
-                                loading
-                                    ? "—"
-                                    : counts.emergencies
-                            }
-                        />
+                                    <RiskZone
+                                        key={
+                                            zone._id ||
+                                            zone.id ||
+                                            `zone-${index}`
+                                        }
+                                        zone={
+                                            zone
+                                        }
+                                    />
 
-                    </section>
-
-
-                    {/* =================================
-                        MAP AREA
-                    ================================= */}
-
-                    <section className="gis-workspace">
-
-
-                        {/* =============================
-                            LEFT PANEL
-                        ============================= */}
-
-                        <aside className="gis-control-panel">
-
-                            <div className="panel-title">
-
-                                <div>
-                                    <span>
-                                        MAP CONTROLS
-                                    </span>
-
-                                    <h2>
-                                        Monitoring Layers
-                                    </h2>
-                                </div>
-
-                                <Layers
-                                    size={20}
-                                />
-
-                            </div>
-
-
-                            {/* SEARCH */}
-
-                            <div className="gis-search">
-
-                                <Search
-                                    size={17}
-                                />
-
-                                <input
-                                    value={
-                                        searchTerm
-                                    }
-                                    onChange={(
-                                        event
-                                    ) =>
-                                        setSearchTerm(
-                                            event
-                                                .target
-                                                .value
-                                        )
-                                    }
-                                    placeholder="Search locations..."
-                                />
-
-                            </div>
-
-
-                            {/* FILTERS */}
-
-                            <div className="gis-filter-group">
-
-                                <label>
-                                    Risk Level
-                                </label>
-
-                                <select
-                                    value={
-                                        riskFilter
-                                    }
-                                    onChange={(
-                                        event
-                                    ) =>
-                                        setRiskFilter(
-                                            event
-                                                .target
-                                                .value
-                                        )
-                                    }
-                                >
-                                    {riskOptions.map(
-                                        (
-                                            option
-                                        ) => (
-                                            <option
-                                                key={
-                                                    option
-                                                }
-                                            >
-                                                {
-                                                    option
-                                                }
-                                            </option>
-                                        )
-                                    )}
-                                </select>
-
-                            </div>
-
-
-                            <div className="gis-filter-group">
-
-                                <label>
-                                    Hazard
-                                </label>
-
-                                <select
-                                    value={
-                                        hazardFilter
-                                    }
-                                    onChange={(
-                                        event
-                                    ) =>
-                                        setHazardFilter(
-                                            event
-                                                .target
-                                                .value
-                                        )
-                                    }
-                                >
-                                    {hazardOptions.map(
-                                        (
-                                            option
-                                        ) => (
-                                            <option
-                                                key={
-                                                    option
-                                                }
-                                            >
-                                                {
-                                                    option
-                                                }
-                                            </option>
-                                        )
-                                    )}
-                                </select>
-
-                            </div>
-
-
-                            {/* LAYERS */}
-
-                            <div className="layers-section">
-
-                                <h3>
-                                    Data Layers
-                                </h3>
-
-
-                                <LayerToggle
-                                    label="Vulnerable Habitations"
-                                    icon={
-                                        <Building2
-                                            size={18}
-                                        />
-                                    }
-                                    count={
-                                        counts.habitations
-                                    }
-                                    active={
-                                        visibleLayers.habitations
-                                    }
-                                    onClick={() =>
-                                        toggleLayer(
-                                            "habitations"
-                                        )
-                                    }
-                                />
-
-
-                                <LayerToggle
-                                    label="Risk Zones"
-                                    icon={
-                                        <AlertTriangle
-                                            size={18}
-                                        />
-                                    }
-                                    count={
-                                        counts.riskZones
-                                    }
-                                    active={
-                                        visibleLayers.riskZones
-                                    }
-                                    onClick={() =>
-                                        toggleLayer(
-                                            "riskZones"
-                                        )
-                                    }
-                                />
-
-
-                                <LayerToggle
-                                    label="Hospitals"
-                                    icon={
-                                        <Hospital
-                                            size={18}
-                                        />
-                                    }
-                                    count={
-                                        counts.hospitals
-                                    }
-                                    active={
-                                        visibleLayers.hospitals
-                                    }
-                                    onClick={() =>
-                                        toggleLayer(
-                                            "hospitals"
-                                        )
-                                    }
-                                />
-
-
-                                <LayerToggle
-                                    label="Safe Sites"
-                                    icon={
-                                        <ShieldCheck
-                                            size={18}
-                                        />
-                                    }
-                                    count={
-                                        counts.shelters
-                                    }
-                                    active={
-                                        visibleLayers.shelters
-                                    }
-                                    onClick={() =>
-                                        toggleLayer(
-                                            "shelters"
-                                        )
-                                    }
-                                />
-
-
-                                <LayerToggle
-                                    label="Emergencies"
-                                    icon={
-                                        <AlertTriangle
-                                            size={18}
-                                        />
-                                    }
-                                    count={
-                                        counts.emergencies
-                                    }
-                                    active={
-                                        visibleLayers.emergencies
-                                    }
-                                    onClick={() =>
-                                        toggleLayer(
-                                            "emergencies"
-                                        )
-                                    }
-                                />
-
-                            </div>
-
-
-                            {/* LEGEND */}
-
-                            <div className="map-legend">
-
-                                <h3>
-                                    Risk Legend
-                                </h3>
-
-                                <LegendItem
-                                    className="critical"
-                                    label="Critical"
-                                />
-
-                                <LegendItem
-                                    className="high"
-                                    label="High"
-                                />
-
-                                <LegendItem
-                                    className="medium"
-                                    label="Medium"
-                                />
-
-                                <LegendItem
-                                    className="low"
-                                    label="Low"
-                                />
-
-                            </div>
-
-                        </aside>
-
-
-                        {/* =============================
-                            MAP
-                        ============================= */}
-
-                        <div className="gis-map-container">
-
-                            {loading && (
-                                <div className="map-loading">
-                                    <div className="loading-spinner" />
-
-                                    <strong>
-                                        Loading GIS intelligence
-                                    </strong>
-
-                                    <span>
-                                        Fetching geographic
-                                        data from the
-                                        backend...
-                                    </span>
-                                </div>
+                                )
                             )}
 
 
-                            <MapContainer
-                                center={[
-                                    20,
-                                    78,
-                                ]}
-                                zoom={5}
-                                className="gis-map"
-                                zoomControl={true}
-                            >
+                        {/* =====================
+                            LOCATIONS
+                        ===================== */}
 
-                                <TileLayer
-                                    attribution="&copy; OpenStreetMap contributors"
-                                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                                />
+                        {filteredLocations.map(
+                            (
+                                location
+                            ) => {
 
-
-                                <MapBounds
-                                    locations={
-                                        filteredLocations
-                                    }
-                                />
+                                if (
+                                    location.latitude ===
+                                        null ||
+                                    location.longitude ===
+                                        null
+                                ) {
+                                    return null;
+                                }
 
 
-                                {/* =====================
-                                    RISK ZONES
-                                ===================== */}
-
-                                {visibleLayers.riskZones &&
-                                    riskZones.map(
-                                        (
-                                            zone,
-                                            index
-                                        ) => (
-                                            <RiskZone
-                                                key={
-                                                    zone._id ||
-                                                    zone.id ||
-                                                    `zone-${index}`
-                                                }
-                                                zone={
-                                                    zone
-                                                }
-                                            />
-                                        )
-                                    )}
-
-
-                                {/* =====================
-                                    LOCATIONS
-                                ===================== */}
-
-                                {filteredLocations.map(
+                                const shouldShow =
                                     (
-                                        location
-                                    ) => {
+                                        location.type ===
+                                            "habitation" &&
+                                        visibleLayers.habitations
+                                    ) ||
 
-                                        if (
-                                            location.latitude ===
-                                                null ||
-                                            location.longitude ===
-                                                null
-                                        ) {
-                                            return null;
+                                    (
+                                        location.type ===
+                                            "hospital" &&
+                                        visibleLayers.hospitals
+                                    ) ||
+
+                                    (
+                                        location.type ===
+                                            "shelter" &&
+                                        visibleLayers.shelters
+                                    ) ||
+
+                                    (
+                                        location.type ===
+                                            "emergency" &&
+                                        visibleLayers.emergencies
+                                    );
+
+
+                                if (
+                                    !shouldShow
+                                ) {
+                                    return null;
+                                }
+
+
+                                return (
+
+                                    <Marker
+                                        key={
+                                            location.id
                                         }
-
-
-                                        const shouldShow =
-                                            (location.type ===
-                                                "habitation" &&
-                                                visibleLayers.habitations) ||
-
-                                            (location.type ===
-                                                "hospital" &&
-                                                visibleLayers.hospitals) ||
-
-                                            (location.type ===
-                                                "shelter" &&
-                                                visibleLayers.shelters) ||
-
-                                            (location.type ===
-                                                "emergency" &&
-                                                visibleLayers.emergencies);
-
-
-                                        if (
-                                            !shouldShow
-                                        ) {
-                                            return null;
+                                        position={[
+                                            Number(
+                                                location.latitude
+                                            ),
+                                            Number(
+                                                location.longitude
+                                            ),
+                                        ]}
+                                        icon={
+                                            defaultMarkerIcon
                                         }
+                                        eventHandlers={{
+                                            click: () =>
+                                                handleLocationClick(
+                                                    location
+                                                ),
+                                        }}
+                                    >
 
+                                        <Popup>
 
-                                        return (
-                                            <Marker
-                                                key={
-                                                    location.id
+                                            <strong>
+                                                {
+                                                    location.name
                                                 }
-                                                position={[
-                                                    Number(
-                                                        location.latitude
-                                                    ),
-                                                    Number(
-                                                        location.longitude
-                                                    ),
-                                                ]}
-                                                icon={
-                                                    defaultMarkerIcon
-                                                }
-                                                eventHandlers={{
-                                                    click: () =>
-                                                        handleLocationClick(
-                                                            location
-                                                        ),
-                                                }}
-                                            >
+                                            </strong>
 
-                                                <Popup>
+                                            <br />
 
-                                                    <strong>
-                                                        {
-                                                            location.name
-                                                        }
-                                                    </strong>
+                                            {
+                                                location.type
+                                            }
 
+                                            {location.riskLevel !==
+                                                "Unknown" && (
+                                                <>
                                                     <br />
 
+                                                    Risk:{" "}
+
                                                     {
-                                                        location.type
+                                                        location.riskLevel
                                                     }
+                                                </>
+                                            )}
 
-                                                    {location.riskLevel !==
-                                                        "Unknown" && (
-                                                        <>
-                                                            <br />
-                                                            Risk:{" "}
-                                                            {
-                                                                location.riskLevel
-                                                            }
-                                                        </>
-                                                    )}
+                                        </Popup>
 
-                                                </Popup>
+                                    </Marker>
 
-                                            </Marker>
-                                        );
-                                    }
-                                )}
+                                );
+                            }
+                        )}
 
-                            </MapContainer>
+                    </MapContainer>
 
 
-                            {/* MAP STATUS */}
+                    {/* MAP STATUS */}
 
-                            <div className="map-status">
+                    <div className="map-status">
 
-                                <span className="live-dot" />
+                        <span className="live-dot" />
 
-                                <strong>
-                                    GIS data connected
-                                </strong>
+                        <strong>
+                            GIS data connected
+                        </strong>
 
-                                <span>
-                                    {
-                                        filteredLocations.length
-                                    }{" "}
-                                    mapped locations
-                                </span>
+                        <span>
+                            {
+                                filteredLocations.length
+                            }{" "}
+                            mapped locations
+                        </span>
 
-                            </div>
+                    </div>
 
-                        </div>
+                </div>
 
-                    </section>
-
-                </main>
-
-            </div>
+            </section>
 
 
             {/* =========================================
@@ -1132,6 +1205,7 @@ function GISMonitoring() {
             ========================================= */}
 
             {selectedLocation && (
+
                 <>
 
                     <div
@@ -1161,7 +1235,9 @@ function GISMonitoring() {
                                 </h2>
 
                                 {selectedLocation.district && (
+
                                     <p>
+
                                         <MapPin
                                             size={15}
                                         />
@@ -1169,7 +1245,9 @@ function GISMonitoring() {
                                         {
                                             selectedLocation.district
                                         }
+
                                     </p>
+
                                 )}
 
                             </div>
@@ -1182,9 +1260,11 @@ function GISMonitoring() {
                                     )
                                 }
                             >
+
                                 <X
                                     size={20}
                                 />
+
                             </button>
 
                         </div>
@@ -1193,14 +1273,17 @@ function GISMonitoring() {
                         <div className="detail-panel-body">
 
                             <div className="location-type">
+
                                 {
                                     selectedLocation.type
                                 }
+
                             </div>
 
 
                             {selectedLocation.type ===
                                 "habitation" && (
+
                                 <>
 
                                     <div className="selected-risk-card">
@@ -1274,6 +1357,7 @@ function GISMonitoring() {
                                         .riskFactors
                                         .length >
                                         0 && (
+
                                         <div className="detail-risk-factors">
 
                                             <h3>
@@ -1281,11 +1365,13 @@ function GISMonitoring() {
                                             </h3>
 
                                             <ul>
+
                                                 {selectedLocation.riskFactors.map(
                                                     (
                                                         factor,
                                                         index
                                                     ) => (
+
                                                         <li
                                                             key={
                                                                 index
@@ -1295,14 +1381,18 @@ function GISMonitoring() {
                                                                 factor
                                                             }
                                                         </li>
+
                                                     )
                                                 )}
+
                                             </ul>
 
                                         </div>
+
                                     )}
 
                                 </>
+
                             )}
 
 
@@ -1310,6 +1400,7 @@ function GISMonitoring() {
                                 null &&
                                 selectedLocation.longitude !==
                                     null && (
+
                                     <div className="coordinates">
 
                                         <MapPin
@@ -1323,18 +1414,23 @@ function GISMonitoring() {
                                             </span>
 
                                             <strong>
+
                                                 {
                                                     selectedLocation.latitude
                                                 }
+
                                                 ,{" "}
+
                                                 {
                                                     selectedLocation.longitude
                                                 }
+
                                             </strong>
 
                                         </div>
 
                                     </div>
+
                                 )}
 
                         </div>
@@ -1342,9 +1438,10 @@ function GISMonitoring() {
                     </aside>
 
                 </>
+
             )}
 
-        </div>
+        </main>
     );
 }
 
@@ -1358,7 +1455,9 @@ function SummaryCard({
     label,
     value,
 }) {
+
     return (
+
         <div className="gis-summary-card">
 
             <div className="summary-icon">
@@ -1366,6 +1465,7 @@ function SummaryCard({
             </div>
 
             <div>
+
                 <span>
                     {label}
                 </span>
@@ -1373,6 +1473,7 @@ function SummaryCard({
                 <strong>
                     {value}
                 </strong>
+
             </div>
 
         </div>
@@ -1387,7 +1488,9 @@ function LayerToggle({
     active,
     onClick,
 }) {
+
     return (
+
         <button
             className={`layer-toggle ${
                 active
@@ -1436,7 +1539,9 @@ function LegendItem({
     className,
     label,
 }) {
+
     return (
+
         <div className="legend-item">
 
             <span
@@ -1456,7 +1561,9 @@ function DetailStat({
     label,
     value,
 }) {
+
     return (
+
         <div className="detail-stat">
 
             <span>
@@ -1473,6 +1580,7 @@ function DetailStat({
 
 
 function RiskZone({ zone }) {
+
     const latitude =
         zone.latitude ??
         zone.center?.latitude;
@@ -1496,6 +1604,7 @@ function RiskZone({ zone }) {
     }
 
     return (
+
         <Circle
             center={[
                 Number(latitude),
@@ -1509,6 +1618,7 @@ function RiskZone({ zone }) {
                 weight: 2,
             }}
         />
+
     );
 }
 

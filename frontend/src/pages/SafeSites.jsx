@@ -1,3 +1,4 @@
+
 import { useEffect, useMemo, useState } from "react";
 
 import {
@@ -17,7 +18,6 @@ import {
     Stethoscope
 } from "lucide-react";
 
-import AuthoritySidebar from "../components/AuthoritySidebar";
 import api from "../api/axios";
 import toast from "react-hot-toast";
 
@@ -25,8 +25,6 @@ import "./SafeSites.css";
 
 
 function SafeSites() {
-
-    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
     const [sites, setSites] = useState([]);
 
@@ -389,28 +387,7 @@ function SafeSites() {
 
     return (
 
-        <div
-            className={`authority-layout ${
-                sidebarCollapsed
-                    ? "sidebar-collapsed"
-                    : ""
-            }`}
-        >
-
-            <AuthoritySidebar
-                collapsed={sidebarCollapsed}
-                onToggle={() =>
-                    setSidebarCollapsed(
-                        (previous) => !previous
-                    )
-                }
-            />
-
-
-            <div className="authority-main">
-
-
-                <main className="safe-sites-page">
+        <main className="safe-sites-page">
 
 
                     {/* ==================================================
@@ -1062,11 +1039,6 @@ function SafeSites() {
 
                     </section>
 
-                </main>
-
-            </div>
-
-
             {/* ==========================================================
                 ADD SAFE SITE MODAL
             ========================================================== */}
@@ -1212,7 +1184,7 @@ function SafeSites() {
 
             )}
 
-        </div>
+        </main>
 
     );
 
