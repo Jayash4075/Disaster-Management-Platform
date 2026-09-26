@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import toast from "react-hot-toast";
-import Navbar from "../components/Navbar";
 import "./AuthorityDashboard.css";
 
 const TEAM_TYPES = [
@@ -110,7 +109,7 @@ function CreateRescueTeam() {
 
     return (
         <div className="authority-page">
-            <Navbar />
+            
             <header className="authority-header">
                 <div>
                     <h1>ResQ — Create Rescue Team</h1>

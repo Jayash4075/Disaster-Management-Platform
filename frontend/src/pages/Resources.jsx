@@ -59,7 +59,7 @@ function Resources() {
         <div className="resources-page">
 
             {/* Navbar */}
-            <nav className="resources-navbar">
+            {/* <nav className="resources-navbar">
                 <div className="resources-logo" onClick={() => navigate("/dashboard")}>
                     Res<span>Q</span>
                 </div>
@@ -84,7 +84,7 @@ function Resources() {
                 >
                     ← Dashboard
                 </button>
-            </nav>
+            </nav> */}
 
             {/* Main Content */}
             <main className="resources-container">

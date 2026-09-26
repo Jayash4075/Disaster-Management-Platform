@@ -2,7 +2,7 @@ const SOSReport = require('../models/report.js');
 const uploadBufferToCloudinary = require('../utils/cloudinaryUpload.js');
 const calculateSeverity = require('../utils/severity.js');
 const {predictSOSSeverity} = require('../utils/mlService.js');
-
+const RescueTeam = require("../models/RescueTeam.js");
 //createSOS, 
 
 module.exports.createSOS = async (req, res) => {
@@ -122,7 +122,12 @@ module.exports.getAllSOS = async (req, res) => {
         .populate(
                 'reporterId',
                 'name phone email'
-            )
+        )
+        .populate(
+            'assignedTeamId',
+            "name organizationName teamName teamType type members capabilities equipment currentStatus status currentSOS"
+
+        )
             .sort({
                 createdAt: -1
             });
@@ -144,6 +149,10 @@ module.exports.getSOSById = async (req, res) => {
         ).populate(
             'reporterId',
             'name phone email'
+        )
+        .populate(
+            'assignedTeamId',
+            "name organizationName teamName teamType type members capabilities equipment currentStatus status currentSOS"
         );
         if (!report) {
 
@@ -152,7 +161,7 @@ module.exports.getSOSById = async (req, res) => {
                 message: 'SOS report not found'
             });
         }
-        return res.status(200).json({success: true,report});
+        return res.status(200).json({success: true,report, count: reports.length});
     }
     catch (err) {
         return res.status(500).json({success: false,message: 'Failed to fetch report',error: err.message});
@@ -174,42 +183,136 @@ module.exports.getMySOS = async (req, res) => {
 };
 
 module.exports.updateSOSStatus = async (req, res) => {
+
     try {
+
         const { status } = req.body;
-        const validStatuses = ['pending','assigned','in-progress','resolved'];
-        if (!status ||!validStatuses.includes(status)) {
-            return res.status(400).json({success: false,message: `status must be one of: ${validStatuses.join(', ')}`});
+        const reportId = req.params.id;
+
+        console.log("\n=================================");
+        console.log("UPDATE SOS STATUS");
+        console.log("=================================");
+
+        console.log("Report ID:", reportId);
+        console.log("New status:", status);
+
+        const allowedStatuses = [
+            "pending",
+            "assigned",
+            "in-progress",
+            "resolved"
+        ];
+
+        if (!allowedStatuses.includes(status)) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Invalid SOS status"
+
+            });
+
         }
-        const report = await SOSReport.findById(
-            req.params.id
-        );
+
+        const report =
+            await SOSReport.findById(reportId);
+
         if (!report) {
-            return res.status(404).json({success: false,message: 'SOS report not found'});
+
+            return res.status(404).json({
+
+                success: false,
+
+                message:
+                    "SOS report not found"
+
+            });
+
         }
-        
+
         report.status = status;
+
         await report.save();
 
-        if (status === 'resolved' && report.assignedTeamId) {
-            const RescueTeam = require('../models/RescueTeam');
-            const team = await RescueTeam.findById(report.assignedTeamId);
-            if (team) {
-                team.currentStatus = 'AVAILABLE';
-                team.currentSOS = null;
-                await team.save();
-            }
+        console.log(
+            "MongoDB status updated:",
+            status
+        );
+
+        // --------------------------------------------------------
+        // SOCKET.IO
+        // --------------------------------------------------------
+
+        const io = req.app.get("io");
+
+        if (!io) {
+
+            console.error(
+                "❌ Socket.IO instance not found"
+            );
+
+        } else {
+
+            const payload = {
+
+                reportId:
+                    report._id.toString(),
+
+                status:
+                    report.status
+
+            };
+
+            console.log(
+                "Emitting status-update:",
+                payload
+            );
+
+            io.emit(
+                "status-update",
+                payload
+            );
+
+            console.log(
+                "✅ status-update emitted"
+            );
+
         }
 
-        const io = req.app.get('io');
-        if (io) {
-            io.emit('status-update', { sosId: report._id, status: report.status });
-        }
-        
-        return res.status(200).json({success: true, message: 'Status updated successfully', sosReport: report});
+        return res.status(200).json({
+
+            success: true,
+
+            message:
+                "SOS status updated successfully",
+
+            report
+
+        });
+
+    } catch (error) {
+
+        console.error(
+            "UPDATE SOS STATUS ERROR:",
+            error
+        );
+
+        return res.status(500).json({
+
+            success: false,
+
+            message:
+                "Failed to update SOS status",
+
+            error:
+                error.message
+
+        });
+
     }
-    catch (err) {
-        return res.status(500).json({success: false, message: 'Failed to update status', error: err.message});
-    }
+
 };
 
 module.exports.cancelSOS = async (req, res) => {
@@ -256,45 +359,257 @@ module.exports.cancelSOS = async (req, res) => {
 };
 
 module.exports.assignRescueTeam = async (req, res) => {
+
     try {
-        console.log("ASSIGN USER:", req.user);
-        console.log("ASSIGN ROLE:", req.user?.role);
-        console.log("ASSIGN BODY:", req.body);
+
+        console.log("\n=================================");
+        console.log("ASSIGN RESCUE TEAM REQUEST");
+        console.log("=================================");
 
         const { teamId } = req.body;
+        const reportId = req.params.id;
+
+        console.log("Report ID:", reportId);
+        console.log("Team ID:", teamId);
+        console.log("Authority:", req.user?.id);
+
+        // --------------------------------------------------------
+        // VALIDATION
+        // --------------------------------------------------------
+
         if (!teamId) {
-            return res.status(400).json({ message: 'teamId is required' });
+
+            return res.status(400).json({
+                success: false,
+                message: "teamId is required"
+            });
+
         }
 
-        const report = await SOSReport.findById(req.params.id);
+        // --------------------------------------------------------
+        // FIND SOS REPORT
+        // --------------------------------------------------------
+
+        const report = await SOSReport.findById(reportId);
+
         if (!report) {
-            return res.status(404).json({ message: 'SOS report not found' });
+
+            return res.status(404).json({
+                success: false,
+                message: "SOS report not found"
+            });
+
         }
 
-        const RescueTeam = require('../models/RescueTeam');
-        const team = await RescueTeam.findById(teamId);
+        // --------------------------------------------------------
+        // FIND RESCUE TEAM
+        // --------------------------------------------------------
+
+        const team =
+            await RescueTeam.findById(teamId);
+
         if (!team) {
-            return res.status(404).json({ message: 'Rescue team not found' });
+
+            return res.status(404).json({
+                success: false,
+                message: "Rescue team not found"
+            });
+
         }
 
-        if (team.currentStatus !== 'AVAILABLE') {
-            return res.status(400).json({ message: 'This team is not currently available' });
+        console.log("SOS found:", report._id);
+        console.log("Team found:", team.name);
+
+        // --------------------------------------------------------
+        // CHECK TEAM AVAILABILITY
+        // --------------------------------------------------------
+
+        if (
+            team.currentStatus !== "AVAILABLE"
+        ) {
+
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Selected rescue team is not available"
+            });
+
         }
+
+        // --------------------------------------------------------
+        // UPDATE SOS
+        // --------------------------------------------------------
 
         report.assignedTeamId = team._id;
-        report.status = 'assigned';
+        report.status = "assigned";
+
         await report.save();
 
-        team.currentStatus = 'BUSY';
+        // --------------------------------------------------------
+        // UPDATE RESCUE TEAM
+        // --------------------------------------------------------
+
+        team.currentStatus = "BUSY";
         team.currentSOS = report._id;
+
         await team.save();
 
-        const io = req.app.get('io');
-        io.emit('status-update', { sosId: report._id, status: 'assigned' });
-        io.emit('team-assigned', { sosId: report._id, teamId: team._id });
+        console.log(
+            "MongoDB updated successfully"
+        );
 
-        res.status(200).json({ message: 'Rescue team assigned', sosReport: report, rescueTeam: team });
-    } catch (err) {
-        res.status(500).json({ message: 'Failed to assign rescue team', error: err.message });
+        // --------------------------------------------------------
+        // GET SOCKET.IO INSTANCE
+        // --------------------------------------------------------
+
+        const io = req.app.get("io");
+
+        if (!io) {
+
+            console.error(
+                "❌ SOCKET.IO INSTANCE NOT FOUND"
+            );
+
+        } else {
+
+            console.log(
+                "✅ Socket.IO instance found"
+            );
+
+            // ----------------------------------------------------
+            // TEAM ASSIGNED EVENT
+            // ----------------------------------------------------
+
+            const teamAssignedPayload = {
+
+                reportId:
+                    report._id.toString(),
+
+                status:
+                    "assigned",
+
+                team: {
+
+                    _id:
+                        team._id.toString(),
+
+                    name:
+                        team.name,
+
+                    organization:
+                        team.organization,
+
+                    teamType:
+                        team.teamType,
+
+                    currentStatus:
+                        team.currentStatus
+
+                }
+
+            };
+
+            console.log(
+                "EMITTING team-assigned:"
+            );
+
+            console.log(
+                teamAssignedPayload
+            );
+
+            io.emit(
+                "team-assigned",
+                teamAssignedPayload
+            );
+
+
+            // ----------------------------------------------------
+            // STATUS UPDATE EVENT
+            // ----------------------------------------------------
+
+            const statusPayload = {
+
+                reportId:
+                    report._id.toString(),
+
+                status:
+                    "assigned"
+
+            };
+
+            console.log(
+                "EMITTING status-update:"
+            );
+
+            console.log(
+                statusPayload
+            );
+
+            io.emit(
+                "status-update",
+                statusPayload
+            );
+
+            console.log(
+                "✅ SOCKET EVENTS EMITTED"
+            );
+        }
+
+        // --------------------------------------------------------
+        // RESPONSE
+        // --------------------------------------------------------
+
+        const updatedReport =
+            await SOSReport.findById(report._id)
+                .populate(
+                    "reporterId",
+                    "name phone email"
+                )
+                .populate(
+                    "assignedTeamId",
+                    "name organization teamType currentStatus"
+                );
+
+        console.log(
+            "Assignment completed successfully"
+        );
+
+        console.log(
+            "=================================\n"
+        );
+
+        return res.status(200).json({
+
+            success: true,
+
+            message:
+                "Rescue team assigned successfully",
+
+            report:
+                updatedReport
+
+        });
+
+    } catch (error) {
+
+        console.error(
+            "❌ ASSIGN RESCUE TEAM ERROR:"
+        );
+
+        console.error(error);
+
+        return res.status(500).json({
+
+            success: false,
+
+            message:
+                "Failed to assign rescue team",
+
+            error:
+                error.message
+
+        });
+
     }
+
 };
