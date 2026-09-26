@@ -486,212 +486,19 @@ function normalizeRiskFeature(feature) {
 // MAP BOUNDS
 // =========================================================
 
-function RiskMapBounds({
-    features,
-    alerts,
-    shelters,
-    hospitals,
-}) {
-
+function RiskMapBounds({ features }) {
     const map = useMap();
 
-
     useEffect(() => {
-
-        const bounds =
-            L.latLngBounds([]);
-
-
-        let hasBounds = false;
-
-
-        // =================================================
-        // RISK FEATURES
-        // =================================================
-
-        features.forEach(
-            (feature) => {
-
-                try {
-
-                    if (
-                        feature?.geometry
-                    ) {
-
-                        const geoLayer =
-                            L.geoJSON(
-                                feature
-                            );
-
-
-                        const featureBounds =
-                            geoLayer.getBounds();
-
-
-                        if (
-                            featureBounds.isValid()
-                        ) {
-
-                            bounds.extend(
-                                featureBounds
-                            );
-
-                            hasBounds = true;
-
-                        }
-
-                    } else {
-
-                        const coords =
-                            getCoordinates(
-                                feature
-                            );
-
-
-                        if (coords) {
-
-                            bounds.extend(
-                                coords
-                            );
-
-                            hasBounds = true;
-
-                        }
-
-                    }
-
-                } catch (error) {
-
-                    console.warn(
-                        "Unable to calculate risk feature bounds:",
-                        error
-                    );
-
-                }
-
-            }
-        );
-
-
-        // =================================================
-        // ALERTS
-        // =================================================
-
-        alerts.forEach(
-            (alert) => {
-
-                const coords =
-                    getCoordinates(
-                        alert
-                    );
-
-
-                if (coords) {
-
-                    bounds.extend(
-                        coords
-                    );
-
-                    hasBounds = true;
-
-                }
-
-            }
-        );
-
-
-        // =================================================
-        // SHELTERS
-        // =================================================
-
-        shelters.forEach(
-            (shelter) => {
-
-                const coords =
-                    getCoordinates(
-                        shelter
-                    );
-
-
-                if (coords) {
-
-                    bounds.extend(
-                        coords
-                    );
-
-                    hasBounds = true;
-
-                }
-
-            }
-        );
-
-
-        // =================================================
-        // HOSPITALS
-        // =================================================
-
-        hospitals.forEach(
-            (hospital) => {
-
-                const coords =
-                    getCoordinates(
-                        hospital
-                    );
-
-
-                if (coords) {
-
-                    bounds.extend(
-                        coords
-                    );
-
-                    hasBounds = true;
-
-                }
-
-            }
-        );
-
-
-        // =================================================
-        // FIT MAP
-        // =================================================
-
-        if (hasBounds) {
-
-            map.fitBounds(
-                bounds,
-                {
-                    padding: [
-                        35,
-                        35,
-                    ],
-
-                    maxZoom: 12,
-                }
-            );
-
-        } else {
-
-            map.setView(
-                [
-                    25.4358,
-                    81.8463,
-                ],
-                6
-            );
-
-        }
-
-    }, [
-        features,
-        alerts,
-        shelters,
-        hospitals,
-        map,
-    ]);
-
+        // Your target area: Prayagraj
+        const targetCenter = [25.4358, 81.8463];
+
+        // Always open directly around the target area
+        map.setView(targetCenter, 11, {
+            animate: false,
+        });
+
+    }, [map, features]);
 
     return null;
 }
@@ -1446,12 +1253,12 @@ function AuthorityRiskMap({
                 defaultCenter
             }
 
-            zoom={6}
+            zoom={11}
 
             style={{
                 width: "100%",
                 height: "100%",
-                minHeight: "520px",
+                minHeight: "700px",
             }}
 
             zoomControl={true}
@@ -2836,7 +2643,6 @@ function AuthorityDashboard() {
                         />
 
                     </div>
-
                     <div>
 
                         <span>
