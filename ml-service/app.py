@@ -104,125 +104,133 @@ except Exception as e:
 # MODEL PATHS
 # =========================================================
 
-disaster_model_path = MODEL_DIR / "disaster_model.pkl"
+MODEL_PATHS = {
 
-sos_model_path = MODEL_DIR / "sos_model.pkl"
+    "disaster":
+        MODEL_DIR / "disaster_model.pkl",
 
-habitation_risk_model_path = (
-    MODEL_DIR / "habitation_risk_model.pkl"
-)
+    "sos":
+        MODEL_DIR / "sos_model.pkl",
 
-capacity_model_path = (
-    MODEL_DIR / "capacity_model.pkl"
-)
+    "habitation":
+        MODEL_DIR / "habitation_risk_model.pkl",
 
-relocation_model_path = (
-    MODEL_DIR / "relocation_model.pkl"
-)
+    "capacity":
+        MODEL_DIR / "capacity_model.pkl",
 
+    "relocation":
+        MODEL_DIR / "relocation_model.pkl"
 
-# =========================================================
-# MODEL VARIABLES
-# =========================================================
-
-disaster_model = None
-
-sos_model = None
-
-habitation_risk_model = None
-
-capacity_model = None
-
-relocation_model = None
+}
 
 
 # =========================================================
-# LOAD MODELS
+# LAZY MODEL CACHE
+# =========================================================
+#
+# Models are NOT loaded when the server starts.
+#
+# They are loaded only when an endpoint actually needs them.
+#
+# Example:
+#
+# /predict/sos
+#       ↓
+# get_model("sos")
+#       ↓
+# Load sos_model.pkl
+#       ↓
+# Store it in _models
+#
+# Future SOS requests reuse the already loaded model.
 # =========================================================
 
-def load_model(model_path, model_name):
+_models = {}
 
-    try:
 
-        model = joblib.load(model_path)
+# =========================================================
+# LAZY MODEL LOADER
+# =========================================================
 
-        print(f"{model_name} loaded successfully")
+def get_model(model_name):
 
-        return model
+    # -----------------------------------------------------
+    # If model is already loaded, return cached model
+    # -----------------------------------------------------
 
-    except FileNotFoundError:
+    if model_name in _models:
 
-        print(
-            f"{model_name} not found: "
-            f"{model_path}"
+        return _models[model_name]
+
+
+    # -----------------------------------------------------
+    # Check whether model name is valid
+    # -----------------------------------------------------
+
+    if model_name not in MODEL_PATHS:
+
+        raise ValueError(
+            f"Unknown model: {model_name}"
         )
 
-        return None
 
-    except Exception as e:
+    model_path = MODEL_PATHS[model_name]
 
-        print(
-            f"Error loading {model_name}: "
-            f"{e}"
+
+    # -----------------------------------------------------
+    # Check whether model file exists
+    # -----------------------------------------------------
+
+    if not model_path.exists():
+
+        raise FileNotFoundError(
+            f"{model_name} not found: {model_path}"
         )
 
-        return None
+
+    # -----------------------------------------------------
+    # Load model only when required
+    # -----------------------------------------------------
+
+    print(
+        f"Loading {model_name} model..."
+    )
+
+    model = joblib.load(model_path)
+
+
+    # -----------------------------------------------------
+    # Store model in memory for future requests
+    # -----------------------------------------------------
+
+    _models[model_name] = model
+
+
+    print(
+        f"{model_name} model loaded successfully"
+    )
+
+
+    return model
 
 
 # =========================================================
-# LOAD AVAILABLE MODELS
+# MODEL STATUS HELPERS
 # =========================================================
 
-disaster_model = load_model(
-    disaster_model_path,
-    "Disaster model"
-)
+def get_model_status(model_name):
 
-sos_model = load_model(
-    sos_model_path,
-    "SOS model"
-)
+    model_path = MODEL_PATHS[model_name]
 
-habitation_risk_model = load_model(
-    habitation_risk_model_path,
-    "Habitation risk model"
-)
+    return {
 
-capacity_model = load_model(
-    capacity_model_path,
-    "Capacity model"
-)
+        "available":
+            model_path.exists(),
 
-relocation_model = load_model(
-    relocation_model_path,
-    "Relocation model"
-)
+        "loaded":
+            model_name in _models
 
-
-print("--------------------------------------------------")
-print("ML MODEL STATUS")
-print("--------------------------------------------------")
-print(
-    "Disaster model:",
-    disaster_model is not None
-)
-print(
-    "SOS model:",
-    sos_model is not None
-)
-print(
-    "Habitation risk model:",
-    habitation_risk_model is not None
-)
-print(
-    "Capacity model:",
-    capacity_model is not None
-)
-print(
-    "Relocation model:",
-    relocation_model is not None
-)
-print("--------------------------------------------------")
+    }
 
 
 # =========================================================
@@ -246,19 +254,20 @@ def home():
         "models": {
 
             "disaster_risk":
-                disaster_model is not None,
+                get_model_status("disaster"),
 
             "sos_severity":
-                sos_model is not None,
+                get_model_status("sos"),
 
             "habitation_risk":
-                habitation_risk_model is not None,
+                get_model_status("habitation"),
 
             "carrying_capacity":
-                capacity_model is not None,
+                get_model_status("capacity"),
 
             "relocation_priority":
-                relocation_model is not None
+                get_model_status("relocation")
+
         },
 
         "endpoints": [
@@ -294,19 +303,19 @@ def health():
         "models": {
 
             "disaster_model":
-                disaster_model is not None,
+                get_model_status("disaster"),
 
             "sos_model":
-                sos_model is not None,
+                get_model_status("sos"),
 
             "habitation_risk_model":
-                habitation_risk_model is not None,
+                get_model_status("habitation"),
 
             "capacity_model":
-                capacity_model is not None,
+                get_model_status("capacity"),
 
             "relocation_model":
-                relocation_model is not None
+                get_model_status("relocation")
 
         }
 
@@ -354,7 +363,9 @@ def predict_disaster():
         ]
 
 
+        # -------------------------------------------------
         # Check required fields
+        # -------------------------------------------------
 
         for field in required_fields:
 
@@ -370,21 +381,16 @@ def predict_disaster():
                 }), 400
 
 
-        # Check model
+        # -------------------------------------------------
+        # LAZY LOAD DISASTER MODEL
+        # -------------------------------------------------
 
-        if disaster_model is None:
-
-            return jsonify({
-
-                "success": False,
-
-                "error":
-                    "Disaster model is not loaded"
-
-            }), 500
+        disaster_model = get_model("disaster")
 
 
+        # -------------------------------------------------
         # Create feature vector
+        # -------------------------------------------------
 
         features = [[
 
@@ -401,19 +407,27 @@ def predict_disaster():
         ]]
 
 
+        # -------------------------------------------------
         # Prediction
+        # -------------------------------------------------
 
         prediction = (
+
             disaster_model
             .predict(features)[0]
+
         )
 
 
+        # -------------------------------------------------
         # Probability of every class
+        # -------------------------------------------------
 
         probabilities = (
+
             disaster_model
             .predict_proba(features)[0]
+
         )
 
 
@@ -424,24 +438,34 @@ def predict_disaster():
 
 
         for class_name, probability in zip(
+
             classes,
+
             probabilities
+
         ):
 
             probability_dict[
                 str(class_name)
             ] = round(
+
                 float(probability),
+
                 4
+
             )
 
 
+        # -------------------------------------------------
         # Probability of predicted class
+        # -------------------------------------------------
 
         predicted_probability = (
+
             probability_dict[
                 str(prediction)
             ]
+
         )
 
 
@@ -536,7 +560,9 @@ def predict_sos():
         ]
 
 
+        # -------------------------------------------------
         # Check fields
+        # -------------------------------------------------
 
         for field in required_fields:
 
@@ -552,21 +578,16 @@ def predict_sos():
                 }), 400
 
 
-        # Check model
+        # -------------------------------------------------
+        # LAZY LOAD SOS MODEL
+        # -------------------------------------------------
 
-        if sos_model is None:
-
-            return jsonify({
-
-                "success": False,
-
-                "error":
-                    "SOS model is not loaded"
-
-            }), 500
+        sos_model = get_model("sos")
 
 
+        # -------------------------------------------------
         # Create feature vector
+        # -------------------------------------------------
 
         features = [[
 
@@ -589,19 +610,27 @@ def predict_sos():
         ]]
 
 
+        # -------------------------------------------------
         # Prediction
+        # -------------------------------------------------
 
         prediction = (
+
             sos_model
             .predict(features)[0]
+
         )
 
 
+        # -------------------------------------------------
         # Probability
+        # -------------------------------------------------
 
         probabilities = (
+
             sos_model
             .predict_proba(features)[0]
+
         )
 
 
@@ -612,26 +641,36 @@ def predict_sos():
 
 
         for class_name, probability in zip(
+
             classes,
+
             probabilities
+
         ):
 
             probability_dict[
                 str(class_name)
             ] = round(
+
                 float(probability),
+
                 4
+
             )
 
 
         predicted_probability = (
+
             probability_dict[
                 str(prediction)
             ]
+
         )
 
 
+        # -------------------------------------------------
         # Severity score for UI
+        # -------------------------------------------------
 
         severity_scores = {
 
@@ -647,8 +686,11 @@ def predict_sos():
 
 
         severity_score = severity_scores.get(
+
             str(prediction).upper(),
+
             50
+
         )
 
 
@@ -729,7 +771,9 @@ def get_villages():
         ].copy()
 
 
+        # -------------------------------------------------
         # Convert NaN values to None
+        # -------------------------------------------------
 
         data = data.astype(object).where(
 
@@ -749,7 +793,9 @@ def get_villages():
 
             "villages":
                 data.to_dict(
+
                     orient="records"
+
                 )
 
         })
@@ -791,8 +837,11 @@ def search_villages():
 
 
         query = request.args.get(
+
             "q",
+
             ""
+
         ).strip()
 
 
@@ -815,9 +864,13 @@ def search_villages():
             .astype(str)
 
             .str.contains(
+
                 query,
+
                 case=False,
+
                 na=False
+
             )
 
         ]
@@ -860,7 +913,9 @@ def search_villages():
 
             "villages":
                 result.to_dict(
+
                     orient="records"
+
                 )
 
         })
@@ -958,27 +1013,20 @@ def predict_habitation():
 
 
         # =================================================
-        # CHECK PS-191 MODELS
+        # LAZY LOAD PS-191 MODELS
         # =================================================
 
-        if (
+        habitation_risk_model = get_model(
+            "habitation"
+        )
 
-            habitation_risk_model is None
+        capacity_model = get_model(
+            "capacity"
+        )
 
-            or capacity_model is None
-
-            or relocation_model is None
-
-        ):
-
-            return jsonify({
-
-                "success": False,
-
-                "error":
-                    "One or more habitation models are not loaded"
-
-            }), 500
+        relocation_model = get_model(
+            "relocation"
+        )
 
 
         # =================================================
@@ -1104,7 +1152,9 @@ def predict_habitation():
 
 
         risk_score = clamp_score(
+
             risk_score
+
         )
 
 
@@ -1113,7 +1163,9 @@ def predict_habitation():
         # =================================================
 
         zone = get_risk_level(
+
             risk_score
+
         )
 
 
@@ -1123,13 +1175,12 @@ def predict_habitation():
         # =================================================
         # 4. HAZARD SCORES
         # =================================================
-        #
+
         # Currently using overall risk score for each
         # hazard.
         #
         # Replace these later if separate hazard models
         # become available.
-        #
 
         hazards = {
 
@@ -1183,7 +1234,9 @@ def predict_habitation():
             capacity_model
 
             .predict_proba(
+
                 capacity_features
+
             )[0]
 
         )
@@ -1201,38 +1254,60 @@ def predict_habitation():
         # =================================================
 
         population = float(
+
             data["population"]
+
         )
+
 
         shelter_capacity = float(
+
             data["shelter_capacity"]
+
         )
+
 
         available_water = float(
+
             data["available_water"]
+
         )
+
 
         food_stock = float(
+
             data["food_stock"]
+
         )
 
+
         medical_capacity = float(
+
             data["medical_capacity"]
+
         )
 
 
         # Calculate capacity supported by each resource
 
         water_capacity = (
+
             available_water / 5
+
         )
+
 
         food_capacity = (
+
             food_stock / 2
+
         )
 
+
         medical_population_capacity = (
+
             medical_capacity * 10
+
         )
 
 
@@ -1254,15 +1329,20 @@ def predict_habitation():
         # Minimum safe capacity
 
         safe_capacity = max(
+
             safe_capacity,
+
             100
+
         )
 
 
         # Population compared with safe capacity
 
         capacity_ratio = (
+
             population / safe_capacity
+
         )
 
 
@@ -1275,8 +1355,11 @@ def predict_habitation():
             "habitationId",
 
             data.get(
+
                 "village_code",
+
                 "UNKNOWN"
+
             )
 
         )
@@ -1287,8 +1370,11 @@ def predict_habitation():
             "name",
 
             data.get(
+
                 "village_name",
+
                 "Unknown Habitation"
+
             )
 
         )
@@ -1330,7 +1416,9 @@ def predict_habitation():
             relocation_model
 
             .predict(
+
                 relocation_features
+
             )[0]
 
         )
@@ -1363,7 +1451,9 @@ def predict_habitation():
         relocation_priority = (
 
             str(
+
                 relocation_prediction
+
             ).upper()
 
         )
@@ -1387,7 +1477,9 @@ def predict_habitation():
             relocation_priority = (
 
                 get_relocation_priority(
+
                     risk_score
+
                 )
 
             )
@@ -1422,8 +1514,11 @@ def predict_habitation():
 
             "riskScore":
                 round(
+
                     risk_score,
+
                     2
+
                 ),
 
             "riskLevel":
@@ -1431,8 +1526,11 @@ def predict_habitation():
 
             "vulnerabilityScore":
                 round(
+
                     vulnerability_score,
+
                     2
+
                 ),
 
 
@@ -1440,7 +1538,8 @@ def predict_habitation():
             # Individual hazard scores
             # -------------------------------------------------
 
-            "hazards": hazards,
+            "hazards":
+                hazards,
 
 
             # -------------------------------------------------
@@ -1477,10 +1576,15 @@ def predict_habitation():
 
                 "riskProbability":
                     round(
+
                         float(
+
                             predicted_risk_probability
+
                         ),
+
                         4
+
                     ),
 
                 "riskProbabilities":
@@ -1491,21 +1595,31 @@ def predict_habitation():
 
                     "status":
                         str(
+
                             capacity_prediction
+
                         ),
 
                     "capacityRatio":
                         round(
+
                             capacity_ratio,
+
                             2
+
                         ),
 
                     "probability":
                         round(
+
                             float(
+
                                 capacity_probability
+
                             ),
+
                             4
+
                         )
 
                 },
@@ -1518,10 +1632,15 @@ def predict_habitation():
 
                     "probability":
                         round(
+
                             float(
+
                                 relocation_probability
+
                             ),
+
                             4
+
                         )
 
                 }
@@ -1533,8 +1652,12 @@ def predict_habitation():
 
     except ValueError as e:
 
-        print("VALUE ERROR IN /predict/habitation:")
+        print(
+            "VALUE ERROR IN /predict/habitation:"
+        )
+
         print(repr(e))
+
 
         return jsonify({
 
