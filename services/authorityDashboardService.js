@@ -307,9 +307,11 @@ async function getAuthorityDashboard() {
         if (
             [
                 "healthy",
+                "health",
                 "ok",
                 "operational",
-                "up"
+                "up",
+                "running"
             ].includes(rawStatus)
         ) {
 
