@@ -67,9 +67,16 @@ function SafeSites() {
 
             const response = await api.get("/api/relocation/sites");
 
-            const data = response.data?.data;
+            const data =
+                response.data?.sites ||
+                response.data?.data ||
+                [];
 
-            setSites(Array.isArray(data) ? data : []);
+            setSites(
+                Array.isArray(data)
+                    ? data
+                    : []
+            );
 
         } catch (err) {
 

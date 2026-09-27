@@ -809,13 +809,13 @@ function RiskPopup({
 
                     <div>
                         <strong>
-                            Capacity Score
+                            Capacity Ratio
                         </strong>
 
                         <br />
 
                         {Number(
-                            data.capacityScore || 0
+                            data.capacityRatio || 0
                         ).toFixed(1)}
                     </div>
 

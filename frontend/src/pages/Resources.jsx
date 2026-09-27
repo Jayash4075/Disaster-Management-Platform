@@ -57,35 +57,7 @@ function Resources() {
 
     return (
         <div className="resources-page">
-
-            {/* Navbar */}
-            {/* <nav className="resources-navbar">
-                <div className="resources-logo" onClick={() => navigate("/dashboard")}>
-                    Res<span>Q</span>
-                </div>
-
-                <div className="resources-nav-links">
-                    <button onClick={() => navigate("/dashboard")}>
-                        Dashboard
-                    </button>
-
-                    <button className="active-nav">
-                        Resources
-                    </button>
-
-                    <button onClick={() => navigate("/volunteers")}>
-                        Volunteers & NGOs
-                    </button>
-                </div>
-
-                <button
-                    className="back-dashboard-btn"
-                    onClick={() => navigate("/dashboard")}
-                >
-                    ← Dashboard
-                </button>
-            </nav> */}
-
+            
             {/* Main Content */}
             <main className="resources-container">
 

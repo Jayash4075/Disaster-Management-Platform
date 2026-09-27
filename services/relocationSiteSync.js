@@ -1,59 +1,42 @@
 const RelocationSite = require("../models/RelocationSite");
 
-const MIN_AVAILABLE_CAPACITY = 1;
+/*
+    IMPORTANT ARCHITECTURE:
+
+    A habitation being GREEN/YELLOW does NOT automatically mean
+    that it is a relocation/relief facility.
+
+    Habitations:
+        -> risk assessment
+        -> vulnerability
+        -> carrying capacity
+
+    Relocation Sites:
+        -> actual schools
+        -> relief camps
+        -> stadiums
+        -> community shelters
+        -> government buildings
+        -> emergency centres
+
+    Therefore this service no longer creates a relocation site
+    from every habitation.
+
+    It only removes old automatically-generated HAB-* sites
+    that may still exist in the database.
+*/
 
 async function syncRelocationSiteForHabitation(habitation) {
 
     const siteId = `HAB-${habitation.habitationId}`;
 
-    const isEligible =
-        habitation.assessmentStatus === "ASSESSED" &&
-        (habitation.riskLevel === "GREEN" || habitation.riskLevel === "YELLOW") &&
-        habitation.location?.coordinates?.length === 2 &&
-        Number(habitation.shelterCapacity) > 0;
+    // Remove any old automatically generated Safe Zone
+    // associated with this habitation.
+    await RelocationSite.deleteOne({ siteId });
 
-    if (!isEligible) {
-        await RelocationSite.deleteOne({ siteId });
-        return null;
-    }
-
-    const availableCapacity = Math.max(
-        0,
-        Number(habitation.shelterCapacity) -
-            (Number(habitation.vulnerablePopulation) || 0)
-    );
-
-    if (availableCapacity < MIN_AVAILABLE_CAPACITY) {
-        await RelocationSite.deleteOne({ siteId });
-        return null;
-    }
-
-    const suitabilityScore =
-        (100 - (Number(habitation.riskScore) || 0)) * 0.4 +
-        (Number(habitation.roadAccess) || 0) * 5 +
-        (Number(habitation.availableWater) > 0 ? 10 : 0) +
-        (Number(habitation.medicalCapacity) > 0 ? 10 : 0) +
-        (Number(habitation.foodStock) > 0 ? 10 : 0);
-
-    const update = {
-        siteId,
-        name: `${habitation.name} (Safe Zone)`,
-        location: habitation.location,
-        capacity: {
-            total: Number(habitation.shelterCapacity),
-            occupied: Number(habitation.vulnerablePopulation) || 0,
-            available: availableCapacity
-        },
-        suitabilityScore: Math.round(suitabilityScore)
-    };
-
-    const site = await RelocationSite.findOneAndUpdate(
-        { siteId },
-        update,
-        { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
-
-    return site;
+    return null;
 }
 
-module.exports = { syncRelocationSiteForHabitation };
+module.exports = {
+    syncRelocationSiteForHabitation
+};

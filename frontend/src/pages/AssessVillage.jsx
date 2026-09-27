@@ -397,15 +397,26 @@ function AssessVillage() {
 
     const getCapacityStatus = () => {
 
-        return (
-            result?.capacityStatus ||
-            result?.capacity_status ||
-            result?.prediction?.capacityStatus ||
-            result?.assessment?.capacityStatus ||
-            "UNKNOWN"
-        );
+    return (
+        result?.capacityStatus ||
+        result?.capacity_status ||
 
-    };
+        result?.prediction?.capacityStatus ||
+        result?.prediction?.capacity_status ||
+
+        result?.prediction?.details?.carryingCapacity?.status ||
+
+        result?.assessment?.capacityStatus ||
+        result?.assessment?.capacity_status ||
+
+        result?.assessment?.details?.carryingCapacity?.status ||
+
+        result?.details?.carryingCapacity?.status ||
+
+        "UNKNOWN"
+    );
+
+};
 
 
     const score = getRiskScore();
