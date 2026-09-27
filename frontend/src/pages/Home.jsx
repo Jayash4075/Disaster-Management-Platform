@@ -8,7 +8,7 @@ function Home() {
       {/* Navbar */}
       <nav className="navbar">
         <div className="logo">
-          ResQ
+          TerraShield
         </div>
 
         <div className="nav-links">
@@ -54,7 +54,7 @@ function Home() {
             </a>
 
             <a href="#features" className="secondary-btn">
-              Explore ResQ
+              Explore TerraShield
             </a>
           </div>
 
@@ -171,7 +171,7 @@ function Home() {
           </h2>
 
           <p>
-            ResQ combines hazard analysis, GIS intelligence,
+            TerraShield combines hazard analysis, GIS intelligence,
             vulnerability assessment and relocation planning
             in one platform.
           </p>
@@ -382,14 +382,14 @@ function Home() {
           </h2>
 
           <p>
-            ResQ transforms disaster-related data into actionable
+            TerraShield transforms disaster-related data into actionable
             intelligence — helping authorities identify unsafe
             habitations, evaluate safer alternatives and make
             informed relocation decisions.
           </p>
 
           <a href="/signup" className="primary-btn">
-            Start with ResQ
+            Start with TerraShield
           </a>
 
         </div>
@@ -406,7 +406,7 @@ function Home() {
 
         <p>
           From proactive risk assessment to emergency response,
-          ResQ helps communities stay safer and better prepared.
+          TerraShield helps communities stay safer and better prepared.
         </p>
 
         <a href="/signup">
@@ -420,7 +420,7 @@ function Home() {
       <footer className="footer">
 
         <div>
-          <h2>ResQ</h2>
+          <h2>TerraShield</h2>
 
           <p>
             Identify Risk. Protect Lives.
@@ -434,7 +434,7 @@ function Home() {
         </div>
 
         <div>
-          <p>© 2026 ResQ</p>
+          <p>© 2026 TerraShield</p>
         </div>
 
       </footer>

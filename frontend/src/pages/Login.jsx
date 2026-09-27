@@ -51,7 +51,7 @@ function Login() {
 
             <div className="auth-left">
                 <div className="resq-brand">
-                    <h2>ResQ</h2>
+                    <h2>TerraShield</h2>
                     <span>Emergency Response & Relief Platform</span>
                 </div>
 
@@ -70,7 +70,7 @@ function Login() {
                 <div className="auth-card">
                     <div className="card-header">
                         <h1>Welcome Back</h1>
-                        <p>Sign in to your ResQ account</p>
+                        <p>Sign in to your TerraShield account</p>
                     </div>
 
                     <form onSubmit={handleSubmit}>

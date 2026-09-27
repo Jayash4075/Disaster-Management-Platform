@@ -348,7 +348,7 @@ function Signup() {
             <div className="auth-left">
 
                 <div className="resq-brand">
-                    <h2>ResQ</h2>
+                    <h2>TerraShield</h2>
 
                     <span>
                         Emergency Response & Relief Platform
@@ -364,7 +364,7 @@ function Signup() {
                     </h1>
 
                     <p>
-                        ResQ brings citizens, rescuers,
+                        TerraShield brings citizens, rescuers,
                         authorities, NGOs and volunteers
                         together for coordinated disaster
                         response.
@@ -388,7 +388,7 @@ function Signup() {
                         <h1>Create Account</h1>
 
                         <p>
-                            Register with ResQ
+                            Register with TerraShield
                         </p>
 
                     </div>

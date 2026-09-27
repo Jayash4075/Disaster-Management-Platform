@@ -112,7 +112,7 @@ function CreateRescueTeam() {
             
             <header className="authority-header">
                 <div>
-                    <h1>ResQ — Create Rescue Team</h1>
+                    <h1>TerraShield — Create Rescue Team</h1>
                     <p>Register a new team for dispatch</p>
                 </div>
                 <button className="refresh-btn" onClick={() => navigate("/authority")}>

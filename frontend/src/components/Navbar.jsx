@@ -20,7 +20,7 @@ const Navbar = () => {
             <div className="navbar-brand">
                 <div className="navbar-logo">R</div>
                 <div>
-                    <h2>ResQ</h2>
+                    <h2>TerraShield</h2>
                     <span>Disaster Management Platform</span>
                 </div>
             </div>
