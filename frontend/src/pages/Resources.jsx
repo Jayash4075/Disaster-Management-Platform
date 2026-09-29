@@ -64,7 +64,7 @@ function Resources() {
                 {/* Header */}
                 <section className="resources-header">
                     <div>
-                        <p className="resources-label">TerraShield Support</p>
+                        <p className="resources-label">TERRASHIELD SUPPORT</p>
 
                         <h1>Emergency Resources</h1>
 

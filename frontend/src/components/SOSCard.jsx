@@ -4,57 +4,101 @@ import "./SOSCard.css";
 
 const SOSCard = () => {
 
-  const navigate = useNavigate();
+    const navigate = useNavigate();
 
-  const handleSOS = () => {
-    navigate("/sos-form");
-  };
+    return (
+        <div className="resq-sos-card">
 
-  return (
-    <div className="sos-card">
+            {/* =========================================
+                LEFT
+            ========================================= */}
 
-      <div className="sos-icon">
-        SOS
-      </div>
+            <div className="resq-sos-main">
 
-      <h2>Emergency SOS</h2>
+                <div className="resq-sos-icon">
+                    SOS
+                </div>
 
-      <p>
-        If you are in immediate danger, press the button below
-        to request emergency assistance.
-      </p>
+                <div className="resq-sos-content">
 
-      <button
-        className="sos-button"
-        onClick={handleSOS}
-      >
-        🚨 SEND SOS
-      </button>
+                    <div className="resq-sos-label">
+                        EMERGENCY ASSISTANCE
+                    </div>
 
-      <div className="emergency-contacts">
+                    <h2>
+                        Need immediate help?
+                    </h2>
 
-        <div className="emergency-contact">
-          <span>🚓</span>
-          <strong>Police</strong>
-          <small>112</small>
+                    <p>
+                        Send your emergency request with your
+                        current location to the response team.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            {/* =========================================
+                BUTTON
+            ========================================= */}
+
+            <div className="resq-sos-action">
+
+                <button
+                    className="resq-sos-button"
+                    onClick={() => navigate("/sos-form")}
+                >
+                    <span>🚨</span>
+                    Send Emergency SOS
+                </button>
+
+                <small>
+                    Use only when you need urgent assistance.
+                </small>
+
+            </div>
+
+
+            {/* =========================================
+                EMERGENCY NUMBERS
+            ========================================= */}
+
+            <div className="resq-emergency-numbers">
+
+                <div className="resq-emergency-number">
+                    <span>🚓</span>
+
+                    <div>
+                        <strong>Police</strong>
+                        <small>112</small>
+                    </div>
+                </div>
+
+
+                <div className="resq-emergency-number">
+                    <span>🚑</span>
+
+                    <div>
+                        <strong>Ambulance</strong>
+                        <small>108</small>
+                    </div>
+                </div>
+
+
+                <div className="resq-emergency-number">
+                    <span>🔥</span>
+
+                    <div>
+                        <strong>Fire</strong>
+                        <small>101</small>
+                    </div>
+                </div>
+
+            </div>
+
         </div>
-
-        <div className="emergency-contact">
-          <span>🚑</span>
-          <strong>Ambulance</strong>
-          <small>108</small>
-        </div>
-
-        <div className="emergency-contact">
-          <span>🔥</span>
-          <strong>Fire</strong>
-          <small>101</small>
-        </div>
-
-      </div>
-
-    </div>
-  );
+    );
 };
 
 export default SOSCard;

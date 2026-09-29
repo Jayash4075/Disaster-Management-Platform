@@ -391,7 +391,7 @@ Longitude: ${location.longitude}`;
             <header className="emergency-header">
 
                 <div>
-                    <h1>ResQ</h1>
+                    <h1>TerraShield</h1>
                     <p>Emergency Assistance</p>
                 </div>
 
@@ -410,6 +410,18 @@ Longitude: ${location.longitude}`;
             {/* Main */}
 
             <main className="emergency-container">
+
+                <div className="emergency-page-intro">
+                    <div>
+                        <span className="intro-eyebrow">CITIZEN SAFETY CENTER</span>
+                        <h2>Emergency Response</h2>
+                        <p>Track your SOS request, location, and rescue response in real time.</p>
+                    </div>
+                    <div className="live-indicator">
+                        <span className="live-dot"></span>
+                        Live monitoring
+                    </div>
+                </div>
 
                 {/* Emergency Status */}
 
@@ -470,6 +482,7 @@ Longitude: ${location.longitude}`;
 
                                 <span>
                                     Latitude
+
                                 </span>
 
                                 <strong>
@@ -534,11 +547,13 @@ Longitude: ${location.longitude}`;
                 </section>
 
 
-                {/* Assigned Team */}
+                {/* Assigned Team + Rescue Status */}
+
+                <div className="emergency-details-grid">
 
                 {assignedTeam && (
 
-                    <section className="emergency-card">
+                    <section className="emergency-card team-card">
 
                         <div className="card-heading">
 
@@ -611,7 +626,7 @@ Longitude: ${location.longitude}`;
 
                 {/* Rescue Status */}
 
-                <section className="emergency-card">
+                <section className="emergency-card rescue-status-card">
 
                     <div className="card-heading">
 
@@ -841,6 +856,8 @@ Longitude: ${location.longitude}`;
                     </div>
 
                 </section>
+
+                </div>
 
 
                 {/* Emergency Actions */}
